@@ -1,0 +1,468 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Navigate, useNavigate, useParams } from 'react-router';
+import { SwipeRow } from '../../components/gestures';
+import { ChevronRight } from '../../components/icons';
+import { Keypad } from '../../components/Keypad';
+import { Alert, HoldMenu, Sheet, SheetOption, type MenuItem } from '../../components/overlays';
+import { BarButton, Button, cx, FieldLabel, Tag, TopBar } from '../../components/ui';
+import { exerciseOrMissing, useData } from '../../data/DataProvider';
+import { stepLb } from '../../data/settings';
+import { saveWorkoutEdits, type EditedExercise, type EditedSet } from '../../data/workouts';
+import type { Exercise } from '../../db/types';
+import { fmtDay, fmtTime, fromLocalInputValue, toLocalInputValue } from '../../lib/dates';
+import { uuid } from '../../lib/id';
+import { applyKey, parseRepsText, parseWeightText, type KeypadKey } from '../../lib/keypad';
+import { dropWeight } from '../../lib/prefill';
+import { hasWeightColumn, isEmptySet, setLabels, TYPE_TAG, weightColumnLabel } from '../../lib/sets';
+import { fromDisplay, unitColumn, unitLabel } from '../../lib/units';
+import { ExercisePicker } from '../exercises/ExercisePicker';
+import { weightCellText, weightEditDisplay, weightEditText, weightFromEdit } from '../workout/SetTable';
+
+type Field = 'weight' | 'reps';
+interface Editing {
+  exKey: string;
+  setKey: string;
+  field: Field;
+  text: string;
+  fresh: boolean;
+}
+
+/** 6.7: fix a finished workout. Same rows and keypad as the builder. Saved only on Save. */
+export function EditWorkout() {
+  const { id = '' } = useParams();
+  const { history } = useData();
+  const hw = history.byId.get(id);
+  const [initial] = useState(() =>
+    hw
+      ? {
+          name: hw.workout.name,
+          startedAt: hw.workout.startedAt,
+          endedAt: hw.workout.endedAt,
+          exercises: hw.exercises.map<EditedExercise>((e) => ({
+            key: e.we.id,
+            exerciseId: e.we.exerciseId,
+            sets: e.sets.map((s) => ({ key: s.id, kind: s.kind, parentKey: s.parentSetId, weight: s.weight, reps: s.reps })),
+          })),
+        }
+      : null,
+  );
+  if (!initial) return <Navigate to="/history" replace />;
+  return <Editor id={id} initial={initial} />;
+}
+
+function Editor({ id, initial }: { id: string; initial: { name: string; startedAt: number; endedAt?: number; exercises: EditedExercise[] } }) {
+  const navigate = useNavigate();
+  const { exerciseMap, settings } = useData();
+  const units = settings.units;
+  const [name, setName] = useState(initial.name);
+  const [startedAt, setStartedAt] = useState(initial.startedAt);
+  const [endedAt, setEndedAt] = useState(initial.endedAt);
+  const [exercises, setExercises] = useState(initial.exercises);
+  const [editing, setEditing] = useState<Editing | null>(null);
+  const [overlay, setOverlay] = useState<'time' | 'add' | 'discard' | null>(null);
+  const [exMenu, setExMenu] = useState<string | null>(null);
+  const [replacing, setReplacing] = useState<string | null>(null);
+  const [setMenu, setSetMenu] = useState<{ exKey: string; setKey: string; rect: DOMRect } | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const snapshot = useMemo(() => JSON.stringify(initial), [initial]);
+  const dirty = JSON.stringify({ name, startedAt, endedAt, exercises }) !== snapshot;
+
+  useEffect(() => {
+    if (!dirty) return;
+    const h = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener('beforeunload', h);
+    return () => window.removeEventListener('beforeunload', h);
+  }, [dirty]);
+
+  const updateEx = (exKey: string, fn: (e: EditedExercise) => EditedExercise) => setExercises((l) => l.map((e) => (e.key === exKey ? fn(e) : e)));
+  const updateSet = (exKey: string, setKey: string, patch: Partial<EditedSet>) => updateEx(exKey, (e) => ({ ...e, sets: e.sets.map((s) => (s.key === setKey ? { ...s, ...patch } : s)) }));
+
+  /** Warm-ups first, then each set followed by its drops. */
+  const normalize = (sets: EditedSet[]) => {
+    const tops = sets.filter((s) => s.kind !== 'drop' || !s.parentKey || !sets.some((p) => p.key === s.parentKey));
+    const out: EditedSet[] = [];
+    const push = (s: EditedSet) => {
+      out.push(s);
+      for (const d of sets.filter((x) => x.kind === 'drop' && x.parentKey === s.key)) push(d);
+    };
+    for (const s of [...tops.filter((s) => s.kind === 'warmup'), ...tops.filter((s) => s.kind !== 'warmup')]) push(s);
+    return out;
+  };
+
+  const addSet = (exKey: string) =>
+    updateEx(exKey, (e) => {
+      const last = [...e.sets].reverse().find((s) => s.kind === 'working');
+      return { ...e, sets: [...e.sets, { key: uuid(), kind: 'working', weight: last?.weight, reps: last?.reps }] };
+    });
+
+  const addDrop = (exKey: string, ex: Exercise) =>
+    updateEx(exKey, (e) => {
+      const parent = [...e.sets].reverse().find((s) => s.kind !== 'warmup');
+      if (!parent) return e;
+      const root = parent.kind === 'drop' ? parent.parentKey : parent.key;
+      const drop: EditedSet = { key: uuid(), kind: 'drop', parentKey: root, weight: dropWeight(parent.weight, ex.type, settings.dropPercent, stepLb(settings)), reps: parent.reps };
+      return { ...e, sets: normalize([...e.sets, drop]) };
+    });
+
+  const toggleWarm = (exKey: string, setKey: string) =>
+    updateEx(exKey, (e) => ({
+      ...e,
+      sets: normalize(e.sets.map((s) => (s.key === setKey && s.kind !== 'drop' ? { ...s, kind: s.kind === 'warmup' ? 'working' : 'warmup' } : s))),
+    }));
+
+  const removeSet = (exKey: string, setKey: string) => {
+    if (editing?.setKey === setKey) setEditing(null);
+    updateEx(exKey, (e) => ({ ...e, sets: e.sets.filter((s) => s.key !== setKey && s.parentKey !== setKey) }));
+  };
+
+  const duplicateSet = (exKey: string, setKey: string) =>
+    updateEx(exKey, (e) => {
+      const i = e.sets.findIndex((s) => s.key === setKey);
+      return { ...e, sets: normalize([...e.sets.slice(0, i + 1), { ...e.sets[i], key: uuid() }, ...e.sets.slice(i + 1)]) };
+    });
+
+  const moveEx = (exKey: string, d: number) =>
+    setExercises((l) => {
+      const i = l.findIndex((e) => e.key === exKey);
+      const j = i + d;
+      if (j < 0 || j >= l.length) return l;
+      const n = [...l];
+      [n[i], n[j]] = [n[j], n[i]];
+      return n;
+    });
+
+  // keypad
+  const editingEx = editing ? exercises.find((e) => e.key === editing.exKey) : undefined;
+  const editingSet = editingEx?.sets.find((s) => s.key === editing?.setKey);
+  const editingExercise = editingEx ? exerciseOrMissing(exerciseMap, editingEx.exerciseId) : undefined;
+
+  const startEdit = (exKey: string, s: EditedSet, field: Field, ex: Exercise) =>
+    setEditing({ exKey, setKey: s.key, field, text: field === 'weight' ? weightEditText(s.weight, ex, units) : s.reps != null ? String(s.reps) : '', fresh: true });
+
+  const onKey = (k: KeypadKey) => {
+    if (!editing || !editingSet || !editingExercise) return;
+    const ex = editingExercise;
+    const allowNegative = editing.field === 'weight' && (ex.type === 'assisted' || ex.type === 'bodyweight_plus');
+    const text = applyKey(editing.text, editing.fresh, k, { mode: editing.field, allowNegative, step: settings.weightStep });
+    setEditing({ ...editing, text, fresh: false });
+    if (editing.field === 'weight') {
+      const v = parseWeightText(text);
+      updateSet(editing.exKey, editing.setKey, { weight: weightFromEdit(v === undefined ? undefined : fromDisplay(v, units), ex) });
+    } else updateSet(editing.exKey, editing.setKey, { reps: parseRepsText(text) });
+  };
+
+  const emptyCount = exercises.reduce((n, e) => n + e.sets.filter((s) => isEmptySet(s)).length, 0);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await saveWorkoutEdits(id, { name, startedAt, endedAt, exercises });
+      navigate(`/history/${id}`, { replace: true });
+    } finally {
+      setSaving(false);
+    }
+  };
+  const leave = () => navigate(`/history/${id}`, { replace: true });
+
+  const exMenuItem = exercises.find((e) => e.key === exMenu);
+  const menuSet = setMenu ? exercises.find((e) => e.key === setMenu.exKey)?.sets.find((s) => s.key === setMenu.setKey) : undefined;
+  const menuItems: MenuItem[] =
+    setMenu && menuSet
+      ? [
+          ...(menuSet.kind !== 'drop'
+            ? [{ label: menuSet.kind === 'warmup' ? 'Mark as working set' : 'Mark as warm-up', glyph: menuSet.kind === 'warmup' ? '1' : 'W', onClick: () => toggleWarm(setMenu.exKey, setMenu.setKey) }]
+            : []),
+          { label: 'Duplicate', glyph: '⧉', onClick: () => duplicateSet(setMenu.exKey, setMenu.setKey) },
+          { label: 'Delete', glyph: '✕', tone: 'danger' as const, onClick: () => removeSet(setMenu.exKey, setMenu.setKey) },
+        ]
+      : [];
+
+  return (
+    <div className="flex h-full flex-col">
+      <TopBar
+        left={
+          <BarButton kind="muted" onClick={() => (dirty ? setOverlay('discard') : leave())}>
+            Cancel
+          </BarButton>
+        }
+        title="Edit workout"
+        right={
+          <BarButton kind="bold" onClick={() => void save()} disabled={saving || !dirty}>
+            Save
+          </BarButton>
+        }
+      />
+      <div className="scroll-y min-h-0 flex-1 px-4 pb-8">
+        <div className="mt-3 flex items-baseline gap-3 border-b border-line-strong pb-1.5">
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onFocus={() => setEditing(null)}
+            maxLength={60}
+            placeholder="Workout name"
+            className="min-w-0 flex-1 bg-transparent text-[24px] font-bold outline-none placeholder:text-fg3"
+          />
+        </div>
+        <button type="button" onClick={() => setOverlay('time')} className="flex h-10 w-full items-center justify-between text-[14px] text-fg2">
+          <span>
+            {fmtDay(startedAt)} · {fmtTime(startedAt)}
+            {endedAt ? ` – ${fmtTime(endedAt)}` : ''}
+          </span>
+          <ChevronRight size={11} />
+        </button>
+
+        {exercises.map((e) => {
+          const ex = exerciseOrMissing(exerciseMap, e.exerciseId);
+          const labels = setLabels(e.sets.map((s, j) => ({ id: s.key, order: j, kind: s.kind, parentSetId: s.parentKey })));
+          const showW = hasWeightColumn(ex.type);
+          const cols = showW ? 'grid-cols-[34px_1fr_1fr]' : 'grid-cols-[34px_1fr]';
+          return (
+            <section key={e.key} className="border-b border-line pt-3 pb-2">
+              <div className="flex items-center gap-2">
+                <b className="min-w-0 flex-1 truncate text-[16px] font-semibold">
+                  {ex.name}
+                  {TYPE_TAG[ex.type] && <Tag>{TYPE_TAG[ex.type]}</Tag>}
+                </b>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditing(null);
+                    setExMenu(e.key);
+                  }}
+                  aria-label={`${ex.name} options`}
+                  className="-mr-2 flex h-11 w-11 items-center justify-center text-[14px] font-bold tracking-[1px] text-accent"
+                >
+                  •••
+                </button>
+              </div>
+              {e.sets.length > 0 && (
+                <div className={cx('grid h-5 items-center gap-2 text-center text-[10.5px] font-bold tracking-[0.05em] text-fg2', cols)}>
+                  <span>SET</span>
+                  {showW && <span>{weightColumnLabel(ex.type, unitColumn(units))}</span>}
+                  <span>REPS</span>
+                </div>
+              )}
+              <div className="flex flex-col gap-[2px]">
+                {e.sets.map((s) => {
+                  const l = labels.get(s.key)!;
+                  const editW = editing?.setKey === s.key && editing.field === 'weight';
+                  const editR = editing?.setKey === s.key && editing.field === 'reps';
+                  const wText = editW ? weightEditDisplay(editing!.text, ex) : weightCellText(s.weight, ex, units);
+                  return (
+                    <SwipeRow
+                      key={s.key}
+                      className={cx(s.kind === 'drop' && 'ml-3.5')}
+                      right={s.kind === 'drop' ? undefined : { label: s.kind === 'warmup' ? 'Working set' : 'Warm-up', onTrigger: () => toggleWarm(e.key, s.key) }}
+                      left={{ label: 'Delete', onTrigger: () => removeSet(e.key, s.key) }}
+                      onLongPress={(rect) => setSetMenu({ exKey: e.key, setKey: s.key, rect })}
+                    >
+                      <div className={cx('grid h-10 items-center gap-2', cols, s.kind === 'drop' && 'border-l-2 border-warn')}>
+                        <button
+                          type="button"
+                          aria-label={`Set ${l} options`}
+                          onClick={(ev) => setSetMenu({ exKey: e.key, setKey: s.key, rect: (ev.currentTarget.parentElement as HTMLElement).getBoundingClientRect() })}
+                          className={cx('flex h-10 items-center justify-center text-[14px] font-bold', s.kind === 'warmup' && 'text-fg2', s.kind === 'drop' && 'text-warn')}
+                        >
+                          {l}
+                        </button>
+                        {showW && <EditCell text={wText} editing={editW} onClick={() => startEdit(e.key, s, 'weight', ex)} label={`Set ${l} weight`} />}
+                        <EditCell text={editR ? editing!.text : s.reps != null ? String(s.reps) : ''} editing={editR} onClick={() => startEdit(e.key, s, 'reps', ex)} label={`Set ${l} reps`} />
+                      </div>
+                    </SwipeRow>
+                  );
+                })}
+              </div>
+              <div className="mt-1 ml-7 flex items-center gap-1 text-[14px] font-semibold">
+                <button type="button" onClick={() => addSet(e.key)} className="h-9 px-1 text-accent">
+                  + Set
+                </button>
+                <span className="text-fg3">·</span>
+                <button type="button" onClick={() => addDrop(e.key, ex)} disabled={!e.sets.some((s) => s.kind !== 'warmup')} className="h-9 px-1 text-warn disabled:opacity-40">
+                  + Drop
+                </button>
+              </div>
+            </section>
+          );
+        })}
+
+        <button
+          type="button"
+          onClick={() => {
+            setEditing(null);
+            setOverlay('add');
+          }}
+          className="mt-4 flex h-12 w-full items-center justify-center rounded-[12px] border border-dashed border-line-strong text-[16px] font-semibold text-accent"
+        >
+          + Add exercises
+        </button>
+        <p className="mt-3 text-[12.5px] leading-normal text-fg2">
+          {emptyCount ? `${emptyCount} ${emptyCount === 1 ? 'set has' : 'sets have'} no reps and will be removed on Save. ` : ''}
+          Records and charts update on Save.
+        </p>
+      </div>
+
+      {editing && editingSet && editingExercise && (
+        <Keypad
+          title={`${(() => {
+            const l = setLabels(editingEx!.sets.map((s, j) => ({ id: s.key, order: j, kind: s.kind, parentSetId: s.parentKey }))).get(editingSet.key);
+            return l === 'W' ? 'Warm-up' : l === 'D' ? 'Drop set' : `Set ${l}`;
+          })()} · ${editing.field === 'weight' ? 'Weight' : 'Reps'}`}
+          mode={editing.field}
+          onModeChange={editingExercise.type === 'bodyweight' ? undefined : (m) => m !== editing.field && startEdit(editing.exKey, editingSet, m, editingExercise)}
+          weightLabel={units === 'lb' ? 'lbs' : 'kg'}
+          stepLabel={`${settings.weightStep} ${unitLabel(units)}`}
+          allowNegative={editing.field === 'weight' && (editingExercise.type === 'assisted' || editingExercise.type === 'bodyweight_plus')}
+          onKey={onKey}
+          onClose={() => setEditing(null)}
+        />
+      )}
+
+      <TimeSheet
+        open={overlay === 'time'}
+        startedAt={startedAt}
+        endedAt={endedAt}
+        onClose={() => setOverlay(null)}
+        onSave={(a, b) => {
+          setStartedAt(a);
+          setEndedAt(b);
+        }}
+      />
+
+      <Sheet open={!!exMenuItem} onClose={() => setExMenu(null)} title={exMenuItem ? exerciseOrMissing(exerciseMap, exMenuItem.exerciseId).name : ''}>
+        {exMenuItem && (
+          <>
+            <SheetOption
+              onClick={() => {
+                setReplacing(exMenuItem.key);
+                setExMenu(null);
+              }}
+            >
+              Replace exercise…
+            </SheetOption>
+            <SheetOption
+              disabled={exercises[0]?.key === exMenuItem.key}
+              onClick={() => {
+                moveEx(exMenuItem.key, -1);
+                setExMenu(null);
+              }}
+            >
+              Move up
+            </SheetOption>
+            <SheetOption
+              disabled={exercises[exercises.length - 1]?.key === exMenuItem.key}
+              onClick={() => {
+                moveEx(exMenuItem.key, 1);
+                setExMenu(null);
+              }}
+            >
+              Move down
+            </SheetOption>
+            <SheetOption
+              tone="danger"
+              onClick={() => {
+                setExercises((l) => l.filter((x) => x.key !== exMenuItem.key));
+                setExMenu(null);
+              }}
+            >
+              Remove from workout
+            </SheetOption>
+          </>
+        )}
+      </Sheet>
+      <HoldMenu open={!!setMenu} anchor={setMenu?.rect} items={menuItems} onClose={() => setSetMenu(null)} />
+      <ExercisePicker
+        open={overlay === 'add'}
+        mode="multi"
+        currentLabel="In this workout"
+        current={exercises.map((e) => ({ exerciseId: e.exerciseId }))}
+        onCancel={() => setOverlay(null)}
+        onDone={({ keep, added }) => {
+          setOverlay(null);
+          setExercises((l) => [
+            ...l.filter((e) => keep.includes(e.exerciseId)),
+            ...added.map((exId) => ({ key: uuid(), exerciseId: exId, sets: [{ key: uuid(), kind: 'working' as const }] })),
+          ]);
+        }}
+      />
+      <ExercisePicker
+        open={!!replacing}
+        mode="single"
+        title="Replace exercise"
+        excludeIds={exercises.map((e) => e.exerciseId)}
+        onCancel={() => setReplacing(null)}
+        onPick={(exId) => {
+          if (replacing) updateEx(replacing, (e) => ({ ...e, exerciseId: exId }));
+          setReplacing(null);
+        }}
+      />
+      <Alert
+        open={overlay === 'discard'}
+        title="Discard changes?"
+        message="Your edits to this workout won't be saved."
+        onClose={() => setOverlay(null)}
+        actions={[
+          { label: 'Discard', kind: 'danger', onClick: leave },
+          { label: 'Keep editing', kind: 'bold', onClick: () => setOverlay(null) },
+        ]}
+      />
+    </div>
+  );
+}
+
+function EditCell({ text, editing, onClick, label }: { text: string; editing: boolean; onClick: () => void; label: string }) {
+  return (
+    <button type="button" aria-label={label} onClick={onClick} className="flex h-10 items-center">
+      <span className={cx('flex h-[32px] w-full items-center justify-center rounded-[8px] text-[16px] font-semibold', editing ? 'border-2 border-accent bg-edit' : 'bg-surface-2')}>
+        {text ? <span>{text}</span> : !editing && <span className="text-[14px] font-medium text-fg3">—</span>}
+        {editing && <span className="ml-[1px] h-[17px] w-[1.5px] animate-pulse bg-accent" />}
+      </span>
+    </button>
+  );
+}
+
+function TimeSheet({
+  open,
+  startedAt,
+  endedAt,
+  onClose,
+  onSave,
+}: {
+  open: boolean;
+  startedAt: number;
+  endedAt?: number;
+  onClose: () => void;
+  onSave: (start: number, end?: number) => void;
+}) {
+  const [a, setA] = useState(toLocalInputValue(startedAt));
+  const [b, setB] = useState(endedAt ? toLocalInputValue(endedAt) : '');
+  useEffect(() => {
+    if (open) {
+      setA(toLocalInputValue(startedAt));
+      setB(endedAt ? toLocalInputValue(endedAt) : '');
+    }
+  }, [open, startedAt, endedAt]);
+  const ta = fromLocalInputValue(a);
+  const tb = b ? fromLocalInputValue(b) : undefined;
+  const error = !ta ? 'Pick a start time.' : tb !== undefined && tb < ta ? 'The end is before the start.' : ta > Date.now() ? "That's in the future." : '';
+  const input = 'mt-1.5 h-12 w-full rounded-[10px] bg-surface-2 px-3 text-[17px] text-fg outline-none focus:ring-2 focus:ring-accent';
+  return (
+    <Sheet open={open} onClose={onClose} title="Date & time">
+      <FieldLabel className="mt-1">Started</FieldLabel>
+      <input type="datetime-local" value={a} max={toLocalInputValue(Date.now())} onChange={(e) => setA(e.target.value)} className={input} />
+      <FieldLabel>Finished</FieldLabel>
+      <input type="datetime-local" value={b} onChange={(e) => setB(e.target.value)} className={input} />
+      {error && <p className="mt-2 text-[13px] font-semibold text-danger">{error}</p>}
+      <Button
+        className="mt-4"
+        disabled={!!error}
+        onClick={() => {
+          if (ta) onSave(ta, tb);
+          onClose();
+        }}
+      >
+        Done
+      </Button>
+    </Sheet>
+  );
+}
