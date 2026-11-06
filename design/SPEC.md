@@ -118,6 +118,9 @@ See the "Design principles" section at the bottom of `storyboards/complete.html`
 - **Top bar.** Cancel/Back on the left, Save/Done on the right. Sheets are for options; alerts are only for confirming data loss.
 - **Gestures** are shortcuts only. Everything they do must also be reachable from a visible control.
 
+- **Logo.** `brand/logos/opengym-logo-dark.svg` (light version alongside): a thick grey bar running off the left edge, a collar, then two equal 45s (the second centered) and a smaller plate, all plates blue (#2E8BFF), short overhang on the right, on black.
+- **Icons.** Only the tab bar uses the new icons: the **solid** set in `brand/nav/solid/`. In-app controls keep the storyboard glyphs (▶, +, ✓, •••, ≡, W / D letters); ignore `brand/icons/`.
+
 ## 9. Open questions
 
 - Resume bar on non-Home tabs during a workout (3.3)?
