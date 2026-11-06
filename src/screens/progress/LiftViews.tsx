@@ -8,7 +8,7 @@ import type { Exercise, Units } from '../../db/types';
 import { availableChartRanges, rangeStart, RANGE_WORDS, type ChartRange } from '../../lib/chart';
 import { fmtMonthDay, fmtMonthYear, weekdayShort } from '../../lib/dates';
 import { computeRecords, isRecent } from '../../lib/records';
-import { formatSet, formatSetWeight } from '../../lib/sets';
+import { dropChains, formatSet, formatSetWeight } from '../../lib/sets';
 import { formatNumber, formatWeight, toDisplay, unitLabel } from '../../lib/units';
 import { variationLabels } from '../../lib/variations';
 
@@ -79,8 +79,7 @@ export function HistoryView({ exercise, onOpenWorkout }: { exercise: Exercise; o
         const header = month !== lastMonth ? month : null;
         lastMonth = month;
         const ex = exerciseMap.get(s.exerciseId) ?? exercise;
-        const top = s.sets.filter((x) => x.kind === 'working');
-        const drops = s.sets.filter((x) => x.kind === 'drop');
+        const chains = dropChains(s.sets);
         const d = new Date(s.date);
         const Body = onOpenWorkout ? 'button' : 'div';
         return (
@@ -95,19 +94,36 @@ export function HistoryView({ exercise, onOpenWorkout }: { exercise: Exercise; o
                 <b className="text-[19px]">{d.getDate()}</b>
               </span>
               <span className="text-[14px] leading-[1.6]">
-                {top.length ? top.map((x, i) => (
-                  <span key={x.id}>
-                    {i > 0 && <span className="mx-1 text-fg3">·</span>}
-                    {formatSet(x, ex.type, settings.units)}
-                  </span>
-                )) : <span className="text-fg2">Warm-ups only</span>}
+                {chains.length ? (
+                  chains.map((c, i) => (
+                    <span key={c.set.id}>
+                      {i > 0 && (
+                        <>
+                          {' '}
+                          <span className="text-fg3">·</span>{' '}
+                        </>
+                      )}
+                      {/* Drops sit right after the set they followed, in the order you did them. */}
+                      {[c.set, ...c.drops].map((x, j) =>
+                        x.kind === 'drop' ? (
+                          <span key={x.id}>
+                            {j > 0 && ' '}
+                            <span className="whitespace-nowrap text-warn">
+                              <DropBadge small /> {formatSet(x, ex.type, settings.units)}
+                            </span>
+                          </span>
+                        ) : (
+                          <span key={x.id} className="whitespace-nowrap">
+                            {formatSet(x, ex.type, settings.units)}
+                          </span>
+                        ),
+                      )}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-fg2">Warm-ups only</span>
+                )}
                 {s.exerciseId !== exercise.id && <Tag>{(labels.get(s.exerciseId) ?? ex.name).toUpperCase()}</Tag>}
-                {drops.map((x) => (
-                  <span key={x.id} className="flex items-center gap-1.5 text-warn">
-                    <DropBadge small />
-                    {formatSet(x, ex.type, settings.units)}
-                  </span>
-                ))}
               </span>
             </Body>
           </div>

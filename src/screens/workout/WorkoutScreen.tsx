@@ -55,7 +55,7 @@ export function WorkoutScreen() {
   return <Workout data={active} finishingRef={finishing} />;
 }
 
-type Overlay = 'options' | 'rename' | 'start' | 'exercise' | 'lookback' | 'all' | 'add' | 'replace' | 'discard' | 'remove' | null;
+type Overlay = 'options' | 'rename' | 'start' | 'exercise' | 'lookback' | 'add' | 'replace' | 'discard' | 'remove' | null;
 
 type FinishState =
   | { step: 'empty' }
@@ -89,6 +89,8 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const [overlay, setOverlay] = useState<Overlay>(null);
+  // 4.12: the exercise list replaces everything under the workout header.
+  const [showAll, setShowAll] = useState(false);
   const [editing, setEditing] = useState<Editing | null>(null);
   const [holdMenu, setHoldMenu] = useState<{ set: WorkoutSet; rect: DOMRect } | null>(null);
   const [finish, setFinish] = useState<FinishState | null>(null);
@@ -109,6 +111,7 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
 
   const editingSet = editing ? cur?.sets.find((s) => s.id === editing.setId) : undefined;
   const activeEdit = editingSet ? editing : null;
+  const keypadOpen = !!(activeEdit && ex);
 
   const doneCount = list.filter((e) => e.sets.length > 0 && e.sets.every((s) => s.completed)).length;
   const loggedCount = list.reduce((n, e) => n + e.sets.filter((s) => s.completed).length, 0);
@@ -124,11 +127,18 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
   const jump = useCallback(
     (weId: string) => {
       setEditing(null);
+      setShowAll(false);
       void setCurrentExercise(workout.id, weId);
-      scrollRef.current?.scrollTo({ top: 0 });
+      // After the exercise view is shown again (it's hidden behind the list).
+      requestAnimationFrame(() => scrollRef.current?.scrollTo({ top: 0 }));
     },
     [workout.id],
   );
+
+  const openAll = () => {
+    setEditing(null);
+    setShowAll(true);
+  };
 
   // ───── keypad
 
@@ -343,7 +353,14 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
   return (
     <div className="flex h-full flex-col">
       {header}
-      <div ref={scrollRef} className="scroll-y min-h-0 flex-1 px-4 pb-6">
+      <div
+        ref={scrollRef}
+        // Tapping the blank space around the set table (e.g. under + Drop / + Set) closes the keypad.
+        onClick={(e) => {
+          if (activeEdit && e.target === e.currentTarget) setEditing(null);
+        }}
+        className={cx('scroll-y min-h-0 flex-1 px-4', activeEdit ? 'pb-24' : 'pb-6', showAll && 'hidden')}
+      >
         {!cur || !ex ? (
           <div className="pt-20">
             <EmptyState icon="+" title="Add your first exercise">
@@ -358,7 +375,7 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
             <div className="mt-3.5 flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <h1 className="text-[22px] leading-tight font-bold tracking-[-0.01em]">{ex.name}</h1>
-                <button type="button" onClick={() => setOverlay('all')} className="mt-0.5 flex h-6 items-center gap-1 text-[13px] text-fg2">
+                <button type="button" onClick={openAll} className="mt-0.5 flex h-6 items-center gap-1 text-[13px] text-fg2">
                   Exercise {idx + 1} of {list.length}
                   {TYPE_HINT[ex.type]}
                   <ChevronDown size={9} />
@@ -422,46 +439,53 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
         )}
       </div>
 
-      {activeEdit && editingSet && ex ? (
-        <Keypad
-          title={`${setName(labels.get(editingSet.id) ?? '')} · ${activeEdit.field === 'weight' ? 'Weight' : 'Reps'}`}
-          mode={activeEdit.field}
-          onModeChange={
-            ex.type === 'bodyweight'
-              ? undefined
-              : (m) => {
-                  if (m !== activeEdit.field) startEdit(editingSet, m);
-                }
-          }
-          weightLabel={unitLabel(units) === 'lb' ? 'lbs' : 'kg'}
-          stepLabel={`${settings.weightStep} ${unitLabel(units)}`}
-          allowNegative={activeEdit.field === 'weight' && (ex.type === 'assisted' || ex.type === 'bodyweight_plus')}
-          onKey={onKey}
-          onClose={() => setEditing(null)}
-        />
-      ) : (
-        cur && (
-          <nav className="grid flex-none grid-cols-2 gap-2 border-t border-line px-3 pt-2.5 pb-[max(10px,env(safe-area-inset-bottom))]" aria-label="Exercises" data-dock>
+      {showAll && <AllExercises exercises={list} currentId={cur?.we.id} onClose={() => setShowAll(false)} onJump={jump} onAdd={() => setOverlay('add')} />}
+
+      {/* Prev / Next stay above the keypad so you can move on without closing it first. */}
+      {cur && !showAll && (
+        <div className="flex-none" data-dock>
+          <nav
+            className={cx('grid grid-cols-2 gap-2 border-t border-line px-3', keypadOpen ? 'py-2' : 'pt-2.5 pb-[max(10px,env(safe-area-inset-bottom))]')}
+            aria-label="Exercises"
+          >
             {prevEx ? (
-              <NavButton small="Prev" onClick={() => jump(prevEx.we.id)} side="left">
+              <NavButton small="Prev" onClick={() => jump(prevEx.we.id)} side="left" compact={keypadOpen}>
                 {prevEx.exercise.name}
               </NavButton>
             ) : (
-              <NavButton small="No previous" onClick={() => setOverlay('all')} tone="white">
+              <NavButton small="No previous" onClick={openAll} tone="white" compact={keypadOpen}>
                 All exercises
               </NavButton>
             )}
             {nextEx ? (
-              <NavButton small="Next" onClick={() => jump(nextEx.we.id)} side="right" tone={allDone ? 'accent' : undefined}>
+              <NavButton small="Next" onClick={() => jump(nextEx.we.id)} side="right" tone={allDone ? 'accent' : undefined} compact={keypadOpen}>
                 {nextEx.exercise.name}
               </NavButton>
             ) : (
-              <NavButton small="Last one" onClick={() => setOverlay('all')} tone="white" align="right">
+              <NavButton small="Last one" onClick={openAll} tone="white" align="right" compact={keypadOpen}>
                 All exercises
               </NavButton>
             )}
           </nav>
-        )
+          {activeEdit && editingSet && ex && (
+            <Keypad
+              title={`${setName(labels.get(editingSet.id) ?? '')} · ${activeEdit.field === 'weight' ? 'Weight' : 'Reps'}`}
+              mode={activeEdit.field}
+              onModeChange={
+                ex.type === 'bodyweight'
+                  ? undefined
+                  : (m) => {
+                      if (m !== activeEdit.field) startEdit(editingSet, m);
+                    }
+              }
+              weightLabel={unitLabel(units) === 'lb' ? 'lbs' : 'kg'}
+              stepLabel={`${settings.weightStep} ${unitLabel(units)}`}
+              allowNegative={activeEdit.field === 'weight' && (ex.type === 'assisted' || ex.type === 'bodyweight_plus')}
+              onKey={onKey}
+              onClose={() => setEditing(null)}
+            />
+          )}
+        </div>
       )}
 
       {/* ───── overlays */}
@@ -532,8 +556,6 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
         onClose={() => setOverlay(null)}
         currentReps={cur?.sets.find((s) => !s.completed && s.kind === 'working')?.reps}
       />
-
-      <AllExercises open={overlay === 'all'} exercises={list} currentId={cur?.we.id} onClose={() => setOverlay(null)} onJump={jump} onAdd={() => setOverlay('add')} />
 
       <ExercisePicker
         open={overlay === 'add'}
@@ -646,6 +668,7 @@ function NavButton({
   side,
   tone,
   align,
+  compact,
 }: {
   children: ReactNode;
   small: string;
@@ -653,6 +676,8 @@ function NavButton({
   side?: 'left' | 'right';
   tone?: 'white' | 'accent';
   align?: 'right';
+  /** Shorter (still 44 px) while the keypad is open below. */
+  compact?: boolean;
 }) {
   const right = side === 'right' || align === 'right';
   return (
@@ -660,7 +685,8 @@ function NavButton({
       type="button"
       onClick={onClick}
       className={cx(
-        'flex h-[50px] min-w-0 items-center gap-2 rounded-[11px] px-3 transition-colors active:opacity-80',
+        'flex min-w-0 items-center gap-2 rounded-[11px] px-3 transition-colors active:opacity-80',
+        compact ? 'h-11' : 'h-[50px]',
         right ? 'justify-end text-right' : 'text-left',
         tone === 'white' ? 'bg-fg text-bg' : tone === 'accent' ? 'bg-accent text-white' : 'bg-surface-2 text-fg',
       )}
