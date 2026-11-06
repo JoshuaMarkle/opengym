@@ -55,6 +55,8 @@ Variations: exercises sharing a `variationGroupId` are variations of each other 
 
 **Previous column.** Match by set position within the exercise: working sets to working sets, drops to the drop that followed the same parent last time. Show a **D** badge after a previous value when you did a drop after that set last time.
 
+**Session lines (look-back History, 4.8).** Sets in the order you did them, each drop right after the set it followed: `10 × 12 · 10 × 10 D 5 × 12 · 10 × 8 D 5 × 10`. Warm-ups are left out.
+
 **Sets.** ✓ completes a set. "+ Set" appends a working set. "+ Drop" adds a drop under the last completed set, prefilled at `weight × (1 − dropPercent)`, rounded to the weight step. Swipe right marks a warm-up (moves to the top as W). Swipe left deletes, with 5 s Undo. Long-press opens a menu: Mark as warm-up / Move to top / Duplicate / Delete.
 
 **Estimated 1RM.** Epley: `w × (1 + reps/30)`. Per session, use the best working set only: no warm-ups, no drops, no sets over 12 reps. Bodyweight type charts reps. BW+added charts the added weight. Assisted charts the negative weight (less assist = progress).
@@ -76,7 +78,7 @@ Variations: exercises sharing a `variationGroupId` are variations of each other 
 
 ## 5. Navigation
 
-Tab bar: **Home · Plans · History · Progress · Settings**. Inside a workout there is no tab bar. The bottom nav is Prev / Next exercise. When there is no Prev or Next, that button becomes "All exercises" (4.11). The chart button next to "•••" opens the History / Charts / Records sheet (4.8–4.10).
+Tab bar: **Home · Plans · History · Progress · Settings**. Inside a workout there is no tab bar. The bottom nav is Prev / Next exercise. When there is no Prev or Next, that button becomes "All exercises" (4.11). All exercises (4.12–4.13) replaces everything under the workout header, so the header and Finish stay on screen; Close returns to the exercise. The chart button next to "•••" opens the History / Charts / Records sheet (4.8–4.10).
 
 ## 6. Screens (see `storyboards/complete.html`)
 
@@ -90,7 +92,7 @@ Tab bar: **Home · Plans · History · Progress · Settings**. Inside a workout 
 8. **Exercises:** 8.1 Library · 8.2 Exercise screen · 8.3 New/edit (type) · 8.4 Link variations
 9. **Settings & data:** 9.1 Settings · 9.2 Picker · 9.3 Backup · 9.4 Restore · 9.5 Import · 9.6 Delete all
 
-**Keypad (4.2):** a 4×4 grid. Left three columns: `1 2 3 / 4 5 6 / 7 8 9 / − 0 .`. Right column: close · + · − · backspace. ± steps weight by `weightStep` and reps by 1. A lbs/reps toggle sits on top. In reps mode the bottom-left key is the range dash and the decimal is disabled.
+**Keypad (4.2):** a 4×4 grid. Left three columns: `1 2 3 / 4 5 6 / 7 8 9 / − 0 .`. Right column: close · + · − · backspace. ± steps weight by `weightStep` and reps by 1. A lbs/reps toggle sits on top. In reps mode the bottom-left key is the range dash and the decimal is disabled. During a workout the keypad opens under the Prev / Next bar (the bar stays visible, 44 px tall), and tapping the blank space under + Drop / + Set closes it.
 
 ## 7. Build order
 

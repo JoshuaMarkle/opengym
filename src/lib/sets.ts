@@ -79,6 +79,30 @@ export function setLabels<T extends LoggedSet>(ordered: T[]): Map<string, string
   return labels;
 }
 
+/**
+ * Groups ordered sets for one-line summaries: each working set followed by the
+ * drops done after it, in the order they happened ("185 × 8 · 185 × 6 D 135 × 9").
+ * Warm-ups and their drops are left out. A drop with nothing before it starts its own group.
+ */
+export function dropChains<T extends LoggedSet>(ordered: T[]): { set: T; drops: T[] }[] {
+  const out: { set: T; drops: T[] }[] = [];
+  let afterWarmup = false;
+  for (const s of ordered) {
+    if (s.kind === 'warmup') {
+      afterWarmup = true;
+    } else if (s.kind === 'drop') {
+      if (afterWarmup) continue;
+      const last = out[out.length - 1];
+      if (last) last.drops.push(s);
+      else out.push({ set: s, drops: [] });
+    } else {
+      afterWarmup = false;
+      out.push({ set: s, drops: [] });
+    }
+  }
+  return out;
+}
+
 /** Working-set number (1-based) for a set, or undefined for warm-ups/drops. */
 export function workingIndex<T extends LoggedSet>(ordered: T[], id: string): number | undefined {
   let n = 0;
