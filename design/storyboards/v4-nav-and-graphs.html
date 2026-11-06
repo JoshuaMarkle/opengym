@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fitness PWA — Storyboard v4</title>
+<style>
+  :root{
+    --accent:#2e8bff; --tip:#2ee66b; --warn:#ff8c1a; --danger:#ff3b3b;
+    --bg:#000; --fg:#fff; --fg2:#8e8e8e; --line:#1f1f1f; --surf:#0e0e0e; --surf2:#161616;
+    --doneTint:color-mix(in srgb,var(--accent) 14%,#000);
+    --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#050505;font-family:var(--font);color:var(--fg);padding:40px 24px 80px;font-variant-numeric:tabular-nums}
+  .board{max-width:1100px;margin:0 auto;background:#0a0a0a;border:1px solid #1c1c1c;border-radius:16px;padding:40px}
+  .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg2);font-weight:600}
+  h1{font-size:34px;font-weight:700;letter-spacing:-.02em;margin:6px 0 6px}
+  .lead{color:var(--fg2);font-size:15px;max-width:780px;line-height:1.5}
+  .changes{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:22px}
+  .change{border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:var(--surf);font-size:12.5px;color:#cfcfcf;line-height:1.45}
+  .change b{color:#fff}
+  .change .x{color:var(--danger);font-weight:700} .change .p{color:var(--tip);font-weight:700} .change .m{color:var(--accent);font-weight:700}
+
+  .section{margin-top:44px;padding-top:28px;border-top:1px solid var(--line)}
+  .section .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;color:#000;background:#fff;border-radius:6px;padding:3px 8px;margin-bottom:10px}
+  .section h2{font-size:22px;font-weight:700;margin-bottom:4px}
+  .section > p{color:var(--fg2);font-size:14px;max-width:780px;line-height:1.5}
+  .row{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:24px;align-items:start}
+  .cap{width:300px;margin:12px auto 0}
+  .cap b{font-size:14px;display:block}
+  .cap b em{font-style:normal;color:var(--accent);margin-right:6px}
+  .cap p{font-size:12px;color:var(--fg2);line-height:1.5;margin-top:4px}
+  .cap .pro{color:var(--tip)} .cap .con{color:var(--warn)}
+
+  /* ranked list + decisions */
+  .rank{margin-top:20px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .rank .r{display:grid;grid-template-columns:44px 230px 1fr 110px;gap:16px;padding:12px 16px;border-bottom:1px solid var(--line);font-size:13px;line-height:1.45;align-items:start}
+  .rank .r:last-child{border-bottom:0}
+  .rank .r.h{font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--fg2);background:var(--surf)}
+  .rank .n{font-size:18px;font-weight:700;color:var(--accent)}
+  .rank b{font-size:14px}
+  .rank .why{color:#bdbdbd}
+  .tier{font-size:11px;font-weight:700;border-radius:6px;padding:3px 8px;display:inline-block}
+  .t1{background:var(--accent);color:#fff} .t2{background:#2a2a2a;color:#fff} .t3{border:1px solid #333;color:var(--fg2)}
+  .dec{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+  .dq{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--surf)}
+  .dq .q{font-size:14px;font-weight:700;display:flex;gap:10px}
+  .dq .q i{font-style:normal;color:var(--accent);flex:none}
+  .dq .o{margin:8px 0 0 22px;font-size:12.5px;color:#bdbdbd;line-height:1.55}
+  .dq .o li{list-style:none}
+  .dq .o li::before{content:"○ ";color:var(--fg2)}
+  .dq .o li.rec::before{content:"● ";color:var(--accent)}
+  .dq .o li.rec{color:#fff}
+  .dq .note{font-size:11.5px;color:var(--fg2);margin:8px 0 0 22px;line-height:1.45}
+
+  /* phone */
+  .phone{width:300px;height:620px;margin:0 auto;border-radius:44px;border:10px solid #2a2a2a;background:var(--bg);overflow:hidden;position:relative;display:flex;flex-direction:column;font-size:15px}
+  .status{height:34px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:12px;font-weight:600}
+  .island{width:84px;height:22px;background:#1a1a1a;border-radius:12px}
+  .head{flex:none;display:flex;justify-content:space-between;align-items:center;padding:6px 16px 10px;border-bottom:1px solid var(--line)}
+  .head .t{font-size:17px;font-weight:700}
+  .head .s{font-size:12px;color:var(--fg2)}
+  .finish{background:var(--accent);color:#fff;font-weight:600;font-size:13px;border-radius:8px;padding:6px 12px}
+  .textbtn{color:var(--accent);font-weight:600;font-size:15px}
+  .body{flex:1;overflow:hidden;padding:0 16px;position:relative}
+  .homebar{flex:none;height:5px;width:110px;background:#fff;opacity:.85;border-radius:3px;margin:6px auto 8px}
+
+  .nav{flex:none;display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px solid var(--line);padding:10px 12px 4px}
+  .nav .nb{height:44px;border-radius:10px;background:var(--surf2);display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:600;gap:8px;white-space:nowrap}
+  .nav .nb small{display:block;font-size:9px;color:var(--fg2);font-weight:600;letter-spacing:.04em}
+  .nav .nb.r{justify-content:flex-end;text-align:right}
+  .nav .nb.list{background:#fff;color:#000}
+  .nav .nb.list small{color:#555}
+  .arrow{font-size:16px;color:var(--fg2)}
+  .lines{display:block;width:14px;height:2px;background:#000;border-radius:1px;box-shadow:0 -4px 0 #000,0 4px 0 #000;margin:0 2px}
+
+  .exhead{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+  .exname{font-size:20px;font-weight:700}
+  .expos{font-size:12px;color:var(--fg2);margin-top:2px}
+  .iconbtn{font-size:12px;font-weight:600;color:var(--accent);border:1px solid var(--line);border-radius:8px;padding:5px 9px}
+  .vars{display:flex;gap:6px;margin-top:10px}
+  .vars span{font-size:12px;font-weight:600;border-radius:8px;padding:6px 10px;border:1px solid var(--line);color:var(--fg2)}
+  .vars span.on{border-color:var(--accent);color:var(--fg);background:var(--doneTint)}
+
+  .tbl{margin-top:12px;font-size:14px}
+  .tr{display:grid;grid-template-columns:28px 1fr 58px 44px 34px;align-items:center;height:40px;border-radius:8px;padding:0 4px;position:relative;background:var(--bg)}
+  .th{height:24px;font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--fg2)}
+  .c{text-align:center}
+  .prev{color:var(--fg2);font-size:13px;display:flex;align-items:center;gap:5px}
+  .dbadge{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:4px;background:var(--warn);color:#000;font-size:9.5px;font-weight:800}
+  .done{background:var(--doneTint)}
+  .in{background:var(--surf2);border-radius:6px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:600;margin:0 3px}
+  .done .in{background:transparent}
+  .cur .in{border:1.5px solid var(--accent)}
+  .ghost .in{color:var(--fg2)}
+  .chk{width:26px;height:26px;border-radius:7px;border:1.5px solid #333;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
+  .chk.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .sn{font-weight:700;font-size:13px;text-align:center}
+  .sn.w{color:var(--fg2)} .sn.d{color:var(--warn)}
+  .drop{margin-left:14px;width:calc(100% - 14px);grid-template-columns:22px 1fr 58px 44px 34px;border-left:2px solid var(--warn);border-radius:0 8px 8px 0}
+  .quick{display:flex;gap:6px;margin-top:6px}
+  .quick span{flex:1;height:34px;border-radius:8px;background:var(--surf2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--accent)}
+  .quick span.dr{color:var(--warn)}
+
+  .swipewrap{position:relative;height:40px;border-radius:8px;overflow:hidden}
+  .swipewrap.left{background:var(--danger)} .swipewrap.right{background:#3a3a3a}
+  .swipewrap .act{position:absolute;top:0;bottom:0;width:96px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;gap:6px}
+  .swipewrap.left .act{right:0} .swipewrap.right .act{left:0}
+  .swipewrap.left .tr{transform:translateX(-86px);border-radius:0;background:#0b0b0b}
+  .swipewrap.right .tr{transform:translateX(96px);border-radius:0;background:#0b0b0b}
+  .wchip{display:inline-flex;width:18px;height:18px;border-radius:5px;background:#fff;color:#000;font-size:11px;font-weight:800;align-items:center;justify-content:center}
+  .hint{font-size:11px;color:var(--fg2);text-align:center;margin-top:10px;line-height:1.5}
+
+  /* exercise list */
+  .edrow{display:flex;align-items:center;gap:10px;height:58px;border-bottom:1px solid var(--line)}
+  .minus{width:22px;height:22px;border-radius:50%;background:var(--danger);flex:none;display:flex;align-items:center;justify-content:center}
+  .minus i{width:10px;height:2px;background:#fff;border-radius:1px;display:block}
+  .ring{width:30px;height:30px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;border:2px solid #333;color:var(--fg2)}
+  .ring.part{border-color:var(--accent);border-right-color:#333;border-bottom-color:#333;color:#fff}
+  .ring.full{background:var(--accent);border-color:var(--accent);color:#fff;font-size:13px}
+  .edrow .mid{flex:1;min-width:0}
+  .edrow .mid b{font-size:14px;display:block}
+  .edrow .mid span{font-size:11px;color:var(--fg2)}
+  .edrow.now .mid b{color:var(--accent)}
+  .edrow .go{color:var(--fg2);font-size:16px}
+  .updn{display:flex;gap:4px}
+  .updn span{width:28px;height:28px;border-radius:7px;background:var(--surf2);display:flex;align-items:center;justify-content:center;font-size:12px;color:#cfcfcf}
+  .updn span.off{opacity:.3}
+  .listbtns{display:grid;grid-template-columns:1fr 96px;gap:8px;margin-top:14px}
+  .listbtns span{height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600}
+  .listbtns .add{border:1px dashed #333;color:var(--accent)}
+  .listbtns .ed{background:var(--surf2);color:#fff}
+  .listbtns .ed.on{background:var(--accent)}
+  .ovsub{font-size:12px;color:var(--fg2);margin:12px 0 2px}
+
+  /* progress screens */
+  .tabbar{flex:none;display:flex;justify-content:space-around;border-top:1px solid var(--line);padding:8px 6px 0}
+  .tabbar span{font-size:9.5px;font-weight:600;color:var(--fg2);display:flex;flex-direction:column;align-items:center;gap:3px}
+  .tabbar span i{width:18px;height:18px;border-radius:5px;border:1.5px solid currentColor;display:block}
+  .tabbar span.on{color:var(--accent)}
+  .seg{display:flex;background:var(--surf2);border-radius:9px;padding:2px;margin-top:10px}
+  .seg span{flex:1;text-align:center;font-size:11.5px;font-weight:600;padding:5px 0;border-radius:7px;color:var(--fg2)}
+  .seg span.on{background:#2c2c2c;color:#fff}
+  .metric{display:flex;gap:6px;margin-top:10px;flex-wrap:nowrap}
+  .metric span{font-size:11.5px;font-weight:600;border-radius:999px;padding:5px 10px;border:1px solid var(--line);color:var(--fg2);white-space:nowrap}
+  .metric span.on{background:#fff;color:#000;border-color:#fff}
+  .hero{margin-top:12px}
+  .hero .k{font-size:11px;font-weight:700;letter-spacing:.05em;color:var(--fg2)}
+  .hero .v{font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+  .hero .v small{font-size:15px;color:var(--fg2);font-weight:600;margin-left:3px}
+  .up{color:var(--tip);font-size:13px;font-weight:700}
+  .dn{color:var(--danger);font-size:13px;font-weight:700}
+  .flat{color:var(--fg2);font-size:13px;font-weight:700}
+  .chart{margin-top:8px;display:block}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+  .stats div{background:var(--surf);border:1px solid var(--line);border-radius:9px;padding:8px}
+  .stats small{display:block;font-size:9.5px;color:var(--fg2);font-weight:700;letter-spacing:.04em}
+  .stats b{font-size:14px}
+  .lifts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .lift{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:10px;min-width:0;overflow:hidden}
+  .lift .nm{font-size:12px;font-weight:600;color:#cfcfcf}
+  .lift .val{font-size:22px;font-weight:700;margin-top:2px}
+  .lift .val small{font-size:11px;color:var(--fg2);margin-left:2px}
+  .rmt{margin-top:10px;font-size:13px}
+  .rmt .rr{display:grid;grid-template-columns:42px 1fr 40px 48px;white-space:nowrap;align-items:center;height:30px;gap:8px;border-bottom:1px solid #151515}
+  .rmt .rr.h{height:22px;font-size:9.5px;font-weight:700;letter-spacing:.05em;color:var(--fg2)}
+  .rmt .bar{height:8px;border-radius:4px;background:#2a2a2a;position:relative}
+  .rmt .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:#5a5a5a}
+  .rmt .rr.new .bar i{background:var(--accent)}
+  .rmt .date{font-size:11px;color:var(--fg2);text-align:right}
+  .rmt .rr.new .date{color:var(--accent);font-weight:700}
+  .sumhead{text-align:center;margin-top:18px}
+  .sumhead .big{font-size:26px;font-weight:700;letter-spacing:-.01em;line-height:1.2}
+  .sumhead .sub{font-size:12px;color:var(--fg2);margin-top:6px}
+  .cmp{margin-top:16px}
+  .cmp .cr{display:grid;grid-template-columns:1fr auto 54px;gap:10px;align-items:center;height:46px;border-bottom:1px solid var(--line)}
+  .cmp .cr b{font-size:14px;display:block}
+  .cmp .cr small{font-size:11px;color:var(--fg2)}
+  .cmp .delta{text-align:right}
+  .pill{display:inline-block;white-space:nowrap;font-size:11px;font-weight:700;border-radius:6px;padding:3px 7px}
+  .pill.up{background:color-mix(in srgb,var(--tip) 18%,#000)}
+  .pill.flat{background:#1c1c1c}
+  .pill.dn{background:color-mix(in srgb,var(--danger) 18%,#000)}
+  .legend2{display:flex;gap:10px;flex-wrap:wrap;font-size:10.5px;color:var(--fg2);margin-top:6px}
+  .legend2 i{display:inline-block;width:10px;height:3px;border-radius:2px;margin-right:4px;vertical-align:2px}
+</style>
+</head>
+<body>
+<div class="board">
+  <div class="eyebrow">Fitness PWA · Storyboard v4 · Dark</div>
+  <h1>One nav, and seeing yourself get stronger</h1>
+  <p class="lead">Part 1 applies your fixes to the logging and exercise screens. Part 2 is about progress: which graphs matter most to lifters, several ways each one could look, and a list of decisions to make.</p>
+
+  <div class="changes">
+    <div class="change"><span class="x">−</span> <b>Top exercise strip removed.</b> The bottom Prev / Next bar is the only way to move between exercises.</div>
+    <div class="change"><span class="m">↻</span> <b>No previous or next exercise?</b> That button becomes "All exercises" and opens the list.</div>
+    <div class="change"><span class="p">+</span> <b>Swipe right = warm-up</b>, swipe left = delete.</div>
+    <div class="change"><span class="m">↻</span> <b>"d" is now an orange <span class="dbadge" style="vertical-align:-2px">D</span> badge</b> after last time's numbers.</div>
+    <div class="change"><span class="m">↻</span> <b>Exercise list:</b> "+ Add exercise" and "Edit" side by side. Edit shows − and ▲▼, then turns into "Done".</div>
+    <div class="change"><span class="p">+</span> <b>Progress:</b> 7 graph screens, a ranked list, and decisions to make.</div>
+  </div>
+
+  <!-- ============ PART 1 ============ -->
+  <div class="section">
+    <span class="tag">PART 1</span>
+    <h2>Logging and exercise list</h2>
+    <p>Without the strip, the exercise name and its position ("2 of 5") sit at the top, and the bottom bar does all the moving.</p>
+    <div class="row">
+
+      <!-- L1 middle exercise -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div>
+          <div class="head"><div><div class="t">Push A</div><div class="s">32:18 · 1 of 5 done</div></div><span class="finish">Finish</span></div>
+          <div class="body">
+            <div class="exhead"><div><div class="exname">Bench Press</div><div class="expos">Exercise 2 of 5</div></div><span class="iconbtn">•••</span></div>
+            <div class="vars"><span class="on">Flat</span><span>Incline</span><span>DB</span></div>
+            <div class="tbl">
+              <div class="tr th"><span class="c">SET</span><span>PREVIOUS</span><span class="c">LBS</span><span class="c">REPS</span><span class="c">✓</span></div>
+              <div class="tr done"><span class="sn w">W</span><span class="prev">95 × 10</span><span class="in">95</span><span class="in">10</span><span class="chk on">✓</span></div>
+              <div class="tr done"><span class="sn">1</span><span class="prev">180 × 8</span><span class="in">185</span><span class="in">8</span><span class="chk on">✓</span></div>
+              <div class="tr done"><span class="sn">2</span><span class="prev">180 × 8</span><span class="in">185</span><span class="in">7</span><span class="chk on">✓</span></div>
+              <div class="tr cur"><span class="sn">3</span><span class="prev">180 × 7 <span class="dbadge">D</span></span><span class="in">185</span><span class="in">7</span><span class="chk"></span></div>
+            </div>
+            <div class="quick"><span class="dr">+ Drop</span><span>+ Set</span></div>
+          </div>
+          <div class="nav">
+            <div class="nb"><span class="arrow">‹</span><span><small>PREV</small>Lateral Raise</span></div>
+            <div class="nb r"><span><small>NEXT</small>Incline DB</span><span class="arrow">›</span></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+        <div class="cap"><b><em>L1</em>Middle exercise</b><p>Name plus "Exercise 2 of 5" at the top. The <span class="dbadge" style="vertical-align:-2px">D</span> badge means you did a drop after this set last time.</p></div>
+      </div>
+
+      <!-- L2 first exercise -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div>
+          <div class="head"><div><div class="t">Push A</div><div class="s">04:10 · 0 of 5 done</div></div><span class="finish">Finish</span></div>
+          <div class="body">
+            <div class="exhead"><div><div class="exname">Lateral Raise</div><div class="expos">Exercise 1 of 5</div></div><span class="iconbtn">•••</span></div>
+            <div class="tbl">
+              <div class="tr th"><span class="c">SET</span><span>PREVIOUS</span><span class="c">LBS</span><span class="c">REPS</span><span class="c">✓</span></div>
+              <div class="tr done"><span class="sn">1</span><span class="prev">20 × 15</span><span class="in">20</span><span class="in">15</span><span class="chk on">✓</span></div>
+              <div class="tr cur"><span class="sn">2</span><span class="prev">20 × 14</span><span class="in">20</span><span class="in">14</span><span class="chk"></span></div>
+              <div class="tr ghost"><span class="sn">3</span><span class="prev">20 × 12 <span class="dbadge">D</span></span><span class="in">20</span><span class="in">12</span><span class="chk"></span></div>
+            </div>
+            <div class="quick"><span class="dr">+ Drop</span><span>+ Set</span></div>
+          </div>
+          <div class="nav">
+            <div class="nb list"><span class="lines"></span><span><small>NO PREVIOUS</small>All exercises</span></div>
+            <div class="nb r"><span><small>NEXT</small>Bench Press</span><span class="arrow">›</span></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+        <div class="cap"><b><em>L2</em>First exercise</b><p>There's no previous exercise, so the left button turns white and opens "All exercises". On the last exercise the right button does the same.</p></div>
+      </div>
+
+      <!-- L3 swipes -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div>
+          <div class="head"><div><div class="t">Push A</div><div class="s">32:18 · 1 of 5 done</div></div><span class="finish">Finish</span></div>
+          <div class="body">
+            <div class="exhead"><div><div class="exname">Bench Press</div><div class="expos">Exercise 2 of 5</div></div><span class="iconbtn">•••</span></div>
+            <div class="tbl">
+              <div class="tr th"><span class="c">SET</span><span>PREVIOUS</span><span class="c">LBS</span><span class="c">REPS</span><span class="c">✓</span></div>
+              <div class="swipewrap right"><span class="act"><span class="wchip">W</span>Warm-up</span><div class="tr ghost"><span class="sn">1</span><span class="prev">95 × 10</span><span class="in">95</span><span class="in">10</span><span class="chk"></span></div></div>
+              <div class="tr cur" style="margin-top:0"><span class="sn">2</span><span class="prev">180 × 8</span><span class="in">185</span><span class="in">8</span><span class="chk"></span></div>
+              <div class="tr ghost"><span class="sn">3</span><span class="prev">180 × 8</span><span class="in">185</span><span class="in">8</span><span class="chk"></span></div>
+              <div class="swipewrap left"><span class="act">Delete</span><div class="tr ghost"><span class="sn">4</span><span class="prev">—</span><span class="in">185</span><span class="in">7</span><span class="chk"></span></div></div>
+            </div>
+            <div class="quick"><span class="dr">+ Drop</span><span>+ Set</span></div>
+            <div class="hint">→ swipe right: mark as warm-up (swipe again to undo)<br>← swipe left: delete (Undo shows for 5 s)</div>
+          </div>
+          <div class="nav">
+            <div class="nb"><span class="arrow">‹</span><span><small>PREV</small>Lateral Raise</span></div>
+            <div class="nb r"><span><small>NEXT</small>Incline DB</span><span class="arrow">›</span></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+        <div class="cap"><b><em>L3</em>Swipe both ways</b><p>Right marks a set as a warm-up: it moves to the top as "W" and doesn't count toward stats. Left deletes. Both are shown at once here just for the board.</p></div>
+      </div>
+    </div>
+
+    <div class="row" style="grid-template-columns:repeat(2,300px);gap:60px;justify-content:start">
+      <!-- E1 default -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div>
+          <div class="head"><div><div class="t">Exercises</div><div class="s">Push A · 32:18</div></div><span class="textbtn">Close</span></div>
+          <div class="body">
+            <div class="ovsub">Plan order. Tap one to open it.</div>
+            <div class="edrow"><span class="ring full">✓</span><div class="mid"><b>Lateral Raise</b><span>3 sets · 20 × 15</span></div><span class="go">›</span></div>
+            <div class="edrow now"><span class="ring part">2/4</span><div class="mid"><b>Bench Press</b><span>185 × 8, 185 × 7</span></div><span class="go">›</span></div>
+            <div class="edrow"><span class="ring">0/3</span><div class="mid"><b>Incline DB Press</b><span>Last: 65 × 10</span></div><span class="go">›</span></div>
+            <div class="edrow"><span class="ring">0/3</span><div class="mid"><b>Dips</b><span>Last: BW × 12</span></div><span class="go">›</span></div>
+            <div class="edrow"><span class="ring">0/3</span><div class="mid"><b>Cable Fly</b><span>Last: 30 × 12</span></div><span class="go">›</span></div>
+            <div class="listbtns"><span class="add">+ Add exercise</span><span class="ed">Edit</span></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+        <div class="cap"><b><em>E1</em>Exercise list</b><p>Normal state: clean, just progress rings and the exercises. "+ Add exercise" and "Edit" sit side by side at the bottom.</p></div>
+      </div>
+      <!-- E2 editing -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div>
+          <div class="head"><div><div class="t">Exercises</div><div class="s">Editing order</div></div><span class="textbtn" style="color:var(--fg2)">Close</span></div>
+          <div class="body">
+            <div class="ovsub">Remove or reorder. Logged sets are kept until you confirm.</div>
+            <div class="edrow"><span class="minus"><i></i></span><span class="ring full">✓</span><div class="mid"><b>Lateral Raise</b><span>3 sets · 20 × 15</span></div><div class="updn"><span class="off">▲</span><span>▼</span></div></div>
+            <div class="edrow now"><span class="minus"><i></i></span><span class="ring part">2/4</span><div class="mid"><b>Bench Press</b><span>185 × 8, 185 × 7</span></div><div class="updn"><span>▲</span><span>▼</span></div></div>
+            <div class="edrow"><span class="minus"><i></i></span><span class="ring">0/3</span><div class="mid"><b>Incline DB Press</b><span>Last: 65 × 10</span></div><div class="updn"><span>▲</span><span>▼</span></div></div>
+            <div class="edrow"><span class="minus"><i></i></span><span class="ring">0/3</span><div class="mid"><b>Dips</b><span>Last: BW × 12</span></div><div class="updn"><span>▲</span><span>▼</span></div></div>
+            <div class="edrow"><span class="minus"><i></i></span><span class="ring">0/3</span><div class="mid"><b>Cable Fly</b><span>Last: 30 × 12</span></div><div class="updn"><span>▲</span><span class="off">▼</span></div></div>
+            <div class="listbtns"><span class="add">+ Add exercise</span><span class="ed on">Done</span></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+        <div class="cap"><b><em>E2</em>Edit mode</b><p>Tapping "Edit" shows a red − and ▲▼ on every row, and the button becomes "Done". Removing an exercise that has logged sets asks first. <span class="con">Your message got cut off at "when editing, it…", so I guessed the rest.</span></p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PART 2 ============ -->
+  <div class="section">
+    <span class="tag">PART 2</span>
+    <h2>What lifters actually want to see</h2>
+    <p>The core question is "am I getting stronger?" The hard part is that you rarely lift the same weight for the same reps twice. 185 × 8 one week and 190 × 6 the next: which is better? The best graphs answer that without making you do the math.</p>
+
+    <div class="rank">
+      <div class="r h"><span>#</span><span>GRAPH</span><span>WHY IT MATTERS</span><span>PRIORITY</span></div>
+      <div class="r"><span class="n">1</span><b>Estimated 1RM trend, per lift</b><span class="why">Converts any weight × reps into one strength number (e.g. 185 × 8 ≈ 234), so sessions with different rep counts can be compared. It's the most direct "am I stronger" line.</span><span><span class="tier t1">Must have</span></span></div>
+      <div class="r"><span class="n">2</span><b>Rep PRs (best weight at each rep count)</b><span class="why">Shows progress even when your 1RM is flat: "first time doing 185 for 8". It's the most motivating thing for lifters who train in the 5–12 rep range.</span><span><span class="tier t1">Must have</span></span></div>
+      <div class="r"><span class="n">3</span><b>Top set per session (real weight)</b><span class="why">The actual heaviest weight and reps, not an estimate. People trust real numbers, and it's what you remember lifting.</span><span><span class="tier t1">Must have</span></span></div>
+      <div class="r"><span class="n">4</span><b>Lift summary: change over a period</b><span class="why">One screen with every main lift and "+12 lb in 3 months". The fastest answer to "am I making progress overall".</span><span><span class="tier t1">Must have</span></span></div>
+      <div class="r"><span class="n">5</span><b>This workout vs last time</b><span class="why">Immediate feedback on the finish screen: which exercises went up, held or went down. This is where most motivation comes from, day to day.</span><span><span class="tier t2">High</span></span></div>
+      <div class="r"><span class="n">6</span><b>Weekly sets per muscle group</b><span class="why">The main training-amount measure for muscle growth. It answers "am I doing enough chest?" rather than "am I stronger".</span><span><span class="tier t2">High</span></span></div>
+      <div class="r"><span class="n">7</span><b>All lifts, % change since start</b><span class="why">Puts every lift on one scale so you can see which ones are moving and which have stalled.</span><span><span class="tier t3">Nice to have</span></span></div>
+      <div class="r"><span class="n">8</span><b>Total volume (lbs × reps)</b><span class="why">Popular but noisy: it goes up just from adding sets. Better as a secondary option than a headline.</span><span><span class="tier t3">Nice to have</span></span></div>
+      <div class="r"><span class="n">9</span><b>Bodyweight + strength relative to bodyweight</b><span class="why">Matters if you're cutting or bulking: "bench 1.2× bodyweight". Needs bodyweight entries.</span><span><span class="tier t3">Nice to have</span></span></div>
+      <div class="r"><span class="n">10</span><b>Consistency (workouts per week, calendar)</b><span class="why">Doesn't show strength, but strength follows consistency. A small calendar or streak is enough.</span><span><span class="tier t3">Nice to have</span></span></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <span class="tag">PART 2 · VIEWS</span>
+    <h2>Seven ways to show progress</h2>
+    <p>The same six months of bench data (and a few other lifts) in each. Blue is the selected lift; everything else is grey.</p>
+
+    <div class="row">
+      <!-- G1 e1RM line -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div>
+          <div class="head"><div><div class="t">Bench Press</div><div class="s">Progress</div></div><span class="iconbtn">Flat ▾</span></div>
+          <div class="body">
+            <div class="metric"><span class="on">Est. 1RM</span><span>Top set</span><span>Volume</span></div>
+            <div class="hero"><div class="k">ESTIMATED 1RM</div><div class="v">234<small>lb</small></div><span class="up">▲ 22 lb (10%) in 6 months</span></div>
+            <svg class="chart" id="g1" width="248" height="170"></svg>
+            <div class="seg"><span>1M</span><span>3M</span><span class="on">6M</span><span>1Y</span><span>All</span></div>
+            <div class="stats"><div><small>BEST SET</small><b>185 × 8</b></div><div><small>SESSIONS</small><b>48</b></div><div><small>LAST</small><b>2 d ago</b></div></div>
+          </div>
+          <div class="tabbar"><span><i></i>Today</span><span><i></i>Plans</span><span><i></i>History</span><span class="on"><i></i>Progress</span><span><i></i>Settings</span></div>
+          <div class="homebar"></div>
+        </div>
+        <div class="cap"><b><em>G1</em>Estimated 1RM line</b><p>One big number, the change, and a clean line. Dots mark new all-time highs. <span class="pro">The clearest "am I stronger" answer.</span> <span class="con">It's an estimate, and less accurate above about 10 reps.</span></p></div>
+      </div>
+
+      <!-- G2 top sets -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div>
+          <div class="head"><div><div class="t">Bench Press</div><div class="s">Progress</div></div><span class="iconbtn">Flat ▾</span></div>
+          <div class="body">
+            <div class="metric"><span>Est. 1RM</span><span class="on">Top set</span><span>Volume</span></div>
+            <div class="hero"><div class="k">HEAVIEST SET, LAST SESSION</div><div class="v">185<small>lb × 8</small></div><span class="up">▲ from 165 × 8 in Aug</span></div>
+            <svg class="chart" id="g2" width="248" height="190"></svg>
+            <div class="legend2"><span>Each dot = top set · number = reps</span></div>
+            <div class="seg"><span>1M</span><span class="on">3M</span><span>6M</span><span>1Y</span><span>All</span></div>
+          </div>
+          <div class="tabbar"><span><i></i>Today</span><span><i></i>Plans</span><span><i></i>History</span><span class="on"><i></i>Progress</span><span><i></i>Settings</span></div>
+          <div class="homebar"></div>
+        </div>
+        <div class="cap"><b><em>G2</em>Real top sets, with reps</b><p>The actual weight you lifted, with reps written on each point, so the weight going up while reps hold is easy to see. <span class="pro">Real numbers, no formula.</span> <span class="con">Busier, and harder to compare a set of 6 with a set of 8.</span></p></div>
+      </div>
+
+      <!-- G3 rep PR table -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div>
+          <div class="head"><div><div class="t">Bench Press</div><div class="s">Records</div></div><span class="iconbtn">Flat ▾</span></div>
+          <div class="body">
+            <div class="metric"><span>Est. 1RM</span><span>Top set</span><span class="on">Rep records</span></div>
+            <div class="rmt" id="g3"></div>
+            <div class="legend2" style="margin-top:8px"><span><i style="background:var(--accent)"></i>set in the last 30 days</span></div>
+          </div>
+          <div class="tabbar"><span><i></i>Today</span><span><i></i>Plans</span><span><i></i>History</span><span class="on"><i></i>Progress</span><span><i></i>Settings</span></div>
+          <div class="homebar"></div>
+        </div>
+        <div class="cap"><b><em>G3</em>Rep records table</b><p>Best weight you've done for 1 to 12 reps, with the date. Blue rows are recent records. <span class="pro">Shows progress at every rep range, and it's very motivating.</span> <span class="con">A table, not a trend; it doesn't show how fast you're moving.</span></p></div>
+      </div>
+    </div>
+
+    <div class="row">
+      <!-- G4 lift summary -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div>
+          <div class="head"><div><div class="t">Progress</div><div class="s">Last 3 months</div></div><span class="iconbtn">3M ▾</span></div>
+          <div class="body">
+            <div class="hero"><div class="k">MAIN LIFTS · EST. 1RM</div><div class="v" style="font-size:26px">+6% <small>average</small></div><span class="up">5 of 6 lifts went up</span></div>
+            <div class="lifts" id="g4"></div>
+          </div>
+          <div class="tabbar"><span><i></i>Today</span><span><i></i>Plans</span><span><i></i>History</span><span class="on"><i></i>Progress</span><span><i></i>Settings</span></div>
+          <div class="homebar"></div>
+        </div>
+        <div class="cap"><b><em>G4</em>Lift summary cards</b><p>Every pinned lift with its estimated 1RM, a small trend line and the change. Tap a card to open G1. <span class="pro">Overall progress in one glance.</span> <span class="con">Sparklines are too small for detail.</span></p></div>
+      </div>
+
+      <!-- G5 workout vs last -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div>
+          <div class="head"><div><div class="t">Workout done</div><div class="s">Push A · 58 min</div></div><span class="textbtn">Close</span></div>
+          <div class="body">
+            <div class="sumhead"><div class="big">Stronger on 3 of 5</div><div class="sub">Compared with your last Push A, 4 days ago</div></div>
+            <div class="cmp">
+              <div class="cr"><div><b>Bench Press</b><small>185 × 8 vs 180 × 8</small></div><span class="up">▲</span><span class="delta"><span class="pill up">+5 lb</span></span></div>
+              <div class="cr"><div><b>Incline DB Press</b><small>65 × 11 vs 65 × 10</small></div><span class="up">▲</span><span class="delta"><span class="pill up">+1 rep</span></span></div>
+              <div class="cr"><div><b>Dips</b><small>BW × 14 vs BW × 12</small></div><span class="up">▲</span><span class="delta"><span class="pill up">+2 reps</span></span></div>
+              <div class="cr"><div><b>Lateral Raise</b><small>20 × 15 vs 20 × 15</small></div><span class="flat">=</span><span class="delta"><span class="pill flat">same</span></span></div>
+              <div class="cr"><div><b>Cable Fly</b><small>27.5 × 12 vs 30 × 12</small></div><span class="dn">▼</span><span class="delta"><span class="pill dn">−2.5 lb</span></span></div>
+            </div>
+            <div class="stats" style="margin-top:14px"><div><small>SETS</small><b>17</b></div><div><small>RECORDS</small><b>2</b></div><div><small>VOLUME</small><b>21.4k</b></div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+        <div class="cap"><b><em>G5</em>Finish screen: vs last time</b><p>Compares each exercise's best set with the last time you did this routine. <span class="pro">Instant feedback every session.</span> <span class="con">A single session is noisy; one bad day shows red.</span></p></div>
+      </div>
+
+      <!-- G6 weekly sets per muscle -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div>
+          <div class="head"><div><div class="t">Training volume</div><div class="s">This week · Mon–Thu</div></div><span class="iconbtn">Week ▾</span></div>
+          <div class="body">
+            <div class="hero"><div class="k">HARD SETS PER MUSCLE</div><div class="v" style="font-size:26px">58 <small>sets so far</small></div></div>
+            <svg class="chart" id="g6" width="248" height="300"></svg>
+            <div class="legend2"><span><i style="background:#262626;height:8px"></i>target 10–20 (editable)</span><span><i style="background:var(--accent)"></i>in range</span><span><i style="background:#6a6a6a"></i>below</span></div>
+          </div>
+          <div class="tabbar"><span><i></i>Today</span><span><i></i>Plans</span><span><i></i>History</span><span class="on"><i></i>Progress</span><span><i></i>Settings</span></div>
+          <div class="homebar"></div>
+        </div>
+        <div class="cap"><b><em>G6</em>Weekly sets per muscle</b><p>Counts working sets (not warm-ups) per muscle this week, against a target range. <span class="pro">Answers "am I training enough?"</span> <span class="con">Needs a muscle assigned to every exercise.</span></p></div>
+      </div>
+    </div>
+
+    <div class="row">
+      <!-- G7 % change all lifts -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div>
+          <div class="head"><div><div class="t">Progress</div><div class="s">All lifts, since May</div></div><span class="iconbtn">6M ▾</span></div>
+          <div class="body">
+            <div class="hero"><div class="k">CHANGE IN EST. 1RM</div><div class="v" style="font-size:26px">Bench <span style="color:var(--accent)">+10%</span></div><span class="flat">Tap a line or name to highlight it</span></div>
+            <svg class="chart" id="g7" width="248" height="210"></svg>
+            <div id="g7l" style="margin-top:8px"></div>
+          </div>
+          <div class="tabbar"><span><i></i>Today</span><span><i></i>Plans</span><span><i></i>History</span><span class="on"><i></i>Progress</span><span><i></i>Settings</span></div>
+          <div class="homebar"></div>
+        </div>
+        <div class="cap"><b><em>G7</em>All lifts, % change</b><p>Every lift starts at 0%, so a 135 lb press and a 315 lb deadlift share one scale. <span class="pro">Shows at once which lifts have stalled.</span> <span class="con">Too many lines gets messy; best kept to the main lifts.</span></p></div>
+      </div>
+      <div style="grid-column:span 2;align-self:center;padding:0 10px">
+        <div class="dq" style="background:transparent">
+          <div class="q"><i>→</i>A suggested combination</div>
+          <div class="o" style="margin-left:22px;line-height:1.7">
+            <div>• <b style="color:#fff">Progress tab</b> opens on <b style="color:#fff">G4</b> (lift summary cards).</div>
+            <div>• Tap a lift to open <b style="color:#fff">G1</b>, with buttons to switch to <b style="color:#fff">G2</b> (top set) and <b style="color:#fff">G3</b> (rep records).</div>
+            <div>• <b style="color:#fff">G5</b> appears when you tap Finish.</div>
+            <div>• <b style="color:#fff">G6</b> and <b style="color:#fff">G7</b> are optional extra screens in the Progress tab, added in a second version.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ DECISIONS ============ -->
+  <div class="section">
+    <span class="tag">DECIDE</span>
+    <h2>Decisions to make</h2>
+    <p>● = my suggestion. Everything else is a real option.</p>
+    <div class="dec">
+      <div class="dq"><div class="q"><i>1</i>Which estimated-1RM formula?</div><ul class="o"><li class="rec">Epley: weight × (1 + reps/30). Simple and the most common.</li><li>Brzycki: a bit lower at high reps.</li><li>Average of several formulas.</li></ul><div class="note">Ignore sets over 12 reps for the estimate either way; it gets inaccurate.</div></div>
+      <div class="dq"><div class="q"><i>2</i>Which set represents a session?</div><ul class="o"><li class="rec">The set with the highest estimated 1RM.</li><li>The heaviest weight lifted.</li><li>The first working set.</li></ul></div>
+      <div class="dq"><div class="q"><i>3</i>Do drop sets and warm-ups count?</div><ul class="o"><li class="rec">Warm-ups never count. Drop sets count toward volume and sets per muscle, but not toward the 1RM estimate or records.</li><li>Drops count everywhere.</li><li>Drops count nowhere.</li></ul></div>
+      <div class="dq"><div class="q"><i>4</i>Variations: separate or combined?</div><ul class="o"><li class="rec">Separate history for each variation, with the "Flat ▾" menu to switch, plus an option to view them combined.</li><li>Always separate.</li><li>Always combined as one "Bench" line.</li></ul></div>
+      <div class="dq"><div class="q"><i>5</i>Where does the Progress tab open?</div><ul class="o"><li class="rec">G4 lift summary cards.</li><li>The last exercise you viewed (G1).</li><li>G7 all lifts, % change.</li></ul></div>
+      <div class="dq"><div class="q"><i>6</i>Which lifts appear on the summary?</div><ul class="o"><li class="rec">You pin them (default: your 4–6 most frequent).</li><li>Automatically, the most frequent.</li><li>Every exercise you've logged.</li></ul></div>
+      <div class="dq"><div class="q"><i>7</i>Default time range, and what's on the x-axis?</div><ul class="o"><li class="rec">3 months, spaced by date (gaps show missed weeks).</li><li>6 months.</li><li>Spaced by session (no gaps).</li></ul></div>
+      <div class="dq"><div class="q"><i>8</i>Raw points or a smoothed line?</div><ul class="o"><li class="rec">Raw dots plus a light trend line through them.</li><li>Raw line only (shows every bad day).</li><li>Trend line only.</li></ul></div>
+      <div class="dq"><div class="q"><i>9</i>How is the change shown?</div><ul class="o"><li class="rec">Both: "▲ 24 lb (11%)".</li><li>lb only.</li><li>% only.</li></ul></div>
+      <div class="dq"><div class="q"><i>10</i>Do records come back anywhere?</div><ul class="o"><li class="rec">No badge in the table (as you asked). Show records on G3, as dots on G1, and as a count on G5.</li><li>Only on G3.</li><li>Not at all.</li></ul></div>
+      <div class="dq"><div class="q"><i>11</i>How to handle bodyweight exercises (dips, pull-ups)?</div><ul class="o"><li class="rec">Chart reps until you add a bodyweight entry, then bodyweight + added weight.</li><li>Always reps only.</li><li>Ask for bodyweight at the start of each workout.</li></ul></div>
+      <div class="dq"><div class="q"><i>12</i>Show goals on the charts?</div><ul class="o"><li class="rec">Yes: a dashed line at the goal weight, with a "% there" label.</li><li>No; goals live on the Today screen only.</li></ul></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // seeded random
+  let s=7; const rnd=()=>{s=(s*16807)%2147483647;return (s-1)/2147483646};
+  const NS='http://www.w3.org/2000/svg';
+  const el=(n,a,p)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e};
+  const txt=(p,x,y,t,a={})=>{const e=el('text',Object.assign({x,y,fill:'#8e8e8e','font-size':10,'font-family':'-apple-system,Helvetica,Arial'},a),p);e.textContent=t;return e};
+
+  // ---- bench e1RM data: 26 weeks
+  const months=['May','Jun','Jul','Aug','Sep','Oct','Nov'];
+  const N=26; const e1=[];
+  for(let i=0;i<N;i++){const t=i/(N-1);e1.push(Math.round(212+24*Math.pow(t,0.85)+(rnd()-.5)*7));}
+  e1[N-1]=234;
+
+  function lineChart(id,data,{min,max,ticks,showDots=true,trend=true,h=170,labelLast=true}){
+    const svg=document.getElementById(id),W=248,H=h,L=30,R=6,T=10,B=20;
+    const x=i=>L+(W-L-R)*i/(data.length-1), y=v=>T+(H-T-B)*(1-(v-min)/(max-min));
+    ticks.forEach(v=>{el('line',{x1:L,x2:W-R,y1:y(v),y2:y(v),stroke:'#1c1c1c'},svg);txt(svg,0,y(v)+3,v);});
+    months.forEach((m,i)=>txt(svg,L+(W-L-R)*i/(months.length-1),H-4,m,{'text-anchor':i==0?'middle':i==months.length-1?'end':'middle'}));
+    if(trend){ // light moving average
+      let pts=data.map((v,i)=>{const a=data.slice(Math.max(0,i-2),i+3);return [x(i),y(a.reduce((p,c)=>p+c,0)/a.length)]});
+      el('polyline',{points:pts.map(p=>p.join(',')).join(' '),fill:'none',stroke:'#2e8bff','stroke-width':2.5,'stroke-linecap':'round','stroke-linejoin':'round'},svg);
+    }
+    let best=-1;
+    data.forEach((v,i)=>{const isHigh=v>best; if(isHigh)best=v;
+      if(showDots) el('circle',{cx:x(i),cy:y(v),r:isHigh?3.2:2,fill:isHigh?'#fff':'#4a4a4a'},svg);});
+    if(labelLast){const i=data.length-1;el('circle',{cx:x(i),cy:y(data[i]),r:5,fill:'#2e8bff',stroke:'#000','stroke-width':2},svg);}
+  }
+  lineChart('g1',e1,{min:200,max:240,ticks:[200,220,240]});
+
+  // ---- G2 top sets (13 sessions over 3 months)
+  (function(){
+    const svg=document.getElementById('g2'),W=248,H=190,L=30,R=6,T=14,B=20;
+    const sets=[[165,8],[170,7],[170,8],[175,6],[175,7],[175,8],[180,6],[180,7],[175,8],[180,8],[185,6],[185,7],[185,8]];
+    const min=160,max=190, x=i=>L+(W-L-R)*i/(sets.length-1), y=v=>T+(H-T-B)*(1-(v-min)/(max-min));
+    [160,170,180,190].forEach(v=>{el('line',{x1:L,x2:W-R,y1:y(v),y2:y(v),stroke:'#1c1c1c'},svg);txt(svg,0,y(v)+3,v);});
+    ['Aug','Sep','Oct','Nov'].forEach((m,i)=>txt(svg,L+(W-L-R)*i/3,H-4,m,{'text-anchor':i==0?'middle':i==3?'end':'middle'}));
+    el('polyline',{points:sets.map((s,i)=>x(i)+','+y(s[0])).join(' '),fill:'none',stroke:'#333','stroke-width':1.5},svg);
+    sets.forEach((s,i)=>{const last=i===sets.length-1;
+      el('circle',{cx:x(i),cy:y(s[0]),r:last?5:3.5,fill:last?'#2e8bff':'#fff',stroke:last?'#000':'none','stroke-width':2},svg);
+      txt(svg,x(i)-3,y(s[0])-8,s[1],{fill:last?'#2e8bff':'#cfcfcf','font-weight':700,'font-size':9.5});});
+  })();
+
+  // ---- G3 rep records
+  (function(){
+    const box=document.getElementById('g3');
+    const rows=[[1,235,'Oct 2','new'],[2,225,'Sep 18'],[3,215,'Oct 21','new'],[4,210,'Sep 30'],[5,205,'Oct 28','new'],[6,195,'Sep 9'],[7,190,'Oct 14'],[8,185,'Nov 3','new'],[9,175,'Aug 22'],[10,170,'Jul 30'],[11,160,'Jun 12'],[12,155,'Jun 3']];
+    let h='<div class="rr h"><span>REPS</span><span></span><span style="text-align:right">LBS</span><span style="text-align:right">DATE</span></div>';
+    rows.forEach(r=>{h+=`<div class="rr ${r[3]||''}"><span style="font-weight:700">${r[0]} RM</span><span class="bar"><i style="width:${(r[1]-120)/(240-120)*100}%"></i></span><span style="text-align:right;font-weight:700">${r[1]}</span><span class="date">${r[2]}</span></div>`});
+    box.innerHTML=h;
+  })();
+
+  // ---- G4 lift cards
+  (function(){
+    const box=document.getElementById('g4');
+    const lifts=[['Bench Press',234,'+10%',212],['Squat',312,'+8%',288],['Deadlift',378,'+6%',356],['Overhead Press',142,'+5%',135],['Barbell Row',214,'0%',214,true],['Pull-up',8,'+2 reps',6,false,'reps']];
+    lifts.forEach(([n,v,c,start,flat,unit])=>{
+      const d=document.createElement('div');d.className='lift';
+      const col=flat?'#8e8e8e':'#2ee66b';
+      d.innerHTML=`<div class="nm">${n}</div><div class="val">${v}<small>${unit||'lb'}</small></div><svg width="98" height="30"></svg><div style="font-size:11px;font-weight:700;color:${col}">${flat?'= ':'▲ '}${c}</div>`;
+      box.appendChild(d);
+      const svg=d.querySelector('svg');const pts=[];
+      for(let i=0;i<12;i++){const t=i/11;const val=flat?start+(rnd()-.5)*6:start+(v-start)*t+(rnd()-.5)*(v-start)*.25;pts.push(val);}
+      pts[11]=v;const mn=Math.min(...pts),mx=Math.max(...pts);
+      el('polyline',{points:pts.map((p,i)=>(i*98/11)+','+(26-(p-mn)/(mx-mn||1)*22)).join(' '),fill:'none',stroke:flat?'#6a6a6a':'#2e8bff','stroke-width':1.8,'stroke-linejoin':'round'},svg);
+    });
+  })();
+
+  // ---- G6 sets per muscle
+  (function(){
+    const svg=document.getElementById('g6'),W=248,L=78,R=24;
+    const m=[['Chest',14],['Back',12],['Shoulders',11],['Triceps',9],['Biceps',6],['Quads',6],['Hamstrings',0],['Glutes',0],['Calves',0],['Abs',0]];
+    const max=24,x=v=>L+(W-L-R)*v/max,rowH=28;
+    el('rect',{x:x(10),y:0,width:x(20)-x(10),height:m.length*rowH,fill:'#141414'},svg);
+    [0,10,20].forEach(v=>txt(svg,x(v)-4,m.length*rowH+12,v));
+    m.forEach(([n,v],i)=>{const yy=i*rowH+6;
+      txt(svg,0,yy+12,n,{fill:'#cfcfcf','font-size':11});
+      el('rect',{x:L,y:yy+2,width:Math.max(0,x(v)-L),height:14,rx:4,fill:v>=10?'#2e8bff':'#6a6a6a'},svg);
+      txt(svg,x(v)+5,yy+13,v,{fill:v>=10?'#fff':'#8e8e8e','font-weight':700,'font-size':10.5});});
+  })();
+
+  // ---- G7 % change all lifts
+  (function(){
+    const svg=document.getElementById('g7'),W=248,H=210,L=30,R=46,T=10,B=20;
+    const series=[['Bench',10,'#2e8bff',true],['Squat',9],['Deadlift',6],['OHP',5],['Row',0]];
+    const n=14,min=-4,max=14, x=i=>L+(W-L-R)*i/(n-1), y=v=>T+(H-T-B)*(1-(v-min)/(max-min));
+    [0,5,10].forEach(v=>{el('line',{x1:L,x2:W-R,y1:y(v),y2:y(v),stroke:v===0?'#333':'#1c1c1c'},svg);txt(svg,0,y(v)+3,(v>0?'+':'')+v+'%');});
+    months.forEach((mm,i)=>txt(svg,L+(W-L-R)*i/(months.length-1),H-4,mm,{'text-anchor':i==0?'middle':i==months.length-1?'end':'middle'}));
+    const draw=([nm,end,col,hl])=>{const pts=[];for(let i=0;i<n;i++){const t=i/(n-1);pts.push(i===0?0:end*Math.pow(t,0.9)+(rnd()-.5)*2.2);}pts[n-1]=end;
+      el('polyline',{points:pts.map((p,i)=>x(i)+','+y(p)).join(' '),fill:'none',stroke:hl?col:'#4a4a4a','stroke-width':hl?2.5:1.5,'stroke-linejoin':'round'},svg);
+      txt(svg,W-R+4,y(end)+3,nm,{fill:hl?'#2e8bff':'#8e8e8e','font-weight':hl?700:500,'font-size':9.5});};
+    series.filter(s=>!s[3]).forEach(draw);series.filter(s=>s[3]).forEach(draw);
+    document.getElementById('g7l').innerHTML='<div class="stats"><div><small>BIGGEST GAIN</small><b>Bench +10%</b></div><div><small>STALLED</small><b>Row 0%</b></div><div><small>AVERAGE</small><b>+6%</b></div></div>';
+  })();
+})();
+</script>
+</body>
+</html>

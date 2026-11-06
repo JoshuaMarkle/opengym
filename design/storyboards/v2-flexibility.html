@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fitness PWA — Flexibility Storyboard</title>
+<style>
+  :root{
+    --accent:#2e8bff; --tip:#2ee66b; --warn:#ff8c1a; --danger:#ff3b3b;
+    --bg:#000; --fg:#fff; --fg2:#8e8e8e; --line:#1f1f1f; --surf:#0e0e0e; --surf2:#161616;
+    --doneTint:color-mix(in srgb,var(--accent) 14%,#000);
+    --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#050505;font-family:var(--font);color:var(--fg);padding:40px 24px 80px;font-variant-numeric:tabular-nums}
+  .board{max-width:1100px;margin:0 auto;background:#0a0a0a;border:1px solid #1c1c1c;border-radius:16px;padding:40px}
+
+  .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg2);font-weight:600}
+  h1{font-size:34px;font-weight:700;letter-spacing:-.02em;margin:6px 0 6px}
+  .lead{color:var(--fg2);font-size:15px;max-width:760px;line-height:1.5}
+
+  .changes{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:22px}
+  .change{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--surf)}
+  .change b{display:block;font-size:13px;margin-bottom:3px}
+  .change span{font-size:12px;color:var(--fg2);line-height:1.45}
+  .change .x{color:var(--danger)} .change .p{color:var(--tip)}
+
+  .section{margin-top:44px;padding-top:28px;border-top:1px solid var(--line)}
+  .section .num-tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;color:#000;background:var(--fg);border-radius:6px;padding:3px 8px}
+  .section h2{font-size:22px;font-weight:700;margin:10px 0 4px}
+  .section > p{color:var(--fg2);font-size:14px;max-width:760px;line-height:1.5}
+  .row{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:24px;align-items:start}
+  .row.two{grid-template-columns:repeat(2,300px);justify-content:start;gap:60px}
+  .cap{width:300px;margin:12px auto 0}
+  .cap b{font-size:14px;display:block}
+  .cap b em{font-style:normal;color:var(--accent);margin-right:6px}
+  .cap span{font-size:12px;color:var(--fg2);line-height:1.5;display:block;margin-top:4px}
+  .cap .pro{color:var(--tip)} .cap .con{color:var(--warn)}
+
+  /* ---------- phone ---------- */
+  .phone{width:300px;height:620px;margin:0 auto;border-radius:44px;border:10px solid #2a2a2a;background:var(--bg);overflow:hidden;position:relative;display:flex;flex-direction:column;font-size:15px}
+  .status{height:34px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:12px;font-weight:600}
+  .island{width:84px;height:22px;background:#1a1a1a;border-radius:12px}
+  .head{flex:none;display:flex;justify-content:space-between;align-items:center;padding:6px 16px 10px;border-bottom:1px solid var(--line)}
+  .head .t{font-size:17px;font-weight:700}
+  .head .s{font-size:12px;color:var(--fg2)}
+  .finish{background:var(--accent);color:#fff;font-weight:600;font-size:13px;border-radius:8px;padding:6px 12px}
+  .body{flex:1;overflow:hidden;padding:0 16px;position:relative}
+  .homebar{flex:none;height:5px;width:110px;background:#fff;opacity:.85;border-radius:3px;margin:6px auto 8px}
+
+  /* bottom nav */
+  .nav{flex:none;display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;border-top:1px solid var(--line);padding:10px 12px 4px}
+  .nav .nb{height:40px;border-radius:10px;background:var(--surf2);display:flex;align-items:center;padding:0 10px;font-size:12px;font-weight:600;gap:6px;overflow:hidden;white-space:nowrap}
+  .nav .nb small{display:block;font-size:9px;color:var(--fg2);font-weight:600;letter-spacing:.04em}
+  .nav .nb .lbl{overflow:hidden;text-overflow:ellipsis}
+  .nav .nb.r{justify-content:flex-end;text-align:right}
+  .nav .mid{width:52px;height:40px;border-radius:10px;background:var(--fg);color:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+  .nav .mid i{font-style:normal;font-size:15px;line-height:1}
+  .nav .mid.on{background:var(--accent);color:#fff}
+  .arrow{font-size:16px;color:var(--fg2)}
+
+  /* exercise title */
+  .exhead{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+  .exname{font-size:17px;font-weight:700}
+  .iconbtn{font-size:12px;font-weight:600;color:var(--accent);border:1px solid var(--line);border-radius:8px;padding:5px 9px}
+
+  /* set table */
+  .tbl{margin-top:10px;font-size:14px}
+  .tr{display:grid;grid-template-columns:30px 1fr 58px 44px 34px;align-items:center;height:40px;border-radius:8px;padding:0 4px;position:relative}
+  .th{height:24px;font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--fg2)}
+  .c{text-align:center}
+  .prev{color:var(--fg2);font-size:13px}
+  .done{background:var(--doneTint)}
+  .in{background:var(--surf2);border-radius:6px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:600;margin:0 3px}
+  .done .in{background:transparent}
+  .cur .in{border:1.5px solid var(--accent)}
+  .ghost .in{color:var(--fg2)}
+  .chk{width:26px;height:26px;border-radius:7px;border:1.5px solid #333;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
+  .chk.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .sn{font-weight:700;font-size:13px;text-align:center}
+  .sn.w{color:var(--fg2)} .sn.d{color:var(--warn)}
+  .drop{margin-left:14px;width:calc(100% - 14px);grid-template-columns:22px 1fr 58px 44px 34px;border-left:2px solid var(--warn);border-radius:0 8px 8px 0}
+  
+  .badge{display:inline-block;font-size:10px;font-weight:700;border-radius:4px;padding:1px 5px}
+  .b-pr{background:var(--tip);color:#000}
+  .quick{display:flex;gap:6px;margin-top:6px}
+  .quick span{flex:1;height:34px;border-radius:8px;background:var(--surf2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--accent)}
+  .quick span.dr{color:var(--warn)}
+
+  /* overview list */
+  .ov-h{font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--fg2);margin:14px 0 6px}
+  .card{border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;background:var(--surf)}
+  .card.now{border-color:var(--accent)}
+  .card .ring{width:30px;height:30px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;border:2px solid #333;color:var(--fg2)}
+  .card .ring.part{border-color:var(--accent);border-right-color:#333;border-bottom-color:#333;color:var(--fg)}
+  .card .ring.full{background:var(--accent);border-color:var(--accent);color:#fff;font-size:13px}
+  .card .mid{flex:1;min-width:0}
+  .card .mid b{font-size:14px;display:block}
+  .card .mid span{font-size:11px;color:var(--fg2)}
+  .card .go{font-size:16px;color:var(--fg2)}
+  .card.dim{opacity:.5}
+  .addex{height:38px;border:1px dashed #333;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--accent);margin-top:4px}
+
+  /* strip */
+  .strip{display:flex;gap:6px;margin:12px -16px 0;padding:0 16px;overflow:hidden;white-space:nowrap}
+  .strip span{font-size:12px;font-weight:600;border-radius:999px;padding:6px 11px;background:var(--surf2);color:var(--fg2);flex:none}
+  .strip span.on{background:var(--fg);color:#000}
+  .strip span.ok{color:var(--accent)}
+
+  /* variation chips */
+  .vars{display:flex;gap:6px;margin-top:8px}
+  .vars span{font-size:12px;font-weight:600;border-radius:8px;padding:6px 10px;border:1px solid var(--line);color:var(--fg2)}
+  .vars span.on{border-color:var(--accent);color:var(--fg);background:var(--doneTint)}
+
+  /* sheets & menus */
+  .scrim{position:absolute;inset:0;background:rgba(0,0,0,.6)}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:#121212;border-top-left-radius:18px;border-top-right-radius:18px;padding:10px 16px 16px;border-top:1px solid #262626}
+  .grab{width:36px;height:5px;border-radius:3px;background:#3a3a3a;margin:0 auto 12px}
+  .sheet h4{font-size:17px;font-weight:700}
+  .sheet .sub{font-size:12px;color:var(--fg2);margin:2px 0 10px}
+  .opt{display:flex;justify-content:space-between;align-items:center;height:48px;border-bottom:1px solid #222;font-size:15px;font-weight:600}
+  .opt:last-child{border-bottom:0}
+  .opt span{font-size:12px;color:var(--fg2);font-weight:500}
+  .opt.sel{color:var(--accent)}
+  .search{height:36px;border-radius:10px;background:#1e1e1e;display:flex;align-items:center;padding:0 12px;font-size:13px;color:var(--fg2);margin-bottom:6px}
+  .grp{font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--fg2);margin-top:10px}
+  .menu{position:absolute;right:20px;width:190px;background:#1c1c1c;border:1px solid #2c2c2c;border-radius:12px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.6)}
+  .menu div{height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-size:14px;border-bottom:1px solid #2a2a2a}
+  .menu div:last-child{border-bottom:0}
+  .menu div span{font-size:11px;color:var(--fg2)}
+  .menu .red{color:var(--danger)}
+  .menu .org{color:var(--warn)}
+  .lifted{position:relative;z-index:2;background:#1a1a1a;outline:1.5px solid var(--accent)}
+
+  .callout{font-size:10px;font-weight:700;color:#000;background:var(--tip);border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;flex:none}
+  .legend{display:grid;grid-template-columns:1fr 1fr;gap:10px 28px;max-width:520px}
+  .legend div{display:flex;gap:10px;font-size:13px;color:#cfcfcf;line-height:1.45}
+  .legend b{color:#fff}
+  .final{display:grid;grid-template-columns:300px 1fr;gap:48px;margin-top:24px;align-items:center}
+  .pin{position:absolute;z-index:5}
+</style>
+</head>
+<body>
+<div class="board">
+
+  <div class="eyebrow">Fitness PWA · Storyboard v2 · Dark</div>
+  <h1>Built for a busy gym</h1>
+  <p class="lead">The plan is a guide, not a script. You can do exercises in any order, add a drop set whenever you want, and swap Bench for Incline without breaking anything. Each problem below has 2–3 ways to solve it, then one screen that combines them.</p>
+
+  <div class="changes">
+    <div class="change"><b><span class="x">−</span> Rest timer</b><span>Removed. The bottom of the screen is now navigation.</span></div>
+    <div class="change"><b><span class="x">−</span> Exercise notes</b><span>No text under the exercise name.</span></div>
+    <div class="change"><b><span class="p">+</span> Bottom nav</b><span>Previous · All exercises · Next, always within thumb reach.</span></div>
+    <div class="change"><b><span class="p">+</span> Flexible sets</b><span>Do exercises in any order, add drop sets, swap variations.</span></div>
+  </div>
+
+  <!-- =============== 1. ORDER =============== -->
+  <div class="section">
+    <span class="num-tag">PROBLEM 1</span>
+    <h2>Doing exercises out of order</h2>
+    <p>The rack is taken, so you jump to whatever is free. The app shouldn't care what order you lift in. It should just make it fast to get to any exercise.</p>
+    <div class="row">
+
+      <!-- 1a overview -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div>
+          <div class="head"><div><div class="t">Push A</div><div class="s">32:18 · 2 of 5 done</div></div><span class="finish">Finish</span></div>
+          <div class="body">
+            <div class="ov-h">IN PROGRESS</div>
+            <div class="card now"><div class="ring part">2/4</div><div class="mid"><b>Bench Press</b><span>82.5 × 8, 82.5 × 7</span></div><span class="go">›</span></div>
+            <div class="ov-h">NOT STARTED</div>
+            <div class="card"><div class="ring">0/3</div><div class="mid"><b>Incline DB Press</b><span>Last: 30 × 10</span></div><span class="go">›</span></div>
+            <div class="card"><div class="ring">0/3</div><div class="mid"><b>Dips</b><span>Last: BW × 12</span></div><span class="go">›</span></div>
+            <div class="ov-h">DONE</div>
+            <div class="card dim"><div class="ring full">✓</div><div class="mid"><b>Lateral Raise</b><span>3 sets</span></div></div>
+            <div class="card dim"><div class="ring full">✓</div><div class="mid"><b>Cable Fly</b><span>3 sets</span></div></div>
+            <div class="addex">+ Add exercise</div>
+          </div>
+          <div class="nav">
+            <div class="nb"><span class="arrow">‹</span><span class="lbl"><small>PREV</small>Cable Fly</span></div>
+            <div class="mid on"><i>≡</i>All</div>
+            <div class="nb r"><span class="lbl"><small>NEXT</small>Incline DB</span><span class="arrow">›</span></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+        <div class="cap"><b><em>1a</em>Workout overview</b><span>The middle button opens a list grouped by status, not plan order. Tap whatever's free. <span class="pro">One tap to any exercise.</span> <span class="con">Adds an extra screen.</span></span></div>
+      </div>
+
+      <!-- 1b strip -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div>
+          <div class="head"><div><div class="t">Push A</div><div class="s">32:18 · 2 of 5 done</div></div><span class="finish">Finish</span></div>
+          <div class="body">
+            <div class="strip"><span class="ok">✓ Lateral</span><span class="ok">✓ Fly</span><span class="on">Bench 2/4</span><span>Incline DB</span><span>Dips</span></div>
+            <div class="exhead"><div class="exname">Bench Press</div><span class="iconbtn">•••</span></div>
+            <div class="tbl">
+              <div class="tr th"><span class="c">SET</span><span>PREVIOUS</span><span class="c">KG</span><span class="c">REPS</span><span class="c">✓</span></div>
+              <div class="tr done"><span class="sn">1</span><span class="prev">80 × 8 <span class="badge b-pr">PR</span></span><span class="in">82.5</span><span class="in">8</span><span class="chk on">✓</span></div>
+              <div class="tr done"><span class="sn">2</span><span class="prev">80 × 8</span><span class="in">82.5</span><span class="in">7</span><span class="chk on">✓</span></div>
+              <div class="tr cur"><span class="sn">3</span><span class="prev">80 × 7</span><span class="in">82.5</span><span class="in">7</span><span class="chk"></span></div>
+              <div class="tr ghost"><span class="sn">4</span><span class="prev">—</span><span class="in">82.5</span><span class="in">7</span><span class="chk"></span></div>
+            </div>
+            <div class="quick"><span>+ Set</span><span class="dr">+ Drop</span></div>
+          </div>
+          <div class="nav">
+            <div class="nb"><span class="arrow">‹</span><span class="lbl"><small>PREV</small>Cable Fly</span></div>
+            <div class="mid"><i>≡</i>All</div>
+            <div class="nb r"><span class="lbl"><small>NEXT</small>Incline DB</span><span class="arrow">›</span></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+        <div class="cap"><b><em>1b</em>Exercise strip + swipe</b><span>A row of chips at the top, with finished exercises ticked. Tap a chip or swipe sideways to switch. <span class="pro">No extra screen.</span> <span class="con">Gets cramped past 6 exercises.</span></span></div>
+      </div>
+
+      <!-- 1c pick next -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div>
+          <div class="head"><div><div class="t">Push A</div><div class="s">32:18 · 3 of 5 done</div></div><span class="finish">Finish</span></div>
+          <div class="body">
+            <div class="exhead"><div class="exname">Bench Press</div><span class="iconbtn">•••</span></div>
+            <div class="tbl">
+              <div class="tr done"><span class="sn">1</span><span class="prev">80 × 8</span><span class="in">82.5</span><span class="in">8</span><span class="chk on">✓</span></div>
+              <div class="tr done"><span class="sn">2</span><span class="prev">80 × 8</span><span class="in">82.5</span><span class="in">7</span><span class="chk on">✓</span></div>
+              <div class="tr done"><span class="sn">3</span><span class="prev">80 × 7</span><span class="in">82.5</span><span class="in">7</span><span class="chk on">✓</span></div>
+              <div class="tr done"><span class="sn">4</span><span class="prev">—</span><span class="in">82.5</span><span class="in">6</span><span class="chk on">✓</span></div>
+            </div>
+            <div class="scrim"></div>
+            <div class="sheet">
+              <div class="grab"></div>
+              <h4>Bench done. What's next?</h4>
+              <div class="sub">Pick whatever is free</div>
+              <div class="opt sel">Incline DB Press <span>0/3 · plan order ›</span></div>
+              <div class="opt">Dips <span>0/3 ›</span></div>
+              <div class="opt">+ Something else <span>search ›</span></div>
+            </div>
+          </div>
+          <div class="nav" style="opacity:.35">
+            <div class="nb"><span class="arrow">‹</span><span class="lbl"><small>PREV</small>Cable Fly</span></div>
+            <div class="mid"><i>≡</i>All</div>
+            <div class="nb r"><span class="lbl"><small>NEXT</small>Incline DB</span><span class="arrow">›</span></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+        <div class="cap"><b><em>1c</em>"What's next?" prompt</b><span>When you tick the last set, a sheet asks where you're going next. The plan order is highlighted first. <span class="pro">Never hunting for the next exercise.</span> <span class="con">Pops up every time; needs a setting to turn it off.</span></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============== 2. DROP SETS =============== -->
+  <div class="section">
+    <span class="num-tag">PROBLEM 2</span>
+    <h2>Drop sets when you feel like it</h2>
+    <p>A drop set isn't planned, so adding one has to be quicker than thinking about it. It attaches to the set it came from and fills in a lighter weight.</p>
+    <div class="row two">
+
+      <!-- 2a quick drop -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div>
+          <div class="head"><div><div class="t">Push A</div><div class="s">38:02 · 3 of 5 done</div></div><span class="finish">Finish</span></div>
+          <div class="body">
+            <div class="exhead"><div class="exname">Lateral Raise</div><span class="iconbtn">•••</span></div>
+            <div class="tbl">
+              <div class="tr th"><span class="c">SET</span><span>PREVIOUS</span><span class="c">KG</span><span class="c">REPS</span><span class="c">✓</span></div>
+              <div class="tr done"><span class="sn">1</span><span class="prev">10 × 15</span><span class="in">10</span><span class="in">15</span><span class="chk on">✓</span></div>
+              <div class="tr done"><span class="sn">2</span><span class="prev">10 × 14</span><span class="in">10</span><span class="in">13</span><span class="chk on">✓</span></div>
+              <div class="tr done"><span class="sn">3</span><span class="prev">10 × 12</span><span class="in">10</span><span class="in">11</span><span class="chk on">✓</span></div>
+              <div class="tr drop done"><span class="sn d">D</span><span class="prev">from 10</span><span class="in">7.5</span><span class="in">10</span><span class="chk on">✓</span></div>
+              <div class="tr drop cur"><span class="sn d">D</span><span class="prev">−25%</span><span class="in">5</span><span class="in">10</span><span class="chk"></span></div>
+            </div>
+            <div class="quick"><span>+ Set</span><span class="dr">+ Drop</span></div>
+          </div>
+          <div class="nav">
+            <div class="nb"><span class="arrow">‹</span><span class="lbl"><small>PREV</small>Bench</span></div>
+            <div class="mid"><i>≡</i>All</div>
+            <div class="nb r"><span class="lbl"><small>NEXT</small>Dips</span><span class="arrow">›</span></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+        <div class="cap"><b><em>2a</em>"+ Drop" button</b><span>Sits next to "+ Set" and adds a drop row under the last set, already filled in about 25% lighter. Tap it again for another drop. <span class="pro">One tap, and it's always visible.</span> <span class="con">Two buttons where there used to be one.</span></span></div>
+      </div>
+
+      <!-- 2b long-press -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div>
+          <div class="head"><div><div class="t">Push A</div><div class="s">38:02 · 3 of 5 done</div></div><span class="finish">Finish</span></div>
+          <div class="body">
+            <div class="exhead"><div class="exname">Lateral Raise</div><span class="iconbtn">•••</span></div>
+            <div class="tbl">
+              <div class="tr th"><span class="c">SET</span><span>PREVIOUS</span><span class="c">KG</span><span class="c">REPS</span><span class="c">✓</span></div>
+              <div class="tr done"><span class="sn">1</span><span class="prev">10 × 15</span><span class="in">10</span><span class="in">15</span><span class="chk on">✓</span></div>
+              <div class="tr done"><span class="sn">2</span><span class="prev">10 × 14</span><span class="in">10</span><span class="in">13</span><span class="chk on">✓</span></div>
+              <div class="tr done lifted"><span class="sn">3</span><span class="prev">10 × 12</span><span class="in">10</span><span class="in">11</span><span class="chk on">✓</span></div>
+            </div>
+            <div class="scrim" style="z-index:1;background:rgba(0,0,0,.45)"></div>
+            <div class="menu" style="top:188px;z-index:3">
+              <div>Add drop set <span>7.5 kg</span></div>
+              <div>Mark as failure</div>
+              <div>Mark as warm-up</div>
+              <div>Duplicate set</div>
+              <div class="red">Delete set</div>
+            </div>
+          </div>
+          <div class="nav">
+            <div class="nb"><span class="arrow">‹</span><span class="lbl"><small>PREV</small>Bench</span></div>
+            <div class="mid"><i>≡</i>All</div>
+            <div class="nb r"><span class="lbl"><small>NEXT</small>Dips</span><span class="arrow">›</span></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+        <div class="cap"><b><em>2b</em>Press and hold a set</b><span>Holding any set brings up a menu: drop set, failure, warm-up, duplicate, delete. <span class="pro">Keeps the screen clean, and works on any set, not just the last one.</span> <span class="con">Hidden: you have to know it's there.</span></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============== 3. SWAPS =============== -->
+  <div class="section">
+    <span class="num-tag">PROBLEM 3</span>
+    <h2>Swapping Bench for Incline</h2>
+    <p>Every variation keeps its own history and PRs, so Incline numbers never mess up your Bench chart. Swapping should take one tap and bring up the right previous numbers.</p>
+    <div class="row">
+
+      <!-- 3a variation chips -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div>
+          <div class="head"><div><div class="t">Push A</div><div class="s">12:40 · 1 of 5 done</div></div><span class="finish">Finish</span></div>
+          <div class="body">
+            <div class="exhead"><div class="exname">Incline Bench</div><span class="iconbtn">•••</span></div>
+            <div class="vars"><span>Flat</span><span class="on">Incline</span><span>DB</span><span>Smith</span></div>
+            <div class="tbl">
+              <div class="tr th"><span class="c">SET</span><span>LAST TIME</span><span class="c">KG</span><span class="c">REPS</span><span class="c">✓</span></div>
+              <div class="tr done"><span class="sn">1</span><span class="prev">70 × 8</span><span class="in">70</span><span class="in">8</span><span class="chk on">✓</span></div>
+              <div class="tr cur"><span class="sn">2</span><span class="prev">70 × 8</span><span class="in">70</span><span class="in">8</span><span class="chk"></span></div>
+              <div class="tr ghost"><span class="sn">3</span><span class="prev">70 × 7</span><span class="in">70</span><span class="in">7</span><span class="chk"></span></div>
+            </div>
+            <div class="quick"><span>+ Set</span><span class="dr">+ Drop</span></div>
+          </div>
+          <div class="nav">
+            <div class="nb"><span class="arrow">‹</span><span class="lbl"><small>PREV</small>—</span></div>
+            <div class="mid"><i>≡</i>All</div>
+            <div class="nb r"><span class="lbl"><small>NEXT</small>Incline DB</span><span class="arrow">›</span></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+        <div class="cap"><b><em>3a</em>Variation chips</b><span>In the plan, Bench is a "chest press" slot with variations linked. Tap a chip to switch; the previous numbers and prefilled weights switch too. <span class="pro">Fastest.</span> <span class="con">You have to link the variations once.</span></span></div>
+      </div>
+
+      <!-- 3b swap sheet -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div>
+          <div class="head"><div><div class="t">Push A</div><div class="s">12:40 · 1 of 5 done</div></div><span class="finish">Finish</span></div>
+          <div class="body">
+            <div class="exhead"><div class="exname">Bench Press</div><span class="iconbtn" style="background:var(--doneTint)">•••</span></div>
+            <div class="scrim"></div>
+            <div class="sheet">
+              <div class="grab"></div>
+              <h4>Swap Bench Press</h4>
+              <div class="sub">Just for today, or always in Push A</div>
+              <div class="search">Search exercises</div>
+              <div class="grp">SAME MUSCLES</div>
+              <div class="opt sel">Incline Bench <span>last 70 × 8</span></div>
+              <div class="opt">DB Bench Press <span>last 32 × 10</span></div>
+              <div class="opt">Smith Machine Bench <span>never</span></div>
+              <div class="grp">RECENT</div>
+              <div class="opt">Chest Press Machine <span>last 60 × 12</span></div>
+            </div>
+          </div>
+          <div class="nav" style="opacity:.35">
+            <div class="nb"><span class="arrow">‹</span><span class="lbl"><small>PREV</small>—</span></div>
+            <div class="mid"><i>≡</i>All</div>
+            <div class="nb r"><span class="lbl"><small>NEXT</small>Incline DB</span><span class="arrow">›</span></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+        <div class="cap"><b><em>3b</em>Swap sheet</b><span>"•••" → Swap opens a list: same muscle group first, then recent exercises, plus search. You choose whether it's for today only or permanent. <span class="pro">No setup.</span> <span class="con">Takes 2–3 taps.</span></span></div>
+      </div>
+
+      <!-- 3c mixed sets -->
+      <div>
+        <div class="phone">
+          <div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div>
+          <div class="head"><div><div class="t">Push A</div><div class="s">12:40 · 1 of 5 done</div></div><span class="finish">Finish</span></div>
+          <div class="body">
+            <div class="exhead"><div class="exname">Chest press</div><span class="iconbtn">•••</span></div>
+            <div class="tbl">
+              <div class="tr th"><span class="c">SET</span><span>EXERCISE</span><span class="c">KG</span><span class="c">REPS</span><span class="c">✓</span></div>
+              <div class="tr done"><span class="sn">1</span><span class="prev" style="color:#fff">Flat</span><span class="in">82.5</span><span class="in">8</span><span class="chk on">✓</span></div>
+              <div class="tr done"><span class="sn">2</span><span class="prev" style="color:#fff">Flat</span><span class="in">82.5</span><span class="in">7</span><span class="chk on">✓</span></div>
+              <div class="tr cur"><span class="sn">3</span><span class="prev" style="color:var(--accent)">Incline ▾</span><span class="in">70</span><span class="in">8</span><span class="chk"></span></div>
+              <div class="tr ghost"><span class="sn">4</span><span class="prev">Incline ▾</span><span class="in">70</span><span class="in">8</span><span class="chk"></span></div>
+            </div>
+            <div class="quick"><span>+ Set</span><span class="dr">+ Drop</span></div>
+          </div>
+          <div class="nav">
+            <div class="nb"><span class="arrow">‹</span><span class="lbl"><small>PREV</small>—</span></div>
+            <div class="mid"><i>≡</i>All</div>
+            <div class="nb r"><span class="lbl"><small>NEXT</small>Incline DB</span><span class="arrow">›</span></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+        <div class="cap"><b><em>3c</em>Swap mid-exercise</b><span>The bench got taken halfway through. Each set remembers which variation it was, so you switch from set 3 on. <span class="pro">Matches what actually happens.</span> <span class="con">Replaces the "previous" column with the variation name.</span></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============== 4. COMBINED =============== -->
+  <div class="section">
+    <span class="num-tag">PROPOSAL</span>
+    <h2>Putting it together</h2>
+    <p>My suggested starting point. Every fix is available but nothing gets in the way, and anything hidden is a shortcut, never the only way.</p>
+    <div class="final">
+      <div class="phone">
+        <div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div>
+        <div class="head"><div><div class="t">Push A</div><div class="s">32:18 · 2 of 5 done</div></div><span class="finish">Finish</span></div>
+        <div class="body">
+          <div class="strip"><span class="ok">✓ Lateral</span><span class="ok">✓ Fly</span><span class="on">Bench 3/4</span><span>Incline DB</span><span>Dips</span></div>
+          <div class="exhead"><div class="exname">Bench Press</div><span class="iconbtn">•••</span></div>
+          <div class="vars"><span class="on">Flat</span><span>Incline</span><span>DB</span><span>Smith</span></div>
+          <div class="tbl">
+            <div class="tr th"><span class="c">SET</span><span>PREVIOUS</span><span class="c">KG</span><span class="c">REPS</span><span class="c">✓</span></div>
+            <div class="tr done"><span class="sn">1</span><span class="prev">80 × 8 <span class="badge b-pr">PR</span></span><span class="in">82.5</span><span class="in">8</span><span class="chk on">✓</span></div>
+            <div class="tr done"><span class="sn">2</span><span class="prev">80 × 8</span><span class="in">82.5</span><span class="in">7</span><span class="chk on">✓</span></div>
+            <div class="tr done"><span class="sn">3</span><span class="prev">80 × 7</span><span class="in">82.5</span><span class="in">6</span><span class="chk on">✓</span></div>
+            <div class="tr drop cur"><span class="sn d">D</span><span class="prev">−25%</span><span class="in">62.5</span><span class="in">8</span><span class="chk"></span></div>
+          </div>
+          <div class="quick"><span>+ Set</span><span class="dr">+ Drop</span></div>
+        </div>
+        <div class="nav">
+          <div class="nb"><span class="arrow">‹</span><span class="lbl"><small>PREV</small>Cable Fly</span></div>
+          <div class="mid"><i>≡</i>All</div>
+          <div class="nb r"><span class="lbl"><small>NEXT</small>Incline DB</span><span class="arrow">›</span></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+      <div class="legend">
+        <div><span class="callout">1</span><span><b>Strip (1b)</b> at the top for quick switching, and the <b>All</b> button opens the overview (1a) when the strip gets long.</span></div>
+        <div><span class="callout">2</span><span><b>Bottom nav</b>: Prev · All · Next, where the rest timer used to be. "Next" skips exercises you've finished.</span></div>
+        <div><span class="callout">3</span><span><b>Variation chips (3a)</b> show only when you've linked variations; otherwise "•••" → Swap (3b).</span></div>
+        <div><span class="callout">4</span><span><b>"+ Drop" (2a)</b> as the visible shortcut; <b>press and hold (2b)</b> for failure, warm-up and delete.</span></div>
+        <div><span class="callout">5</span><span><b>No notes, no timer.</b> The exercise name and the sets are the whole screen.</span></div>
+        <div><span class="callout">6</span><span><b>"What's next?" (1c)</b> is off by default; turn it on in Settings if you want it.</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
