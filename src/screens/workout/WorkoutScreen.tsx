@@ -1,8 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Navigate, useNavigate } from 'react-router';
-import { ChartIcon, ChevronDown, ChevronLeft } from '../../components/icons';
-import { Keypad, ModeTabs, type KeypadTab } from '../../components/Keypad';
+import { ChartIcon, CheckGlyph, ChevronDown, ChevronLeft } from '../../components/icons';
+import { BarChip, Keypad, ModeTabs, type KeypadTab } from '../../components/Keypad';
 import { Alert, HoldMenu, Sheet, SheetOption, useToast, type MenuItem } from '../../components/overlays';
 import { BarPicker, PlatePad } from '../../components/PlatePad';
 import { Button, cx, EmptyState, IconButton, TextField } from '../../components/ui';
@@ -24,6 +24,7 @@ import {
   renameWorkout,
   replaceWorkoutExercise,
   restoreSets,
+  restoreWorkoutExercise,
   routineChanges,
   setCurrentExercise,
   setWorkoutStart,
@@ -36,6 +37,7 @@ import { db } from '../../db/db';
 import { muscleLabel, type Exercise, type WorkoutSet } from '../../db/types';
 import { useNow } from '../../hooks/useNow';
 import {
+  CARDIO_VALUE_KEYS,
   cardioFields,
   cardioSummary,
   editTextOf,
@@ -52,7 +54,7 @@ import {
 import { carryOver } from '../../lib/carryOver';
 import { fmtClock, fmtDuration, fmtMonthDay, fmtTime, fromLocalInputValue, toLocalInputValue } from '../../lib/dates';
 import { applyKey, parseRepsText, parseWeightText, type KeypadKey, type KeypadOptions } from '../../lib/keypad';
-import { barLabel, hasPlatePad } from '../../lib/plates';
+import { barShortLabel, hasPlatePad } from '../../lib/plates';
 import { describeChange, type RoutineChange } from '../../lib/routineDiff';
 import { formatSet, hasWeightColumn, setLabels, workingIndex } from '../../lib/sets';
 import { isFolded, nextTarget, supersetBlocks, supersetRound, supersetTags, type MemberSets } from '../../lib/supersets';
@@ -114,8 +116,6 @@ const TYPE_HINT: Record<Exercise['type'], string> = {
   cardio: ' · cardio',
 };
 
-const CARDIO_KEYS = ['durationSec', 'distance', 'speed', 'incline', 'level', 'calories'] as const;
-
 function setName(label: string, cardio = false) {
   if (cardio) return `Segment ${label}`;
   return label === 'W' ? 'Warm-up' : label === 'D' ? 'Drop set' : `Set ${label}`;
@@ -131,7 +131,7 @@ const isCardioField = (f: string): f is CardioField => f !== 'weight' && f !== '
 
 function cardioOf(s: CardioValues): CardioValues {
   const out: CardioValues = {};
-  for (const k of CARDIO_KEYS) if (s[k] != null) out[k] = s[k];
+  for (const k of CARDIO_VALUE_KEYS) if (s[k] != null) out[k] = s[k];
   return out;
 }
 
@@ -150,8 +150,6 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
   const [holdMenu, setHoldMenu] = useState<{ member: ActiveExercise; set: WorkoutSet; rect: DOMRect } | null>(null);
   const [finish, setFinish] = useState<FinishState | null>(null);
   const [busy, setBusy] = useState(false);
-  // B4: "↓ A2 · Barbell Row, set 2" after ✓ jumps to the partner.
-  const [banner, setBanner] = useState<{ text: string; id: number } | null>(null);
   const [supersetPre, setSupersetPre] = useState<string[]>([]);
   // Plates vs 123, per exercise, ahead of the saved preference catching up.
   const [padPref, setPadPref] = useState<Record<string, boolean>>({});
@@ -196,12 +194,6 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
     const el = scrollRef.current?.querySelector(`[data-set-id="${activeEdit.setId}"]`);
     el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [activeEdit?.setId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (!banner) return;
-    const t = window.setTimeout(() => setBanner(null), 2200);
-    return () => window.clearTimeout(t);
-  }, [banner]);
 
   const scrollToSet = (setId: string) =>
     window.setTimeout(() => scrollRef.current?.querySelector(`[data-set-id="${setId}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 60);
@@ -372,8 +364,8 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
   };
 
   /**
-   * Where you go after a set is ticked. In a superset: the partner's set (B4),
-   * with a brief banner. Otherwise the next open set of the same exercise.
+   * Where you go after a set is ticked. In a superset: the partner's set (B4).
+   * Otherwise the next open set of the same exercise.
    */
   const advance = (m: ActiveExercise, set: WorkoutSet): { member: ActiveExercise; set: WorkoutSet } | null => {
     if (isSuperset) {
@@ -383,7 +375,6 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
       const ts = tm.sets.find((s) => s.id === t.setId)!;
       if (tm.we.id !== m.we.id) {
         void setCurrentExercise(workout.id, tm.we.id);
-        setBanner({ text: `${tags.get(tm.we.id)} · ${tm.exercise.name}, ${setWord(tm, ts)}`, id: Date.now() });
         scrollToSet(ts.id);
       }
       return { member: tm, set: ts };
@@ -708,15 +699,11 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
             const tag = tags.get(m.we.id);
             if (!focused && isFolded({ key: m.we.id, sets: m.sets }, cur.we.id, round.round)) {
               const done = m.sets.filter((s) => s.completed && s.kind === 'working');
-              const all = m.sets.every((s) => s.completed);
               return (
                 <button key={m.we.id} type="button" onClick={() => focus(m)} className="flex min-h-[52px] w-full items-center gap-2.5 border-b border-line text-left">
-                  <TagPill tag={tag} />
+                  <TagPill tag={tag} done={allTicked(m.sets)} />
                   <b className="min-w-0 flex-1 truncate text-[16px] font-semibold">{m.exercise.name}</b>
-                  <span className="flex flex-none items-center gap-1.5 text-[13px] text-fg2">
-                    <span className="max-w-[150px] truncate">{done.map((s) => formatSet(s, m.exercise.type, units)).join(' · ')}</span>
-                    {all && <span className="font-bold text-accent">✓</span>}
-                  </span>
+                  <span className="max-w-[150px] flex-none truncate text-[13px] text-fg2">{done.map((s) => formatSet(s, m.exercise.type, units)).join(' · ')}</span>
                 </button>
               );
             }
@@ -724,7 +711,7 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
               <section key={m.we.id} className={cx('pb-3 transition-opacity', !focused && 'opacity-55')}>
                 <div className="mt-1 flex items-start justify-between gap-2">
                   <button type="button" onClick={() => focus(m)} className="flex min-h-11 min-w-0 items-center gap-2.5 text-left" aria-label={`${tag} ${m.exercise.name}${focused ? ' (current)' : ''}`}>
-                    <TagPill tag={tag} on={focused} />
+                    <TagPill tag={tag} on={focused} done={allTicked(m.sets)} />
                     <span className={cx('min-w-0 truncate font-bold tracking-[-0.01em]', focused ? 'text-[20px]' : 'text-[17px]')}>{m.exercise.name}</span>
                   </button>
                   {focused && icons}
@@ -765,20 +752,19 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
     };
     return (
       <Keypad
-        left={plateOk ? <ModeTabs value={platesOn ? 'plates' : 'numbers'} onChange={setPad} /> : label}
+        left={
+          plateOk ? (
+            <span className="flex items-center gap-1">
+              <ModeTabs value={platesOn ? 'plates' : 'numbers'} onChange={setPad} />
+              {platesOn && <BarChip label={barShortLabel(barDisplayOf(editEx))} onPress={() => setOverlay('bar')} />}
+            </span>
+          ) : (
+            label
+          )
+        }
         tabs={tabs}
         tab={field}
         onTab={(f) => f !== field && startEdit(editingMember, editingSet, f)}
-        right={
-          platesOn ? (
-            <button type="button" onClick={() => setOverlay('bar')} className="flex h-11 flex-none items-center" aria-label="Choose the bar">
-              <span className="flex h-[30px] items-center gap-1 rounded-[8px] bg-surface px-2.5 text-[13px] font-semibold">
-                {barLabel(barDisplayOf(editEx), units)}
-                <ChevronDown size={9} />
-              </span>
-            </button>
-          ) : undefined
-        }
         next={{ done: fi === fields.length - 1, onPress: onNext }}
         bottomLeft={
           field === 'weight'
@@ -870,16 +856,6 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
       {/* Prev / Next stay above the keypad so you can move on without closing it first. */}
       {cur && !showAll && (
         <div className="relative flex-none" data-dock>
-          {banner && (
-            <div
-              key={banner.id}
-              role="status"
-              className="anim-toast pointer-events-none absolute inset-x-3 bottom-full mb-2 flex h-11 items-center justify-center gap-1.5 rounded-[11px] border border-accent bg-[color-mix(in_srgb,#2e8bff_16%,var(--og-bg))] px-3 text-[14px] font-semibold text-accent"
-            >
-              <span aria-hidden>↓</span>
-              <span className="truncate">{banner.text}</span>
-            </div>
-          )}
           <nav
             className={cx('grid grid-cols-2 gap-2 border-t border-line bg-bg px-3', keypadOpen ? 'py-2' : 'pt-2.5 pb-[max(10px,env(safe-area-inset-bottom))]')}
             aria-label="Exercises"
@@ -889,7 +865,7 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
                 {prevNav.text}
               </NavButton>
             ) : (
-              <NavButton small="No previous" onClick={openAll} tone="white" compact={keypadOpen}>
+              <NavButton small="No previous" onClick={openAll} compact={keypadOpen}>
                 All exercises
               </NavButton>
             )}
@@ -902,7 +878,7 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
                 Finish workout
               </NavButton>
             ) : (
-              <NavButton small="Last one" onClick={openAll} tone="white" align="right" compact={keypadOpen}>
+              <NavButton small="Last one" onClick={openAll} align="right" compact={keypadOpen}>
                 All exercises
               </NavButton>
             )}
@@ -957,8 +933,14 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
         onSettings={() => ex && navigate(`/exercises/${ex.id}`)}
         onRemove={() => {
           if (!cur) return;
-          if (cur.sets.some((s) => s.completed)) setOverlay('remove');
-          else void removeWorkoutExercise(cur.we.id);
+          if (cur.sets.some((s) => s.completed)) {
+            setOverlay('remove');
+            return;
+          }
+          const name = cur.exercise.name;
+          void removeWorkoutExercise(cur.we.id).then((removed) => {
+            if (removed) toast({ message: `${name} removed`, actionLabel: 'Undo', onAction: () => void restoreWorkoutExercise(removed) });
+          });
         }}
         superset={
           cur && ex?.type !== 'cardio'
@@ -1121,15 +1103,27 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
   );
 }
 
-/** A1 / A2 tag: blue on the exercise you're on, grey on its partners. */
-export function TagPill({ tag, on }: { tag?: string; on?: boolean }) {
+/**
+ * A1 / A2 tag: blue on the exercise you're on, grey on its partners. Once every
+ * set of that exercise is ticked (`done`) it turns into a ✓.
+ */
+export function TagPill({ tag, on, done }: { tag?: string; on?: boolean; done?: boolean }) {
   if (!tag) return null;
   return (
-    <span className={cx('flex h-[20px] min-w-[26px] flex-none items-center justify-center rounded-[5px] px-1 text-[11px] font-extrabold', on ? 'bg-accent text-white' : 'bg-surface-2 text-fg2')}>
-      {tag}
+    <span
+      aria-label={done ? `${tag}, done` : undefined}
+      className={cx(
+        'flex h-[20px] min-w-[26px] flex-none items-center justify-center rounded-[5px] px-1 text-[11px] font-extrabold',
+        on ? 'bg-accent text-white' : done ? 'bg-done text-accent' : 'bg-surface-2 text-fg2',
+      )}
+    >
+      {done ? <CheckGlyph size={11} /> : tag}
     </span>
   );
 }
+
+/** Every set ticked (and at least one set). */
+const allTicked = (sets: WorkoutSet[]) => sets.length > 0 && sets.every((s) => s.completed);
 
 function untickedMessage(labels: string[]): string {
   const shown = labels.slice(0, 2);
@@ -1144,12 +1138,13 @@ function Clock({ since }: { since: number }) {
   return <span className="tabular-nums">{fmtClock(Math.max(0, now - since))}</span>;
 }
 
+/** + Set, + Drop, + Segment: text only, no fill, like every other add button in the app. 44 px tall. */
 function QuickButton({ children, onClick, tone }: { children: ReactNode; onClick: () => void; tone?: 'warn' }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={cx('flex h-11 items-center justify-center rounded-[10px] bg-surface-2 text-[15px] font-semibold active:opacity-70', tone === 'warn' ? 'text-warn' : 'text-accent')}
+      className={cx('flex h-11 items-center justify-center rounded-[10px] text-[15px] font-semibold active:opacity-60', tone === 'warn' ? 'text-warn' : 'text-accent')}
     >
       {children}
     </button>
@@ -1169,7 +1164,7 @@ function NavButton({
   small: string;
   onClick: () => void;
   side?: 'left' | 'right';
-  tone?: 'white' | 'accent';
+  tone?: 'accent';
   align?: 'right';
   /** Shorter (still 44 px) while the keypad is open below. */
   compact?: boolean;
@@ -1183,12 +1178,12 @@ function NavButton({
         'flex min-w-0 items-center gap-2 rounded-[11px] px-3 transition-colors active:opacity-80',
         compact ? 'h-11' : 'h-[50px]',
         right ? 'justify-end text-right' : 'text-left',
-        tone === 'white' ? 'bg-fg text-bg' : tone === 'accent' ? 'bg-accent text-white' : 'bg-surface-2 text-fg',
+        tone === 'accent' ? 'bg-accent text-white' : 'bg-surface-2 text-fg',
       )}
     >
       {side === 'left' && <span className="text-[19px] text-fg2">‹</span>}
       <span className="min-w-0">
-        <small className={cx('block text-[10px] font-bold tracking-[0.05em] uppercase', tone === 'white' ? 'text-[#555]' : tone === 'accent' ? 'text-white/75' : 'text-fg2')}>{small}</small>
+        <small className={cx('block text-[10px] font-bold tracking-[0.05em] uppercase', tone === 'accent' ? 'text-white/75' : 'text-fg2')}>{small}</small>
         <span className="block truncate text-[14px] font-semibold">{children}</span>
       </span>
       {side === 'right' && <span className={cx('text-[19px]', tone === 'accent' ? 'text-white/80' : 'text-fg2')}>›</span>}

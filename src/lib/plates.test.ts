@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { barIdFor, barLabel, hasPlatePad, loadPlates, PLATES, plateCounts, plateTotal, removeAt } from './plates';
+import { barIdFor, barLabel, barShortLabel, canAddPlate, hasPlatePad, loadPlates, MAX_PLATES_PER_SIDE, PLATES, plateCounts, plateTotal, removeAt } from './plates';
 
 describe('plate pad', () => {
   it('total = bar + 2 × one side', () => {
@@ -42,5 +42,18 @@ describe('plate pad', () => {
     expect(hasPlatePad('weight', 'machine')).toBe(true);
     expect(hasPlatePad('weight', 'dumbbell')).toBe(false);
     expect(hasPlatePad('bodyweight_plus', 'barbell')).toBe(false);
+  });
+
+  it('stops at ten plates a side', () => {
+    expect(MAX_PLATES_PER_SIDE).toBe(10);
+    expect(canAddPlate(Array(9).fill(45))).toBe(true);
+    expect(canAddPlate(Array(10).fill(45))).toBe(false);
+    expect(canAddPlate([])).toBe(true);
+  });
+
+  it('labels the bar briefly for the keypad header', () => {
+    expect(barShortLabel(45)).toBe('Bar 45');
+    expect(barShortLabel(20)).toBe('Bar 20');
+    expect(barShortLabel(0)).toBe('No bar');
   });
 });

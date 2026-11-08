@@ -174,6 +174,17 @@
     transform: scale(1);
   }
 }
+/* iOS alerts start a touch larger and settle in. */
+@keyframes og-alert-in {
+  from {
+    opacity: 0;
+    transform: scale(1.12);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
 @keyframes og-slide-in {
   from {
     transform: translateX(24px);
@@ -213,6 +224,9 @@
 .anim-pop {
   animation: og-pop-in 0.18s ease-out;
 }
+.anim-alert {
+  animation: og-alert-in 0.2s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
 .anim-page {
   animation: og-slide-in 0.22s cubic-bezier(0.2, 0.9, 0.25, 1);
 }
@@ -227,6 +241,7 @@
   .anim-sheet,
   .anim-fade,
   .anim-pop,
+  .anim-alert,
   .anim-page,
   .anim-toast,
   .anim-pulse {

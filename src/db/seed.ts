@@ -37,18 +37,25 @@ export async function ensureSeeded(): Promise<void> {
     const missing = seeds.filter((e) => !have.has(e.id));
     if (missing.length) await db.exercises.bulkAdd(missing);
     // Preset columns that changed: only rows still holding the old default move.
-    for (const [id, from] of Object.entries(RETIRED_PRESET_COLUMNS)) {
+    for (const [id, olds] of Object.entries(RETIRED_PRESET_COLUMNS)) {
       const ex = await db.exercises.get(id);
       const to = seeds.find((s) => s.id === id)?.cardioColumns;
-      if (!ex || ex.isCustom || !to || (ex.cardioColumns ?? []).join() !== from.join()) continue;
+      const have = (ex?.cardioColumns ?? []).join();
+      if (!ex || ex.isCustom || !to || !olds.some((from) => from.join() === have)) continue;
       await db.exercises.update(id, { cardioColumns: to, updatedAt: Date.now() });
     }
   });
 }
 
-/** Built-in cardio presets whose default columns changed, with what they used to be. */
-const RETIRED_PRESET_COLUMNS: Record<string, CardioColumn[]> = {
-  'ex-treadmill': ['distance', 'speed'],
-  'ex-stair-climber': ['level', 'calories'],
-  'ex-jump-rope': ['calories'],
+/** Built-in cardio presets whose default columns changed, with every default they used to have. */
+const RETIRED_PRESET_COLUMNS: Record<string, CardioColumn[][]> = {
+  'ex-treadmill': [
+    ['distance', 'speed'],
+    ['distance', 'avgSpeed'],
+  ],
+  'ex-stair-climber': [
+    ['level', 'calories'],
+    ['speed', 'level'],
+  ],
+  'ex-jump-rope': [['calories']],
 };

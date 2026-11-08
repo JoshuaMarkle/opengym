@@ -168,11 +168,23 @@ export async function addExercisesToWorkout(workoutId: string, exerciseIds: stri
   });
 }
 
-export async function removeWorkoutExercise(weId: string): Promise<void> {
-  await db.transaction('rw', db.workouts, db.workoutExercises, db.workoutSets, async () => {
+/** What removing an exercise took away: enough to put it back exactly (order, superset letters, sets). */
+export interface RemovedWorkoutExercise {
+  workoutId: string;
+  removedId: string;
+  /** Every exercise in the workout as it was, the removed one included. */
+  before: WorkoutExercise[];
+  sets: WorkoutSet[];
+  currentExerciseId?: string;
+}
+
+export async function removeWorkoutExercise(weId: string): Promise<RemovedWorkoutExercise | null> {
+  return db.transaction('rw', db.workouts, db.workoutExercises, db.workoutSets, async () => {
     const we = await db.workoutExercises.get(weId);
-    if (!we) return;
-    await db.workoutSets.where('workoutExerciseId').equals(weId).delete();
+    if (!we) return null;
+    const before = await workoutExercises(we.workoutId);
+    const sets = await db.workoutSets.where('workoutExerciseId').equals(weId).toArray();
+    await db.workoutSets.bulkDelete(sets.map((x) => x.id));
     await db.workoutExercises.delete(weId);
     const rest = await writeGrouping(await workoutExercises(we.workoutId));
     const w = await db.workouts.get(we.workoutId);
@@ -180,6 +192,27 @@ export async function removeWorkoutExercise(weId: string): Promise<void> {
       const idx = Math.min(we.order, rest.length - 1);
       await db.workouts.update(w.id, { currentExerciseId: rest[idx]?.id, updatedAt: Date.now() });
     }
+    return { workoutId: we.workoutId, removedId: weId, before, sets, currentExerciseId: w?.currentExerciseId };
+  });
+}
+
+/** Undo for removeWorkoutExercise: the exercise, its sets, and everyone's order and superset letter. */
+export async function restoreWorkoutExercise(r: RemovedWorkoutExercise): Promise<void> {
+  await db.transaction('rw', db.workouts, db.workoutExercises, db.workoutSets, async () => {
+    const w = await db.workouts.get(r.workoutId);
+    if (!w || w.status !== 'active') return;
+    const now = await workoutExercises(r.workoutId);
+    const nowIds = new Set(now.map((x) => x.id));
+    const back = r.before.find((x) => x.id === r.removedId);
+    if (!back || nowIds.has(back.id)) return;
+    const wasIds = new Set(r.before.map((x) => x.id));
+    const t = Date.now();
+    await db.workoutExercises.put({ ...back, updatedAt: t });
+    await db.workoutSets.bulkPut(r.sets);
+    // The old order and letters for what's still here; anything added since goes after.
+    const order = [...r.before.filter((x) => x.id === back.id || nowIds.has(x.id)), ...now.filter((x) => !wasIds.has(x.id))];
+    await Promise.all(order.map((x, i) => db.workoutExercises.update(x.id, { order: i, supersetGroup: x.supersetGroup, updatedAt: t })));
+    if (r.currentExerciseId) await db.workouts.update(w.id, { currentExerciseId: r.currentExerciseId, updatedAt: t });
   });
 }
 
@@ -611,6 +644,7 @@ export async function saveWorkoutEdits(
           incline: s.incline,
           level: s.level,
           calories: s.calories,
+          steps: s.steps,
           completed: true,
         })),
       );

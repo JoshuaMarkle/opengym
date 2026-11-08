@@ -12,7 +12,7 @@ export const MI_M = 1609.344;
 export const KM_M = 1000;
 
 /** A typed (or stored) cardio value. */
-export type CardioField = 'time' | 'distance' | 'speed' | 'incline' | 'level' | 'calories';
+export type CardioField = 'time' | 'distance' | 'speed' | 'incline' | 'level' | 'calories' | 'steps';
 
 export interface CardioValues {
   durationSec?: number;
@@ -21,6 +21,8 @@ export interface CardioValues {
   incline?: number;
   level?: number;
   calories?: number;
+  /** stair climber steps */
+  steps?: number;
 }
 
 /** What a cardio exercise needs to know about itself. Exercise satisfies it. */
@@ -28,6 +30,9 @@ export interface CardioSpec {
   cardioColumns?: readonly CardioColumn[];
   distanceUnit?: DistanceUnit;
 }
+
+/** Every stored cardio value on a set, in row order. */
+export const CARDIO_VALUE_KEYS = ['durationSec', 'distance', 'speed', 'incline', 'level', 'calories', 'steps'] as const;
 
 export type DistanceDisplay = 'mi' | 'km' | 'm';
 
@@ -42,6 +47,7 @@ export const CARDIO_COLUMN_INFO: { id: CardioColumn; label: string }[] = [
   { id: 'incline', label: 'Incline' },
   { id: 'level', label: 'Level' },
   { id: 'calories', label: 'Calories' },
+  { id: 'steps', label: 'Steps' },
   { id: 'split500', label: 'Split /500m' },
   { id: 'pace', label: 'Pace' },
   { id: 'avgSpeed', label: 'Avg speed' },
@@ -53,6 +59,7 @@ const FIELD_OF: Record<CardioColumn, CardioField | undefined> = {
   incline: 'incline',
   level: 'level',
   calories: 'calories',
+  steps: 'steps',
   split500: undefined,
   pace: undefined,
   avgSpeed: undefined,
@@ -104,6 +111,8 @@ export function columnHeader(col: CardioColumn | 'time', ex: CardioSpec, units: 
       return 'LEVEL';
     case 'calories':
       return 'CAL';
+    case 'steps':
+      return 'STEPS';
     case 'split500':
       return '/500M';
     case 'pace':
@@ -130,6 +139,8 @@ export function fieldTab(field: CardioField, ex: CardioSpec, units: Units): stri
       return 'level';
     case 'calories':
       return 'cal';
+    case 'steps':
+      return 'steps';
   }
 }
 
@@ -140,6 +151,7 @@ export const FIELD_NAME: Record<CardioField, string> = {
   incline: 'Incline',
   level: 'Level',
   calories: 'Calories',
+  steps: 'Steps',
 };
 
 /** Unit hint next to a column in the setup list (C5). */
@@ -259,6 +271,7 @@ export function formatField(field: CardioField, stored: number | undefined, ex: 
     case 'level':
       return formatNumber(v, 1);
     case 'calories':
+    case 'steps':
       return withCommas(v);
   }
 }
@@ -294,6 +307,8 @@ export function keypadFor(field: CardioField, ex: CardioSpec, units: Units): { m
       return { mode: 'int', step: 1, stepLabel: '1' };
     case 'calories':
       return { mode: 'int', step: 10, stepLabel: '10 cal' };
+    case 'steps':
+      return { mode: 'int', step: 10, stepLabel: '10' };
   }
 }
 
@@ -341,6 +356,7 @@ export interface CardioTotals {
   /** meters, when any segment has a distance */
   distance?: number;
   calories?: number;
+  steps?: number;
   /** km/h: distance ÷ time when both exist, else the time-weighted average */
   speed?: number;
   incline?: number;
@@ -361,6 +377,8 @@ export function cardioTotals(sets: CardioValues[]): CardioTotals {
   const distance = withDist.length ? withDist.reduce((n, s) => n + s.distance!, 0) : undefined;
   const withCal = sets.filter((s) => s.calories != null);
   const calories = withCal.length ? withCal.reduce((n, s) => n + s.calories!, 0) : undefined;
+  const withSteps = sets.filter((s) => s.steps != null);
+  const steps = withSteps.length ? withSteps.reduce((n, s) => n + s.steps!, 0) : undefined;
   const distTime = withDist.reduce((n, s) => n + (s.durationSec ?? 0), 0);
   const speed = distance && distTime > 0 && withDist.every((s) => s.durationSec) ? distance / 1000 / (distTime / 3600) : timeWeighted(sets, 'speed');
   return {
@@ -368,6 +386,7 @@ export function cardioTotals(sets: CardioValues[]): CardioTotals {
     durationSec,
     distance,
     calories,
+    steps,
     speed,
     incline: timeWeighted(sets, 'incline'),
     level: timeWeighted(sets, 'level'),
@@ -384,6 +403,8 @@ export function totalText(col: CardioColumn | 'time', t: CardioTotals, ex: Cardi
       return t.distance != null ? formatField('distance', t.distance, ex, units) : '—';
     case 'calories':
       return t.calories != null ? formatField('calories', t.calories, ex, units) : '—';
+    case 'steps':
+      return t.steps != null ? formatField('steps', t.steps, ex, units) : '—';
     case 'speed':
       return t.speed != null ? avg(formatField('speed', t.speed, ex, units)) : '—';
     case 'incline':
@@ -418,7 +439,7 @@ export const longDistanceWord = (units: Units) => (units === 'kg' ? 'km' : 'mi')
  * "3 × 2:00 · 1,495 m", "32:00 · 8.8 mi · L7". Empty when nothing was logged.
  */
 export function cardioSummary(sets: CardioValues[], ex: CardioSpec, units: Units): string {
-  const logged = sets.filter((s) => s.durationSec || s.distance || s.calories);
+  const logged = sets.filter((s) => s.durationSec || s.distance || s.calories || s.steps);
   if (!logged.length) return '';
   const t = cardioTotals(logged);
   const parts: string[] = [];
@@ -428,6 +449,7 @@ export function cardioSummary(sets: CardioValues[], ex: CardioSpec, units: Units
   if (t.distance != null) parts.push(distanceText(t.distance, distanceDisplay(ex, units)));
   const cols = cardioColumns(ex);
   if (cols.includes('level') && t.level != null) parts.push(`L${Math.round(t.level)}`);
+  if (cols.includes('steps') && t.steps != null) parts.push(`${withCommas(t.steps)} steps`);
   if (cols.includes('calories') && t.calories != null && t.distance == null) parts.push(`${withCommas(t.calories)} cal`);
   return parts.join(' · ');
 }
@@ -465,7 +487,7 @@ export function segmentPlaceholders<T extends CardioValues & { id: string }>(
     const p = previous[i];
     if (!p) return;
     const v: CardioValues = {};
-    for (const k of ['durationSec', 'distance', 'speed', 'incline', 'level', 'calories'] as const) {
+    for (const k of CARDIO_VALUE_KEYS) {
       if (s[k] == null && p[k] != null) v[k] = p[k];
     }
     if (Object.keys(v).length) out.set(s.id, v);
@@ -475,5 +497,5 @@ export function segmentPlaceholders<T extends CardioValues & { id: string }>(
 
 /** A segment with nothing logged in it. */
 export function isEmptySegment(v: CardioValues): boolean {
-  return !v.durationSec && !v.distance && !v.calories && v.speed == null && v.level == null && v.incline == null;
+  return !v.durationSec && !v.distance && !v.calories && !v.steps && v.speed == null && v.level == null && v.incline == null;
 }

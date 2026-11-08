@@ -4,6 +4,7 @@ import { CheckGlyph } from '../../components/icons';
 import { cx } from '../../components/ui';
 import type { CardioColumn, Exercise, Units, WorkoutSet } from '../../db/types';
 import {
+  CARDIO_VALUE_KEYS,
   cardioColumns,
   cardioTotals,
   columnHeader,
@@ -24,6 +25,7 @@ const FIELD: Partial<Record<CardioColumn | 'time', CardioField>> = {
   incline: 'incline',
   level: 'level',
   calories: 'calories',
+  steps: 'steps',
 };
 
 const valueOf = (v: CardioValues, f: CardioField) => (f === 'time' ? v.durationSec : v[f]);
@@ -158,7 +160,7 @@ export function CardioTable({
 
 function strip(s: WorkoutSet): CardioValues {
   const out: CardioValues = {};
-  for (const k of ['durationSec', 'distance', 'speed', 'incline', 'level', 'calories'] as const) if (s[k] != null) out[k] = s[k];
+  for (const k of CARDIO_VALUE_KEYS) if (s[k] != null) out[k] = s[k];
   return out;
 }
 

@@ -144,6 +144,14 @@ export interface AlertAction {
   disabled?: boolean;
 }
 
+/** Two short actions sit side by side (iOS does the same); anything longer stacks. */
+const SIDE_BY_SIDE_MAX_CHARS = 12;
+
+/**
+ * iOS-style alert: centered, 270 wide, translucent, hairline-separated buttons.
+ * Callers list the main action first and the way out (Cancel, Keep editing) last;
+ * side by side that order flips, so the way out sits on the left like on iOS.
+ */
 export function Alert({
   open,
   title,
@@ -161,31 +169,40 @@ export function Alert({
 }) {
   useEscape(onClose, open);
   if (!open) return null;
+  const row = actions.length === 2 && actions.every((a) => typeof a.label === 'string' && a.label.length <= SIDE_BY_SIDE_MAX_CHARS);
+  const shown = row ? [...actions].reverse() : actions;
   return (
     <Portal>
-      <div className={cx(LAYER, 'z-50 flex items-start justify-center px-10 pt-[24vh]')}>
+      <div className={cx(LAYER, 'z-50 flex items-center justify-center px-6 pt-safe pb-safe')}>
         <div className="anim-fade absolute inset-0 bg-[var(--og-scrim)]" onClick={onClose} />
-        <div role="alertdialog" aria-modal="true" className="anim-pop relative w-full max-w-[300px] overflow-hidden rounded-2xl border border-line-strong bg-surface-2 text-center">
-          <div className="px-4 pt-[18px] pb-3.5">
-            <div className="text-[17px] font-bold">{title}</div>
-            {message && <div className="mt-1.5 text-[13.5px] leading-snug text-fg2">{message}</div>}
+        <div
+          role="alertdialog"
+          aria-modal="true"
+          className="anim-alert relative max-h-full w-[270px] overflow-y-auto rounded-[14px] bg-[color-mix(in_srgb,var(--og-surface-2)_92%,transparent)] text-center backdrop-blur-xl"
+        >
+          <div className="px-4 pt-5 pb-[18px]">
+            <div className="text-[17px] leading-snug font-semibold">{title}</div>
+            {message && <div className="mt-1 text-[13px] leading-snug text-fg">{message}</div>}
             {children}
           </div>
-          {actions.map((a, i) => (
-            <button
-              key={i}
-              type="button"
-              disabled={a.disabled}
-              onClick={a.onClick}
-              className={cx(
-                'flex h-[46px] w-full items-center justify-center border-t border-line-strong px-3 text-[17px] active:bg-key-fn disabled:opacity-35',
-                a.kind === 'danger' ? 'font-semibold text-danger' : 'text-accent',
-                a.kind === 'bold' && 'font-bold',
-              )}
-            >
-              {a.label}
-            </button>
-          ))}
+          <div className={cx('border-t border-line-strong', row && 'grid grid-cols-2')}>
+            {shown.map((a, i) => (
+              <button
+                key={i}
+                type="button"
+                disabled={a.disabled}
+                onClick={a.onClick}
+                className={cx(
+                  'flex min-h-11 w-full items-center justify-center px-3 py-2.5 text-[17px] leading-tight active:bg-key-fn disabled:opacity-35',
+                  row ? i > 0 && 'border-l border-line-strong' : i > 0 && 'border-t border-line-strong',
+                  a.kind === 'danger' ? 'text-danger' : 'text-accent',
+                  a.kind === 'bold' && 'font-semibold',
+                )}
+              >
+                {a.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </Portal>

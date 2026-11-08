@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Units } from '../db/types';
-import { BAR_OPTIONS, barIdFor, loadPlates, PLATES, plateCounts, plateShape, plateTotal, removeAt, sum } from '../lib/plates';
+import { BAR_OPTIONS, barIdFor, canAddPlate, loadPlates, MAX_PLATES_PER_SIDE, PLATES, plateCounts, plateShape, plateTotal, removeAt, sum } from '../lib/plates';
 import { formatNumber } from '../lib/units';
 import { KEYPAD_GRID_HEIGHT } from './Keypad';
 import { Sheet } from './overlays';
@@ -9,8 +9,8 @@ import { Button, cx, Radio } from './ui';
 /**
  * A3–A4: the plate pad. Bar drawing on the left (the right half of a barbell, like
  * the logo), the total and the six plate buttons on the right, Undo / Clear / Done
- * below. A button adds that plate to each side; tapping a plate on the drawing
- * takes it off. Same height as the number keypad. Values are in the display unit.
+ * below. A button adds that plate to each side (up to ten a side); tapping a
+ * plate on the drawing takes it off. Same height as the number keypad. Values are in the display unit.
  */
 export function PlatePad({
   units,
@@ -31,6 +31,10 @@ export function PlatePad({
   const counts = plateCounts(stack);
   const total = plateTotal(bar, stack);
   const newest = stack[stack.length - 1];
+  const full = !canAddPlate(stack);
+  const add = (p: number) => {
+    if (!full) change([...stack, p]);
+  };
 
   const change = (next: number[]) => {
     setHistory((h) => [...h, stack]);
@@ -57,7 +61,9 @@ export function PlatePad({
               <b className="text-[26px] leading-none font-bold tracking-[-0.01em]">{formatNumber(total, 2)}</b>
               <small className="ml-0.5 text-[12px] font-semibold text-fg2">{units}</small>
             </span>
-            <span className="flex-none text-[12px] text-fg2">{formatNumber(sum(stack), 2)} / side</span>
+            <span className={cx('flex-none text-[12px]', full ? 'font-semibold text-warn' : 'text-fg2')}>
+              {full ? `Max ${MAX_PLATES_PER_SIDE} / side` : `${formatNumber(sum(stack), 2)} / side`}
+            </span>
           </div>
           <div className="grid flex-1 grid-cols-2 grid-rows-3 gap-[5px]">
             {plates.map((p) => {
@@ -67,18 +73,20 @@ export function PlatePad({
                   key={p}
                   type="button"
                   aria-label={`Add ${formatNumber(p, 2)} ${units} to each side${n ? `, ${n} loaded` : ''}`}
+                  aria-disabled={full}
                   onPointerDown={(e) => {
                     e.preventDefault();
-                    change([...stack, p]);
+                    add(p);
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      change([...stack, p]);
+                      add(p);
                     }
                   }}
                   className={cx(
-                    'flex items-center justify-between rounded-[10px] bg-key px-2.5 leading-none transition-[filter] active:brightness-125',
+                    'flex items-center justify-between rounded-[10px] bg-key px-2.5 leading-none transition-[filter]',
+                    full ? 'opacity-35' : 'active:brightness-125',
                     n > 0 && 'ring-[1.5px] ring-fg3 ring-inset',
                   )}
                 >

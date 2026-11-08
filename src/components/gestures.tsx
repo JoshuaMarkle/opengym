@@ -60,6 +60,7 @@ export function SwipeRow({
   onLongPress,
   className = '',
   disabled = false,
+  rounded = true,
 }: {
   children: ReactNode;
   left?: { label: ReactNode; onTrigger: () => void };
@@ -67,6 +68,8 @@ export function SwipeRow({
   onLongPress?: (rect: DOMRect) => void;
   className?: string;
   disabled?: boolean;
+  /** Off for full-width list rows with hairlines. */
+  rounded?: boolean;
 }) {
   const [dx, setDx] = useState(0);
   const [animating, setAnimating] = useState(false);
@@ -154,7 +157,7 @@ export function SwipeRow({
   const armed = Math.abs(dx) >= SWIPE_TRIGGER;
 
   return (
-    <div ref={elRef} className={cx('relative overflow-hidden rounded-[9px]', className)}>
+    <div ref={elRef} className={cx('relative overflow-hidden', rounded && 'rounded-[9px]', className)}>
       {dx > 0 && right && (
         <div className={cx('absolute inset-0 flex items-center pl-4 text-[14px] font-bold text-white transition-colors', armed ? 'bg-[#4a4a4a]' : 'bg-[#2e2e2e]')}>
           {right.label}

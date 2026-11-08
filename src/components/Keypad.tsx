@@ -13,10 +13,10 @@ export interface KeypadTab {
  * bottom-left key (− sign, – range or : for time), 0 and the decimal point.
  * Right column: close · + step · − step · backspace.
  *
- * Header: on the left either the 123 | Plates mode tabs or a label ("Set 3 · Reps");
- * on the right the field tabs (lbs | reps, or the cardio columns) and one blue
- * icon button, the size of a field tab: → Next on any box but the last in the row,
- * ✓ Done on the last one.
+ * Header: on the left either the 123 | Plates mode tabs (with the bar picker beside
+ * them on Plates) or a label ("Set 3 · Reps"); on the right the field tabs (lbs |
+ * reps, or the cardio columns) and one blue icon button, the size of a field tab:
+ * → Next on any box but the last in the row, ✓ Done on the last one.
  * Same spot, so the thumb never moves. `panel` swaps the grid for the plate pad.
  */
 export function Keypad({
@@ -24,7 +24,6 @@ export function Keypad({
   tabs,
   tab,
   onTab,
-  right,
   next,
   bottomLeft,
   decimal = true,
@@ -37,8 +36,6 @@ export function Keypad({
   tabs?: KeypadTab[];
   tab?: string;
   onTab?: (id: string) => void;
-  /** Replaces the field tabs and Next (the plate pad's bar picker). */
-  right?: ReactNode;
   next?: { done: boolean; onPress: () => void };
   bottomLeft: { key: 'minus' | 'dash' | 'colon'; enabled: boolean };
   decimal?: boolean;
@@ -58,33 +55,31 @@ export function Keypad({
     <div className="no-select flex-none border-t border-line-strong bg-kp px-2 pt-1.5 pb-[max(8px,env(safe-area-inset-bottom))]" role="group" aria-label="Keypad" data-dock>
       <div className="flex min-h-11 items-center justify-between gap-2 pb-1.5 pl-1.5">
         <div className="min-w-0 truncate text-[13px] font-semibold text-fg2">{left}</div>
-        {right ?? (
-          <div className="flex flex-none items-center gap-1.5">
-            {tabs && tabs.length > 1 && onTab && <FieldTabs tabs={tabs} value={tab} onChange={onTab} />}
-            {next && (
-              <button
-                type="button"
-                aria-label={next.done ? 'Done: complete the set and go to the next one' : 'Next box'}
-                onPointerDown={(e) => {
+        <div className="flex flex-none items-center gap-1.5">
+          {tabs && tabs.length > 1 && onTab && <FieldTabs tabs={tabs} value={tab} onChange={onTab} />}
+          {next && (
+            <button
+              type="button"
+              aria-label={next.done ? 'Done: complete the set and go to the next one' : 'Next box'}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                next.onPress();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
                   next.onPress();
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    next.onPress();
-                  }
-                }}
-                className="flex h-11 min-w-11 items-center justify-center active:opacity-80"
-              >
-                {/* Drawn the size of a selected field tab; the button around it keeps the 44 px target. */}
-                <span className="flex h-[28px] items-center rounded-[7px] bg-accent px-2.5 text-white">
-                  {next.done ? <CheckGlyph size={14} /> : <ArrowGlyph size={14} />}
-                </span>
-              </button>
-            )}
-          </div>
-        )}
+                }
+              }}
+              className="flex h-11 min-w-11 items-center justify-center active:opacity-80"
+            >
+              {/* Drawn the size of a selected field tab; the button around it keeps the 44 px target. */}
+              <span className="flex h-[28px] items-center rounded-[7px] bg-accent px-2.5 text-white">
+                {next.done ? <CheckGlyph size={14} /> : <ArrowGlyph size={14} />}
+              </span>
+            </button>
+          )}
+        </div>
       </div>
       {panel ?? (
         <div className="grid grid-cols-[1fr_1fr_1fr_72px] gap-1.5">
@@ -148,6 +143,24 @@ export function ModeTabs({ value, onChange }: { value: 'numbers' | 'plates'; onC
       tone="neutral"
       label="Keypad mode"
     />
+  );
+}
+
+/** "Bar 45 ▾" beside the mode tabs on Plates (A3, A5). Drawn like a pill; 44 px tall to tap. */
+export function BarChip({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label={`${label}. Choose the bar`}
+      // A click, not pointerdown: it opens a sheet, and the tap must not land on its scrim.
+      onClick={onPress}
+      className="flex h-11 flex-none items-center active:opacity-70"
+    >
+      <span className="flex h-[32px] items-center gap-1 rounded-[9px] bg-surface px-2.5 text-[13px] font-semibold whitespace-nowrap text-fg">
+        {label}
+        <ChevronDown size={9} />
+      </span>
+    </button>
   );
 }
 

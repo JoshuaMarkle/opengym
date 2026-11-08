@@ -184,10 +184,10 @@ export const SEED_EXERCISES: SeedExercise[] = [
   { name: 'Turkish Get-up', muscle: 'other', equipment: 'other' },
 
   // ── Cardio presets (C6): ordinary cardio exercises with their columns picked
-  { name: 'Treadmill', muscle: 'other', equipment: 'machine', type: 'cardio', cardio: ['distance', 'avgSpeed'], isRun: true },
+  { name: 'Treadmill', muscle: 'other', equipment: 'machine', type: 'cardio', cardio: ['distance', 'pace'], isRun: true },
   { name: 'Bike', muscle: 'other', equipment: 'machine', type: 'cardio', cardio: ['distance', 'level'] },
   { name: 'Rower', muscle: 'other', equipment: 'machine', type: 'cardio', cardio: ['distance', 'split500'], distanceUnit: 'm' },
-  { name: 'Stair Climber', muscle: 'other', equipment: 'machine', type: 'cardio', cardio: ['speed', 'level'] },
+  { name: 'Stair Climber', muscle: 'other', equipment: 'machine', type: 'cardio', cardio: ['steps'] },
   { name: 'Elliptical', muscle: 'other', equipment: 'machine', type: 'cardio', cardio: ['distance', 'level'] },
   { name: 'Run / Walk Outside', muscle: 'other', equipment: 'other', type: 'cardio', cardio: ['distance', 'pace'], isRun: true },
   { name: 'Jump Rope', muscle: 'other', equipment: 'other', type: 'cardio', cardio: [] },

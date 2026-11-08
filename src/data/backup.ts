@@ -225,13 +225,14 @@ export async function exportCsv(): Promise<File> {
           s.incline ?? '',
           s.level ?? '',
           s.calories ?? '',
+          s.steps ?? '',
           we.supersetGroup ?? '',
         ]);
       }
     }
   }
   const csv = toCsv(
-    ['Workout', 'Start', 'End', 'Exercise', 'Set Type', 'Set', `Weight (${units})`, 'Reps', 'Seconds', 'Distance (m)', 'Speed (km/h)', 'Incline (%)', 'Level', 'Calories', 'Superset'],
+    ['Workout', 'Start', 'End', 'Exercise', 'Set Type', 'Set', `Weight (${units})`, 'Reps', 'Seconds', 'Distance (m)', 'Speed (km/h)', 'Incline (%)', 'Level', 'Calories', 'Steps', 'Superset'],
     rows,
   );
   return new File([csv], `opengym-workouts-${isoDate(Date.now())}.csv`, { type: 'text/csv' });

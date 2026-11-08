@@ -9,7 +9,7 @@ export type ExerciseType = 'weight' | 'bodyweight' | 'bodyweight_plus' | 'assist
  * Cardio columns besides time (SPEC §10). Up to two per exercise. `split500`,
  * `pace` and `avgSpeed` are worked out from time and distance, never typed.
  */
-export type CardioColumn = 'distance' | 'speed' | 'incline' | 'level' | 'calories' | 'split500' | 'pace' | 'avgSpeed';
+export type CardioColumn = 'distance' | 'speed' | 'incline' | 'level' | 'calories' | 'steps' | 'split500' | 'pace' | 'avgSpeed';
 /** How a cardio exercise's distance is shown: follow the units setting (mi / km), or meters (rowers). */
 export type DistanceUnit = 'auto' | 'm';
 export type Muscle = 'chest' | 'back' | 'legs' | 'shoulders' | 'arms' | 'core' | 'other';
@@ -159,6 +159,8 @@ export interface WorkoutSet extends BaseRecord {
   incline?: number;
   level?: number;
   calories?: number;
+  /** stair climber steps */
+  steps?: number;
 }
 
 export type Units = 'lb' | 'kg';

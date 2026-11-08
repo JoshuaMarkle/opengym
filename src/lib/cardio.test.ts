@@ -188,3 +188,28 @@ describe('isEmptySet', () => {
     expect(isEmptySet({ reps: 0 })).toBe(true);
   });
 });
+
+describe('stair climber steps', () => {
+  const stairs = { cardioColumns: ['steps'] as const };
+  it('is a typed box with a STEPS header', () => {
+    expect(cardioFields(stairs)).toEqual(['time', 'steps']);
+    expect(columnHeader('steps', stairs, 'lb')).toBe('STEPS');
+    expect(columnsLabel(stairs, 'lb')).toBe('time · steps');
+  });
+  it('stores whole steps and shows thousands commas', () => {
+    const v = parseFieldText('steps', '1450', stairs, 'kg')!;
+    expect(v).toBe(1450);
+    expect(formatField('steps', v, stairs, 'kg')).toBe('1,450');
+  });
+  it('adds up in Σ and the summary line', () => {
+    const t = cardioTotals([
+      { durationSec: 600, steps: 700 },
+      { durationSec: 600, steps: 750 },
+    ]);
+    expect(totalText('steps', t, stairs, 'lb')).toBe('1,450');
+    expect(cardioSummary([{ durationSec: 1200, steps: 1450 }], stairs, 'lb')).toBe('20:00 · 1,450 steps');
+  });
+  it('a segment with only steps is not empty', () => {
+    expect(isEmptySet({ steps: 300 })).toBe(false);
+  });
+});

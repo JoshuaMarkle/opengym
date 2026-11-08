@@ -80,7 +80,7 @@ Variations: exercises sharing a `variationGroupId` are variations of each other 
 
 ## 5. Navigation
 
-Tab bar: **Home · Plans · History · Progress · Settings**. Inside a workout there is no tab bar. The bottom nav is Prev / Next exercise. When there is no Prev or Next, that button becomes "All exercises" (4.11). All exercises (4.12–4.13) replaces everything under the workout header, so the header and Finish stay on screen; Close returns to the exercise. The chart button next to "•••" opens the History / Charts / Records sheet (4.8–4.10).
+Tab bar: **Home · Plans · History · Progress · Settings**. Inside a workout there is no tab bar. The bottom nav is Prev / Next exercise. When there is no Prev or Next, that button becomes "All exercises" (4.11). All exercises (4.12–4.13) replaces everything under the workout header, so the header and Finish stay on screen; Close returns to the exercise. Swiping an exercise row left removes it (same as Edit → −): logged sets ask first, otherwise there's a 5 s Undo. The Prev / Next buttons are always grey. The chart button next to "•••" opens the History / Charts / Records sheet (4.8–4.10).
 
 ## 6. Screens (see `storyboards/complete.html`)
 
@@ -119,7 +119,7 @@ See the "Design principles" section at the bottom of `storyboards/complete.html`
 - **Meaning colors.** Accent `#2E8BFF` (actions, done) · Tip `#2EE66B` (up, records, live) · Warning `#FF8C1A` (drops, backup due) · Caution `#FF3B3B` (delete, down).
 - **Type.** System font with tabular numbers. Sizes: 34/28 titles, 22/20 exercise names, 17/15 rows, 12–13 meta, 10 caps labels.
 - **Layout.** Flat rows with hairline dividers, no cards, no shadows. 16 px edges, 8 px grid, 44 px minimum tap target.
-- **Top bar.** Cancel/Back on the left, Save/Done on the right. Sheets are for options; alerts are only for confirming data loss.
+- **Top bar.** Cancel/Back on the left, Save/Done on the right. Sheets are for options; alerts are only for confirming data loss. Alerts look like iOS alerts: centered, 270 wide, hairline-separated buttons, two short actions side by side (the way out on the left).
 - **Gestures** are shortcuts only. Everything they do must also be reachable from a visible control.
 
 - **Logo.** `brand/logos/opengym-logo-dark.svg` (light version alongside): a thick grey bar running off the left edge, a collar, then two equal 45s (the second centered) and a smaller plate, all plates blue (#2E8BFF), short overhang on the right, on black.
@@ -141,33 +141,33 @@ Resolved for §10:
 Screens: `optional/final-features.html`. It supersedes `optional/optional-features.html`, `optional/plate-pad-and-supersets.html` and `optional/cardio.html`. Gym profiles, intervals, in-app cardio timers, the warm-up ramp and routine sharing are **not** planned.
 
 **Keypad header (A1–A2).** Applies to the core keypad too:
-- Left: `123 | Plates` mode tabs. On a reps box this becomes a label instead, because plates only apply to weight.
-- Right: field tabs (`lbs | reps`, or the cardio columns), then **one** blue button. On any box except the last in the row it reads **→ Next** and moves to the next box. On the last box it reads **✓ Done**, which completes the set and jumps to the next set's first box. Same position, so the thumb never moves.
+- Left: `123 | Plates` mode tabs, with the "Bar 45 ▾" picker beside them on Plates. On a reps box this becomes a label instead, because plates only apply to weight.
+- Right: field tabs (`lbs | reps`, or the cardio columns), then **one** blue button, on Plates too. On any box except the last in the row it reads **→ Next** and moves to the next box. On the last box it reads **✓ Done**, which completes the set and jumps to the next set's first box. Same position, so the thumb never moves.
 
 **Plate pad (A3–A5).**
 - The bar drawing is on the left, showing the right half of a barbell like the logo. The total and "x per side" sit top right, with a 2 × 3 grid of plate buttons (45 / 35 / 25 / 10 / 5 / 2.5) below. Each button shows how many are loaded per side. Bottom row: Undo / Clear / Done.
-- Tapping a plate button adds that plate to **each** side. Tapping a plate on the drawing removes it. Total = bar + 2 × plates.
+- Tapping a plate button adds that plate to **each** side, up to **10 plates a side** (then the buttons dim and "Max 10 / side" shows). Tapping a plate on the drawing removes it. Total = bar + 2 × plates.
 - When the stack doesn't fit, it slides left and a ‹ hint appears, so the outermost plates always stay visible.
-- "Bar 45 lb ▾" picks Barbell 45 / Light 35 / EZ 25 / Trap 60 / Custom / No bar (machine). The choice is remembered per exercise.
+- "Bar 45 ▾" picks Barbell 45 / Light 35 / EZ 25 / Trap 60 / Custom / No bar (machine). The choice is remembered per exercise.
 - The panel is the same height as the number keypad.
 
 **Supersets (B1–B6).**
 - Data: add `RoutineExercise.supersetGroup` and `WorkoutExercise.supersetGroup` (a letter). Exercises sharing a group are a superset.
 - Create one with "•••" → "Superset with…", or by dragging an exercise into the bracket. Unlink the same way.
-- Logging: the group shares one screen with tags A1 / A2. After ✓ the app jumps to the same set number of the partner exercise; finished partners fold into one line. If set counts differ, the extra sets just continue on their own.
+- Logging: the group shares one screen with tags A1 / A2. After ✓ the app jumps to the same set number of the partner exercise (no banner); finished partners fold into one line, and a finished exercise's tag turns into ✓. If set counts differ, the extra sets just continue on their own.
 - Everywhere else (exercise list, routine screen, history) the group shows as one blue bracket and moves as one block.
 
 **Cardio (C1–C6, D1–D4).**
-- New exercise type `cardio`. Data: `Exercise.cardioColumns`, which is `time` plus up to 2 of `distance | speed | incline | level | calories | split500 | pace | avgSpeed`. Split, pace and average speed are calculated from time and distance, never entered. `Exercise.distanceUnit` is `auto` (mi / km by units) or `m`; `Exercise.isRun` marks runs for distance records. Stored values are SI: seconds, meters, km/h. `WorkoutSet` gets the fields `durationSec`, `distance`, `speed`, `incline`, `level` and `calories`.
+- New exercise type `cardio`. Data: `Exercise.cardioColumns`, which is `time` plus up to 2 of `distance | speed | incline | level | calories | steps | split500 | pace | avgSpeed`. Split, pace and average speed are calculated from time and distance, never entered. `Exercise.distanceUnit` is `auto` (mi / km by units) or `m`; `Exercise.isRun` marks runs for distance records. Stored values are SI: seconds, meters, km/h. `WorkoutSet` gets the fields `durationSec`, `distance`, `speed`, `incline`, `level`, `calories` and `steps`.
 - Logging uses the set table with no Previous column. Columns: `# | TIME | col2 | col3 | ✓`. Last session appears as one line under the exercise name. Empty boxes show last time's values in grey, and ✓ accepts them. Rows are "segments" (the button is "+ Segment"). A Σ row (total time and distance, average speed) appears **only with 2 or more segments**, both while logging and in History.
 - Keypad: the field tabs follow the exercise's columns. In time mode, ":" is the bottom-left key and ± steps by 1 minute.
-- Presets: Treadmill (time · mi · mph, the mph worked out from distance ÷ time), Bike (time · mi · level), Rower (time · m · /500m), Stair climber (time · mph · level), Elliptical, Run/walk outside, Jump rope (time only), Generic (time only). They're found under a "Cardio" filter in the normal picker.
+- Presets: Treadmill (time · mi · /mi pace, worked out from time ÷ distance, like Run/walk outside), Bike (time · mi · level), Rower (time · m · /500m), Stair climber (time · steps), Elliptical, Run/walk outside, Jump rope (time only), Generic (time only). They're found under a "Cardio" filter in the normal picker.
 - Finish summary: cardio gets its own small section listing what you did, plus a "Cardio this week: X min · Y mi" line. There's no faster/slower comparison, and it does **not** count toward "Stronger on X of Y". Cardio minutes are added to the stats row.
 - Progress tracks **amount, not speed**. A Lifts / Cardio switch at the top. The cardio graph shows Minutes / Miles / Sessions per week with ranges **4W · 3M · 6M · 1Y · All**, hiding any range there isn't enough history for. A dashed line shows the average. Per-machine rows show totals (time, distance, sessions) for the range. Machine detail shows the same weekly chart for one machine plus recent sessions. There are no speed charts and no "best" per machine.
 - Distance records (opened from "Records ›"): fastest **1 mile, 5K, 10K, half marathon and marathon**. They come from run-type exercises (outside or treadmill) where one segment covered at least that distance, with the time scaled to the exact distance. Distances not reached yet show "—", plus your longest so far.
 - History: cardio is shown as a mini table with the same columns plus a Σ row.
 - Cardio is excluded from est. 1RM, records and lift stats.
-- Backups carry schema version 2 (cardio fields, superset groups); version 1 backups still restore. CSV export adds Seconds, Distance (m), Speed (km/h), Incline, Level, Calories and Superset columns.
+- Backups carry schema version 2 (cardio fields, superset groups); version 1 backups still restore. CSV export adds Seconds, Distance (m), Speed (km/h), Incline, Level, Calories, Steps and Superset columns.
 
 ## 11. Plan schedules
 

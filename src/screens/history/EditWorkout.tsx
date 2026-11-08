@@ -73,6 +73,7 @@ export function EditWorkout() {
               ...(s.incline != null && { incline: s.incline }),
               ...(s.level != null && { level: s.level }),
               ...(s.calories != null && { calories: s.calories }),
+              ...(s.steps != null && { steps: s.steps }),
             })),
           })),
         }

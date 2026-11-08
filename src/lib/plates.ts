@@ -48,6 +48,17 @@ export function hasPlatePad(type: ExerciseType, equipment: Equipment): boolean {
   return type === 'weight' && (equipment === 'barbell' || equipment === 'machine');
 }
 
+/** Most plates the pad loads on one side. Past this the plate buttons turn off. */
+export const MAX_PLATES_PER_SIDE = 10;
+
+/** Room for one more plate on each side? */
+export const canAddPlate = (stack: number[]) => stack.length < MAX_PLATES_PER_SIDE;
+
+/** Short bar label for the keypad header: "Bar 45", "No bar". The unit is on the lbs / kg tab beside it. */
+export function barShortLabel(weight: number): string {
+  return weight > 0 ? `Bar ${formatNumber(weight, 2)}` : 'No bar';
+}
+
 export const sum = (stack: number[]) => stack.reduce((a, b) => a + b, 0);
 
 export function plateTotal(bar: number, stack: number[]): number {
