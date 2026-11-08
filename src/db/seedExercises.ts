@@ -204,3 +204,22 @@ export function slugify(name: string): string {
 }
 
 export const seedExerciseId = (name: string) => `ex-${slugify(name)}`;
+
+/**
+ * Compound lifts in the built-in library (training-logic §14): they set each lift's
+ * pace prior, and the default focus lifts come from them. Everything else is isolation;
+ * custom exercises count as "DB / machine compound".
+ */
+export const COMPOUND_NAMES = [
+  'Bench Press', 'Incline Bench Press', 'DB Bench Press', 'Decline Bench Press', 'Smith Machine Bench Press', 'Incline DB Press', 'Incline Machine Press',
+  'Smith Machine Incline Press', 'Decline DB Press', 'Machine Chest Press', 'Floor Press', 'Push-up', 'Weighted Push-up', 'Dips', 'Assisted Dips',
+  'Deadlift', 'Sumo Deadlift', 'Trap Bar Deadlift', 'Deficit Deadlift', 'Rack Pull', 'Pull-up', 'Weighted Pull-up', 'Assisted Pull-up', 'Chin-up',
+  'Weighted Chin-up', 'Lat Pulldown', 'Close-Grip Lat Pulldown', 'Single-Arm Lat Pulldown', 'Barbell Row', 'Pendlay Row', 'DB Row', 'T-Bar Row',
+  'Chest-Supported Row', 'Seated Cable Row', 'Machine Row', 'Single-Arm Cable Row', 'Inverted Row', 'Good Morning', 'Meadows Row', 'Squat', 'Front Squat',
+  'Safety Bar Squat', 'Pause Squat', 'Box Squat', 'Goblet Squat', 'Hack Squat', 'Smith Machine Squat', 'Pendulum Squat', 'Belt Squat', 'Leg Press',
+  'Single-Leg Press', 'Romanian Deadlift', 'DB Romanian Deadlift', 'Stiff-Leg Deadlift', 'Single-Leg RDL', 'Bulgarian Split Squat', 'Split Squat',
+  'Walking Lunge', 'Reverse Lunge', 'Barbell Lunge', 'Step-up', 'Hip Thrust', 'Machine Hip Thrust', 'Pistol Squat', 'Overhead Press', 'DB Shoulder Press',
+  'Machine Shoulder Press', 'Seated Barbell Press', 'Smith Machine Shoulder Press', 'Push Press', 'Arnold Press', 'Landmine Press', 'Handstand Push-up',
+  'Close-Grip Bench Press', 'JM Press', 'Power Clean', 'Hang Clean', 'Clean and Jerk', 'Snatch', 'Thruster',
+];
+export const COMPOUND_IDS = new Set(COMPOUND_NAMES.map(seedExerciseId));

@@ -31,11 +31,13 @@ export const CATALOG: Section[] = [
   {
     n: 1,
     title: 'First launch',
-    blurb: 'Seen once: what the app is, how to install it, three settings.',
+    blurb: 'Seen once: what the app is, how to install it, three short setup steps.',
     screens: [
       ['1.1', 'Welcome', 'First launch only. The second button goes straight to restore or import (9.4, 9.5).'],
       ['1.2', 'Install guide', 'Only when opened in a browser tab, not from the Home Screen. Installed, iOS is far less likely to clear the data.'],
-      ['1.3', 'Setup', 'Units, week start and theme. Defaults: lbs, Sunday, Dark.'],
+      ['1.3', 'Setup', 'Step 1 of 3: units, week start and theme. Defaults: lbs, Sunday, Dark.'],
+      ['1.5', 'Setup: effort target', 'How close to failure to train. The fit zone picks weights that land each set here. "Close to failure" (RIR 0–2) is pre-selected.'],
+      ['1.6', 'Setup: experience', 'Sets each lift\'s starting pace until about 8 weeks of your own log take over. An import counts fully.'],
       ['1.4', 'Home, empty', 'Before any routines exist. Both buttons work immediately.'],
     ],
   },
@@ -78,6 +80,7 @@ export const CATALOG: Section[] = [
       ['3.3', 'Resume bar', 'On every other tab while a workout runs, one tap back to your sets.'],
       ['3.4', 'Home, scheduled', 'With a scheduled active folder, Home follows the plan: today, then the next few days, rest days collapsed.'],
       ['3.5', 'Missed a day', 'A quiet note the day after a missed workout: do it today or skip it. Never shown for "Wait for me" cycles.'],
+      ['3.6', 'Home: Lately', 'At most one goal line and one trend line, only when something changed, each shown on one day. Priority: goal done, goal behind, a focus lift turning Climbing or Slipping, a milestone ready.'],
     ],
   },
   {
@@ -110,6 +113,13 @@ export const CATALOG: Section[] = [
       ['4.23', 'Cardio: bike', 'Columns change per machine: Bike tracks level. One segment, so no Σ row.'],
       ['4.24', 'Cardio: rower', 'Split /500m is worked out from time and meters, never typed.'],
       ['4.25', 'Effort pad: RPE', 'With effort on, a reps box\'s tabs read lbs · reps · rpe. The effort pad takes the number keys\' place: Easy to Max, ½ for half steps. With "Ask on every set", Next on reps comes here before ✓ Done. The outlined badge is the routine\'s target.'],
+      ['4.27', 'Suggestion bar', 'Suggest mode. Each set is judged on its own fit zone; set 1 leads, later sets share its weight when it still fits and are never heavier. Green ▲ for up or keep, orange ▼ for down. ✓ fills LBS; reps are never touched. Green "try" hints sit under Previous.'],
+      ['4.28', 'Why: sets', 'Each set\'s zone (the weights that land it in the rep range at the effort target), its aim, and the last 3 sessions\' calls.'],
+      ['4.29', 'Why: recent weeks', 'Est. 1RM for 6 weeks and set 1\'s reps against the range.'],
+      ['4.30', 'Suggestion accepted', 'The LBS boxes now hold the next weights, the hints turn into "aim" reps, and Undo puts the old values back.'],
+      ['4.31', 'Auto', 'Auto fills LBS when the exercise comes up, in blue until you change one. Ignore puts last time\'s weights back.'],
+      ['4.32', 'Back after a break?', 'After 3+ weeks without a lift: a break, or sessions that weren\'t logged? Nothing changes until you pick.'],
+      ['4.33', 'Comeback ramp', '"I took a break": about 90% of last time (80% after 6 weeks), then back to the old weight over 3 sessions. Those sessions stay out of the trend.'],
       ['4.26', 'Effort pad: RIR', 'The same pad in RIR. Badges get an R (2R), and Previous shows last time\'s effort under the set. Stored once as RPE, so switching modes never loses data.'],
     ],
   },
@@ -122,6 +132,7 @@ export const CATALOG: Section[] = [
       ['5.2', 'Update the routine?', 'Only when exercises, order or set counts changed. Weights and reps never count.'],
       ['5.3', 'Summary', 'Each lift\'s best set vs the last time you did this routine. Cardio gets its own section and a weekly total.'],
       ['5.4', 'Workout options', 'Tap the workout name: rename, change start time, discard (confirms first).'],
+      ['5.5', 'Goal reached', 'Shown once, on the summary of the workout that hit a goal, with a Likely and a Stretch next step. "Not now" leaves the lift without a goal.'],
     ],
   },
   {
@@ -144,16 +155,24 @@ export const CATALOG: Section[] = [
     title: 'Progress',
     blurb: 'Am I getting stronger?',
     screens: [
-      ['7.1', 'Progress', 'Each pinned lift: est. 1RM, trend and change over the range.'],
+      ['7.1', 'Progress', 'Focus lifts first, then every other lift logged in the last 8 weeks (Train everything). Each gets a status from the last 8 weeks against its own pace, so one bad day never counts.'],
       ['7.2', 'Lift: est. 1RM', 'Epley from the best working set per session (no warm-ups, drops, or sets over 12 reps). White dots = new all-time highs.'],
       ['7.3', 'Lift: top set', 'The weight actually lifted, reps on each point.'],
       ['7.4', 'Lift: records', 'Best weight at each rep count, with dates. Blue = last 30 days.'],
-      ['7.5', 'Pinned lifts', 'Which lifts Progress shows, in order.'],
+      ['7.5', 'Focus lifts', 'Up to 5 lifts that go first and get the Home lines; by default the 4 most-logged compound lifts. Train everything off: only these get statuses, milestones and goals.'],
       ['7.6', 'Progress, empty', 'Until an exercise has two sessions.'],
       ['7.7', 'Cardio', 'How much, not how fast: minutes, miles or sessions per week. Ranges hide without enough history.'],
       ['7.8', 'Machine detail', 'The weekly chart for one machine, then recent sessions.'],
       ['7.9', 'Distance records', 'Fastest mile, 5K, 10K, half and full marathon from run-type exercises.'],
       ['7.10', 'Effort-adjusted 1RM', 'With "Use effort in est. 1RM", 155 × 10 @8 counts as 12 reps to failure. "Same weight, easier" appears when a weight × reps you did in the last 8 weeks now rates lower.'],
+      ['7.12', 'Goals', 'Each goal with its state. Without a date it shows an estimate, or "not moving toward it yet" rather than a date that keeps sliding.'],
+      ['7.13', 'Lift trend', 'From the trend row on a lift. The status, the 8-week line, pace, milestones (the round numbers lifters count in) and its goal.'],
+      ['7.14', 'Slipping', 'A real drop with most recent sessions under the trend. "What changed" lists facts from the log only: how often, how many sets, gaps.'],
+      ['7.15', 'Month in review', 'Leads Progress for the first week of each month, then under Month in review. Counts, one best moment, every lift against the month before.'],
+      ['7.16', 'New goal', 'Weight × reps, converted to an est. 1RM so every set counts. Each date shows its verdict; the projection is a curve with a slow–fast band, and redraws as you pick.'],
+      ['7.17', 'New goal, messy data', 'When recent sessions don\'t line up there\'s no projection. You pick a pace instead, read against this lift\'s own: slow, typical, focused or rare.'],
+      ['7.18', 'Goal', 'The white tick is where steady gains would put you today. "This week" is a small number to beat; the plan points back to the workout suggestions.'],
+      ['7.19', 'Goal behind', 'After 2 weeks behind and no longer Likely: a later date, a lighter target, or keep it. Plain, never scolding.'],
       ['7.11', 'History with effort', 'Each set is one unbreakable block (155 × 10 @8). A line that runs out of room wraps the whole block and never ends on a dot.'],
     ],
   },
@@ -182,6 +201,9 @@ export const CATALOG: Section[] = [
       ['9.5', 'Import from Strong / Hevy', 'Their CSV export, matched to the library. Unsure matches are flagged orange.'],
       ['9.6', 'Delete all data', 'The only irreversible action, so it needs typing DELETE.'],
       ['9.7', 'Effort', 'Off by default. RPE or RIR, which sets Next on reps asks on, and whether est. 1RM counts reps in reserve. Warm-ups, drops and cardio never ask.'],
+      ['9.9', 'Training', 'Every training option on one screen. Step size, matching and pace are worked out from the log, never asked.'],
+      ['9.10', 'Training phase', 'Maintaining makes holding count as a win and keeps topped-out sets at their weight; Coming back ramps every lift. Ends on a date and falls back to Building.'],
+      ['9.11', 'Effort target', 'The setup question, editable later. "Only the last set to failure" gives earlier sets one more rep in reserve.'],
       ['9.8', 'RPE and RIR', 'Opened from Settings › Effort, and the first time effort is turned on. Both terms, then one table mapping RPE, RIR and how a set feels.'],
     ],
   },
@@ -205,13 +227,18 @@ type Scene = { server: 'sample' | 'empty'; ids: string[]; run: (c: Ctx) => Promi
 const SCENES: Scene[] = [];
 const scene = (server: Scene['server'], ids: string, run: Scene['run']) => SCENES.push({ server, ids: ids.split(' '), run });
 
-scene('empty', '1.1 1.2 1.3 1.4 6.8 7.6', async ({ p, go, shot }) => {
+scene('empty', '1.1 1.2 1.3 1.5 1.6 1.4 6.8 7.6', async ({ p, go, shot }) => {
   await go('/welcome');
   await shot('1.1');
   await p.click('Get started');
   await shot('1.2');
   await p.click('Continue in');
   await shot('1.3');
+  await p.click('Continue');
+  await shot('1.5');
+  await p.click('Continue');
+  await p.click('3+ years');
+  await shot('1.6');
   await p.click('Done');
   await shot('1.4');
   await go('/history');
@@ -564,6 +591,139 @@ scene('sample', '9.8 9.7 2.22 4.25 4.26 7.10 7.11', async ({ p, go, shot, dismis
   await shot('7.10');
   await p.click({ sel: '[role=tab]', text: 'History' });
   await shot('7.11');
+});
+
+// Training (training-logic §9, proposal A1–A9): the bar, hints, Why, Auto, a gap.
+/** Rewrite the newest session of a lift: [weight, reps, rpe] per working set. */
+const setLastSession = (exerciseId: string, sets: [number, number, number][]) => `(async () => {
+  const wes = await __og.db.workoutExercises.where('exerciseId').equals(${JSON.stringify(exerciseId)}).toArray();
+  const ws = await __og.db.workouts.bulkGet(wes.map((w) => w.workoutId));
+  const i = ws.reduce((b, w, k) => (w && (!ws[b] || w.startedAt > ws[b].startedAt) ? k : b), 0);
+  const working = (await __og.db.workoutSets.where('workoutExerciseId').equals(wes[i].id).toArray()).filter((s) => s.kind === 'working').sort((a, b) => a.order - b.order);
+  const next = ${JSON.stringify(sets)};
+  for (let k = 0; k < working.length; k++) await __og.db.workoutSets.update(working[k].id, next[k] ? { weight: next[k][0], reps: next[k][1], rpe: next[k][2] } : { completed: false });
+})()`;
+
+scene('sample', '4.27 4.28 4.29 4.30', async ({ p, go, shot, dismiss }) => {
+  await p.eval(setLastSession('ex-bench-press', [[155, 12, 8], [155, 10, 8.5], [155, 8, 9]]));
+  await go('/');
+  await p.click('Start Push', 1500);
+  await shot('4.27');
+  await p.click('Why');
+  await shot('4.28');
+  await p.click('Recent weeks');
+  await shot('4.29');
+  await dismiss();
+  await p.click('Use ');
+  await shot('4.30');
+});
+
+/** Remove a lift from every workout in the last `days`, so its last session is older (a gap). */
+const dropRecent = (exerciseId: string, days: number) => `(async () => {
+  const since = ${NOW.getTime()} - ${days} * 864e5;
+  for (const we of await __og.db.workoutExercises.where('exerciseId').equals(${JSON.stringify(exerciseId)}).toArray()) {
+    const w = await __og.db.workouts.get(we.workoutId);
+    if (!w || w.startedAt < since) continue;
+    await __og.db.workoutSets.where('workoutExerciseId').equals(we.id).delete();
+    await __og.db.workoutExercises.delete(we.id);
+  }
+})()`;
+
+/** Scale the working weights of a lift's last `n` sessions (to make a slip). */
+const scaleRecent = (exerciseId: string, n: number, factor: number) => `(async () => {
+  const wes = await __og.db.workoutExercises.where('exerciseId').equals(${JSON.stringify(exerciseId)}).toArray();
+  const dated = await Promise.all(wes.map(async (we) => ({ we, at: (await __og.db.workouts.get(we.workoutId))?.startedAt ?? 0 })));
+  dated.sort((a, b) => b.at - a.at);
+  for (const { we } of dated.slice(0, ${n})) {
+    for (const s of await __og.db.workoutSets.where('workoutExerciseId').equals(we.id).toArray()) {
+      if (s.kind === 'working' && s.weight) await __og.db.workoutSets.update(s.id, { weight: Math.round((s.weight * ${factor}) / 5) * 5 });
+    }
+  }
+})()`;
+
+const addGoal = (g: Record<string, unknown>) => `__og.db.goals.add(${JSON.stringify({ id: `goal-${Math.random().toString(36).slice(2)}`, createdAt: NOW.getTime(), updatedAt: NOW.getTime(), startTau: 78, ...g })})`;
+
+scene('sample', '4.31', async ({ p, go, shot }) => {
+  await p.eval(setLastSession('ex-bench-press', [[155, 12, 8], [155, 10, 8.5], [155, 8, 9]]));
+  await p.eval(`__og.db.settings.update('settings', { suggestMode: 'auto' })`);
+  await go('/');
+  await p.click('Start Push', 1500);
+  await shot('4.31');
+});
+
+scene('sample', '4.32 4.33', async ({ p, go, shot }) => {
+  await p.eval(dropRecent('ex-bench-press', 26));
+  await go('/');
+  await p.click('Start Push', 1500);
+  await shot('4.32');
+  await p.click('I took a break');
+  await shot('4.33');
+});
+
+scene('sample', '5.5', async ({ p, go, shot }) => {
+  await p.eval(addGoal({ exerciseId: 'ex-bench-press', weight: 155, reps: 10, by: NOW.getTime() + 21 * 864e5, startE1rm: 215, startedAt: NOW.getTime() - 70 * 864e5, startRate: 1.5 }));
+  await go('/');
+  await p.click('Start Push', 1500);
+  await p.click('Complete set W');
+  await p.click('Complete set 1');
+  await p.click('Finish');
+  await p.click('Drop them and finish');
+  await p.click('Just this time', 1500);
+  await shot('5.5');
+});
+
+scene('sample', '7.13 7.16 7.18 7.17 7.19 7.12 7.14 3.6 7.15', async ({ p, go, shot }) => {
+  await go('/progress/lift/ex-bench-press/trend');
+  await shot('7.13');
+  await go('/progress/goal/new?ex=ex-bench-press');
+  await p.click({ sel: 'input[aria-label="Goal weight"]' });
+  await p.type('245');
+  await p.click({ sel: 'input[aria-label="Goal reps"]' });
+  await p.eval(`document.querySelector('input[aria-label="Goal reps"]').select()`);
+  await p.type('5');
+  await p.eval('document.activeElement?.blur()');
+  await shot('7.16');
+  await p.click('Save', 800);
+  await shot('7.18');
+  await go('/progress/goal/new?ex=ex-preacher-curl');
+  await p.click({ sel: 'input[aria-label="Goal weight"]' });
+  await p.type('100');
+  await p.click({ sel: 'input[aria-label="Goal reps"]' });
+  await p.eval(`document.querySelector('input[aria-label="Goal reps"]').select()`);
+  await p.type('8');
+  await p.eval('document.activeElement?.blur()');
+  await shot('7.17');
+  await p.click('Cancel');
+  // A goal set 10 weeks ago at a pace the lift didn't keep.
+  await p.eval(addGoal({ exerciseId: 'ex-lat-pulldown', weight: 230, reps: 5, by: NOW.getTime() + 56 * 864e5, startE1rm: 180, startedAt: NOW.getTime() - 70 * 864e5, startRate: 3.5 }));
+  await p.eval(addGoal({ exerciseId: 'ex-leg-curl', weight: 200, reps: 8, startE1rm: 190, startedAt: NOW.getTime() - 30 * 864e5, startRate: 1.5 }));
+  await go('/progress');
+  await p.click('Goals');
+  await p.click({ sel: 'button', text: 'Lat Pulldown', start: true });
+  await shot('7.19');
+  await go('/progress');
+  await shot('7.12');
+  await p.eval(scaleRecent('ex-machine-chest-press', 5, 0.88));
+  await sleep(1500);
+  await go('/progress/lift/ex-machine-chest-press/trend');
+  await shot('7.14');
+  await p.eval(`__og.db.settings.update('settings', { pinnedCustomized: true, pinnedExerciseIds: ['ex-bench-press', 'ex-machine-chest-press', 'ex-lat-pulldown', 'ex-leg-press'] })`);
+  await go('/');
+  await p.eval(`document.querySelector('main, [data-scroll], .overflow-y-auto')?.scrollBy(0, 400)`);
+  await shot('3.6');
+  await go('/progress/month');
+  await shot('7.15');
+});
+
+scene('sample', '9.9 9.11 9.10', async ({ p, go, shot }) => {
+  await go('/settings/training');
+  await shot('9.9');
+  await p.click('Effort target');
+  await shot('9.11');
+  await go('/settings/training');
+  await p.click('Training phase');
+  await p.click('Maintaining');
+  await shot('9.10');
 });
 
 const STRONG_CSV = `Date,Workout Name,Duration,Exercise Name,Set Order,Weight,Reps,Distance,Seconds,Notes,Workout Notes,RPE

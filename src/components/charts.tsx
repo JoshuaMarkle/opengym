@@ -228,3 +228,118 @@ export function WeeklyBars({ weeks, values, avg, height = 170, format = (v: numb
     </div>
   );
 }
+
+export interface ForecastBand {
+  date: number;
+  lo: number;
+  hi: number;
+}
+
+/**
+ * Trend and projection chart (proposal C1, D2, D3, F3, F4). Grey session dots, the
+ * fitted trend in blue, an optional shaded band (the projection's slow–fast edges, or
+ * the ±wobble zone), a dashed projection, a dashed target line and a date marker.
+ * Gaps of 3+ weeks are left blank with a label, never drawn as drops.
+ */
+export function ForecastChart({
+  points,
+  from,
+  to,
+  fit,
+  band,
+  curve,
+  target,
+  targetLabel,
+  marker,
+  markerTone = 'tip',
+  gaps,
+  height = 190,
+  label = 'Trend chart',
+}: {
+  points: ChartPoint[];
+  from: number;
+  to: number;
+  fit?: ChartPoint[];
+  band?: ForecastBand[];
+  curve?: ChartPoint[];
+  target?: number;
+  targetLabel?: string;
+  marker?: number;
+  markerTone?: 'tip' | 'warn' | 'fg2';
+  gaps?: { from: number; to: number; label: string }[];
+  height?: number;
+  label?: string;
+}) {
+  const [ref, width] = useWidth<HTMLDivElement>();
+  const padL = 34;
+  const padR = 10;
+  const padT = 12;
+  const padB = 20;
+  const span = Math.max(1, to - from);
+  const vals = [...points.map((p) => p.value), ...(fit ?? []).map((p) => p.value), ...(curve ?? []).map((p) => p.value), ...(band ?? []).flatMap((b) => [b.lo, b.hi]), ...(target != null ? [target] : [])];
+  const ticks = vals.length ? niceTicks(Math.min(...vals), Math.max(...vals), 3) : [];
+  const lo = ticks[0] ?? 0;
+  const hi = ticks[ticks.length - 1] ?? 1;
+  const iw = Math.max(1, width - padL - padR);
+  const ih = height - padT - padB;
+  const x = (d: number) => padL + ((Math.min(to, Math.max(from, d)) - from) / span) * iw;
+  const y = (v: number) => padT + ih - ((v - lo) / Math.max(1e-9, hi - lo)) * ih;
+  const months = monthTicks(from, to);
+  const line = (ps: ChartPoint[]) => ps.map((p) => `${x(p.date)},${y(p.value)}`).join(' ');
+  const toneVar = markerTone === 'tip' ? 'var(--og-tip)' : markerTone === 'warn' ? 'var(--color-warn)' : 'var(--og-fg2)';
+
+  return (
+    <div ref={ref} className="mt-2 w-full">
+      {width > 0 && (
+        <svg width={width} height={height} role="img" aria-label={label} className="block overflow-visible">
+          {ticks.map((t) => (
+            <g key={t}>
+              <line x1={padL} x2={width - padR} y1={y(t)} y2={y(t)} stroke="var(--og-chart-grid)" />
+              <text x={0} y={y(t) + 3.5} fill="var(--og-fg2)" fontSize="11">
+                {formatNumber(t, 1)}
+              </text>
+            </g>
+          ))}
+          {months.map((m, i) => (
+            <text key={m} x={x(m)} y={height - 4} fill="var(--og-fg2)" fontSize="11" textAnchor={i === 0 && x(m) - padL < 12 ? 'start' : 'middle'}>
+              {monthShort(new Date(m).getMonth())}
+            </text>
+          ))}
+          {band && band.length > 1 && (
+            <polygon
+              points={[...band.map((b) => `${x(b.date)},${y(b.hi)}`), ...[...band].reverse().map((b) => `${x(b.date)},${y(b.lo)}`)].join(' ')}
+              fill="var(--color-accent-soft)"
+            />
+          )}
+          {gaps?.map((g) => (
+            <g key={g.from}>
+              <rect x={x(g.from)} y={padT} width={Math.max(0, x(g.to) - x(g.from))} height={ih} fill="var(--og-surface)" opacity="0.7" />
+              <text x={(x(g.from) + x(g.to)) / 2} y={padT + 12} fill="var(--og-fg2)" fontSize="10" fontWeight="700" textAnchor="middle">
+                {g.label}
+              </text>
+            </g>
+          ))}
+          {target != null && (
+            <g>
+              <line x1={padL} x2={width - padR} y1={y(target)} y2={y(target)} stroke="var(--og-fg)" strokeWidth="1.2" strokeDasharray="4 4" />
+              {targetLabel && (
+                <text x={width - padR} y={y(target) - 5} fill="var(--og-fg)" fontSize="11" fontWeight="700" textAnchor="end">
+                  {targetLabel}
+                </text>
+              )}
+            </g>
+          )}
+          {fit && fit.length > 1 && <polyline points={line(fit)} fill="none" stroke="var(--color-accent)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />}
+          {curve && curve.length > 1 && <polyline points={line(curve)} fill="none" stroke="var(--color-accent)" strokeWidth="2" strokeDasharray="5 4" strokeLinecap="round" />}
+          {points.map((p, i) => (
+            <circle key={i} cx={x(p.date)} cy={y(p.value)} r="2.6" fill="var(--og-chart-dot)" />
+          ))}
+          {points.length > 0 && <circle cx={x(points[points.length - 1].date)} cy={y(points[points.length - 1].value)} r="5" fill="var(--color-accent)" stroke="var(--og-bg)" strokeWidth="2" />}
+          {marker != null && (
+            <line x1={x(marker)} x2={x(marker)} y1={padT} y2={padT + ih} stroke={toneVar} strokeWidth="2" />
+          )}
+        </svg>
+      )}
+    </div>
+  );
+}

@@ -9,6 +9,8 @@ import { BarPicker, PlatePad } from '../../components/PlatePad';
 import { Button, cx, EmptyState, IconButton, TextField } from '../../components/ui';
 import { type ActiveExercise, type ActiveWorkoutData, useActiveWorkout, useData } from '../../data/DataProvider';
 import { setExercisePrefs } from '../../data/exercises';
+import { updateSettings } from '../../data/settings';
+import { tipForExercise, weightsBySet, workoutTraining } from '../../data/training';
 import { lastSession } from '../../data/history';
 import {
   addDropSet,
@@ -29,6 +31,10 @@ import {
   routineChanges,
   setCurrentExercise,
   setWorkoutStart,
+  applySuggestion,
+  revertSuggestion,
+  setGapAnswer,
+  setSuggestion,
   toggleWarmup,
   unlinkWorkoutSuperset,
   updateSet,
@@ -71,6 +77,7 @@ import { ExerciseMenu } from './ExerciseMenu';
 import { LookbackSheet } from './LookbackSheet';
 import { SetTable, weightEditText, weightFromEdit } from './SetTable';
 import { SupersetSheet } from './SupersetSheet';
+import { barState, GapPrompt, hintsFor, TipLine, TrainingBar, WhySheet } from './Training';
 
 /** 4.x: the workout in progress. No tab bar; Prev / Next move between exercises. */
 export function WorkoutScreen() {
@@ -155,6 +162,9 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
   const [supersetPre, setSupersetPre] = useState<string[]>([]);
   // Plates vs 123, per exercise, ahead of the saved preference catching up.
   const [padPref, setPadPref] = useState<Record<string, boolean>>({});
+  // Training (4.27–4.33): the Why sheet's exercise, and gap questions put off for today.
+  const [whyId, setWhyId] = useState<string | null>(null);
+  const [gapLater, setGapLater] = useState<string[]>([]);
 
   let idx = list.findIndex((e) => e.we.id === workout.currentExerciseId);
   if (idx < 0) idx = 0;
@@ -175,6 +185,33 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
   const memberSets = (ticked?: string): MemberSets<WorkoutSet>[] =>
     members.map((m) => ({ key: m.we.id, sets: m.sets.map((s) => (s.id === ticked ? { ...s, completed: true } : s)) }));
   const round = isSuperset && cur ? supersetRound(memberSets(), cur.we.id) : { round: 1, rounds: 1 };
+
+  // Training (design/training-logic.html §9): each exercise's suggestion from its last session.
+  const training = useMemo(() => new Map(list.map((e) => [e.we.id, workoutTraining(e, history, settings, workout.startedAt)])), [list, history, settings, workout.startedAt]);
+  const exerciseKey = list.map((e) => e.exercise.id).join();
+  // §23: at most one tip per workout, on the first exercise it applies to.
+  const tip = useMemo(() => {
+    for (const e of list) {
+      const t = tipForExercise(history, e.exercise, settings, workout.startedAt);
+      if (t) return { weId: e.we.id, tip: t };
+    }
+    return null;
+  }, [exerciseKey, history, settings, workout.startedAt]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto (§9): LBS arrives filled with the next weights when the exercise comes up. Never after a gap.
+  const autoFilled = useRef(new Set<string>());
+  useEffect(() => {
+    if (settings.suggestMode !== 'auto') return;
+    for (const m of members) {
+      const t = training.get(m.we.id);
+      if (t?.kind !== 'ready' || t.comeback || t.hideBar || !t.sg.changed || m.we.suggestion || autoFilled.current.has(m.we.id)) continue;
+      if (settings.suggestOnlyIds?.includes(m.exercise.id)) continue;
+      const weights = weightsBySet(t, m.sets);
+      if (!Object.keys(weights).length) continue;
+      autoFilled.current.add(m.we.id);
+      void applySuggestion(m.we.id, weights, { weights: t.sg.weights.map((w) => w ?? 0), auto: true });
+    }
+  }, [cur?.we.id, training, settings.suggestMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const variations = useVariations(ex);
   const varLabels = useMemo(() => variationLabels(variations), [variations]);
@@ -268,7 +305,12 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
     const e = m.exercise;
     if (field === 'weight') {
       const v = parseWeightText(text);
-      void updateSet(set.id, { weight: weightFromEdit(v === undefined ? undefined : fromDisplay(v, units), e) });
+      const weight = weightFromEdit(v === undefined ? undefined : fromDisplay(v, units), e);
+      void updateSet(set.id, { weight });
+      // Auto (§9): overwriting a filled box turns it white and is remembered as an edit.
+      const sg = m.we.suggestion;
+      const i = m.sets.filter((x) => x.kind === 'working').findIndex((x) => x.id === set.id);
+      if (sg?.auto && sg.outcome !== 'edited' && sg.outcome !== 'dismissed' && i >= 0 && weight !== sg.weights[i]) void setSuggestion(m.we.id, { ...sg, outcome: 'edited' });
     } else if (field === 'reps') {
       void updateSet(set.id, { reps: parseRepsText(text) });
     } else {
@@ -640,6 +682,58 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
 
   const editingCell = (m: ActiveExercise) => (activeEdit && editingMember?.we.id === m.we.id ? { setId: activeEdit.setId, field: activeEdit.field, text: activeEdit.text } : null);
 
+  /** Auto-filled LBS boxes still holding the app's weight (blue until edited). */
+  const autoIdsOf = (m: ActiveExercise): Set<string> | undefined => {
+    const sg = m.we.suggestion;
+    if (!sg?.auto || sg.outcome === 'dismissed') return undefined;
+    const ids = new Set<string>();
+    m.sets.filter((x) => x.kind === 'working').forEach((x, i) => x.weight != null && sg.weights[i] === x.weight && ids.add(x.id));
+    return ids;
+  };
+
+  /** 4.27–4.33: the training bar, the break question and the tip, under the exercise header. */
+  const trainingBlock = (m: ActiveExercise) => {
+    const t = training.get(m.we.id);
+    const tipEl = tip?.weId === m.we.id && (
+      <TipLine tip={tip.tip} onDismiss={() => void updateSettings({ dismissedTips: [...settings.dismissedTips, tip.tip] })} />
+    );
+    if (!t || t.kind === 'none') return tipEl;
+    if (t.kind === 'gap')
+      return gapLater.includes(m.we.id) ? (
+        tipEl
+      ) : (
+        <GapPrompt t={t} exercise={m.exercise} units={units} onAnswer={(a) => void setGapAnswer(m.we.id, a)} onDismiss={() => setGapLater((g) => [...g, m.we.id])} />
+      );
+    const state = barState(t, m.we.suggestion, settings, m.exercise);
+    return (
+      <>
+        {state !== 'none' && (
+          <TrainingBar
+            t={t}
+            state={state}
+            exercise={m.exercise}
+            units={units}
+            onAccept={() => acceptSuggestion(m)}
+            onDismiss={() => void setSuggestion(m.we.id, { weights: t.sg.weights.map((w) => w ?? 0), outcome: 'dismissed' })}
+            onUndo={() => void revertSuggestion(m.we.id, undefined)}
+            onWhy={() => setWhyId(m.we.id)}
+          />
+        )}
+        {tipEl}
+      </>
+    );
+  };
+
+  const acceptSuggestion = (m: ActiveExercise) => {
+    const t = training.get(m.we.id);
+    if (t?.kind !== 'ready') return;
+    setEditing(null);
+    void applySuggestion(m.we.id, weightsBySet(t, m.sets), { weights: t.sg.weights.map((w) => w ?? 0), outcome: 'accepted' });
+  };
+
+  const whyMember = whyId ? list.find((e) => e.we.id === whyId) : undefined;
+  const whyTraining = whyMember ? training.get(whyMember.we.id) : undefined;
+
   const table = (m: ActiveExercise) =>
     m.exercise.type === 'cardio' ? (
       <CardioTable
@@ -664,6 +758,8 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
         effort={settings.effort}
         effortAsk={settings.effortAsk}
         narrow={isSuperset}
+        hints={hintsFor(training.get(m.we.id) ?? { kind: 'none' }, m.we.suggestion, settings, m.exercise, units)}
+        autoIds={autoIdsOf(m)}
         onEdit={(s, f) => startEdit(m, s, f)}
         onToggle={(s) => onToggle(m, s)}
         onToggleWarmup={(s) => void toggleWarmup(s.id)}
@@ -736,6 +832,7 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
                   {focused && icons}
                 </div>
                 {focused && variationChips}
+                {focused && trainingBlock(m)}
                 {table(m)}
                 {emptySets(m)}
                 {focused && addButtons(m)}
@@ -882,6 +979,7 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
               {icons}
             </div>
             {variationChips}
+            {trainingBlock(cur)}
             {table(cur)}
             {emptySets(cur)}
             {addButtons(cur)}
@@ -926,6 +1024,34 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
       )}
 
       {/* ───── overlays */}
+
+      {whyMember && whyTraining?.kind === 'ready' && (
+        <WhySheet
+          open
+          onClose={() => setWhyId(null)}
+          t={whyTraining}
+          state={barState(whyTraining, whyMember.we.suggestion, settings, whyMember.exercise)}
+          exercise={whyMember.exercise}
+          history={history}
+          settings={settings}
+          at={workout.startedAt}
+          onUse={() => {
+            setWhyId(null);
+            acceptSuggestion(whyMember);
+          }}
+          onIgnore={() => {
+            setWhyId(null);
+            // Nothing written yet (Suggest): remember the dismissal. Filled (Auto, ✓): put the old weights back.
+            if (whyMember.we.suggestion) void revertSuggestion(whyMember.we.id, 'dismissed');
+            else void setSuggestion(whyMember.we.id, { weights: whyTraining.sg.weights.map((w) => w ?? 0), outcome: 'dismissed' });
+          }}
+          onSuggestOnly={() => {
+            setWhyId(null);
+            void updateSettings({ suggestOnlyIds: [...(settings.suggestOnlyIds ?? []), whyMember.exercise.id] });
+            void revertSuggestion(whyMember.we.id, undefined).then(() => setSuggestion(whyMember.we.id, undefined));
+          }}
+        />
+      )}
 
       <HoldMenu
         open={!!holdMenu}

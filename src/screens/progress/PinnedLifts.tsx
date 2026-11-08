@@ -8,15 +8,17 @@ import { BarButton, Check, cx, Screen, SearchField, TopBar } from '../../compone
 import { useData } from '../../data/DataProvider';
 import { updateSettings } from '../../data/settings';
 import type { Exercise } from '../../db/types';
-import { usePinned } from './Progress';
+import { ToggleRow } from '../settings/Training';
+import { FOCUS_MAX, usePinned } from './Progress';
 
-/** 7.5: which lifts Progress shows, and in what order. */
+/** 7.5 (F1): focus lifts go first in Progress and get the Home lines. Up to 5. */
 export function PinnedLifts() {
   const navigate = useNavigate();
-  const { exercises, history } = useData();
+  const { exercises, history, settings } = useData();
   const pinned = usePinned();
   const [query, setQuery] = useState('');
   const pinnedIds = pinned.map((e) => e.id);
+  const full = pinned.length >= FOCUS_MAX;
   const sessions = (id: string) => history.sessionsByExercise.get(id)?.length ?? 0;
 
   const others = useMemo(() => {
@@ -38,7 +40,7 @@ export function PinnedLifts() {
     <Screen
       header={
         <TopBar
-          title="Pinned lifts"
+          title="Focus lifts"
           right={
             <BarButton kind="bold" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/progress'))}>
               Done
@@ -47,9 +49,24 @@ export function PinnedLifts() {
         />
       }
     >
+      <div className="mt-2">
+        <ToggleRow
+          label="Train everything"
+          detail="Trends, milestones and goals for every lift you log"
+          on={settings.trainEverything}
+          onChange={(v) => void updateSettings({ trainEverything: v })}
+        />
+      </div>
+      <p className="mt-2 text-[13px] leading-snug text-fg2">
+        {settings.trainEverything
+          ? 'Focus lifts go first in Progress and get the Home lines. Up to 5.'
+          : 'Only focus lifts get trends, milestones and goals. Skipping legs is fine: every lift still gets workout suggestions and records.'}
+      </p>
       <div className="mt-4 flex justify-between pb-1 text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase">
-        <span>Pinned · drag to order</span>
-        <span className="font-semibold tracking-normal">{pinned.length}</span>
+        <span>Focus · drag to order</span>
+        <span className="font-semibold tracking-normal">
+          {pinned.length} of {FOCUS_MAX}
+        </span>
       </div>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={pinnedIds} strategy={verticalListSortingStrategy}>
@@ -58,21 +75,27 @@ export function PinnedLifts() {
           ))}
         </SortableContext>
       </DndContext>
-      {!pinned.length && <p className="border-b border-line py-3 text-[13px] text-fg2">Nothing pinned. Tick lifts below.</p>}
+      {!pinned.length && <p className="border-b border-line py-3 text-[13px] text-fg2">No focus lifts. Tick lifts below.</p>}
 
-      <div className="mt-6 pb-1 text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase">Other exercises</div>
+      <div className="mt-6 pb-1 text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase">{full ? 'Other exercises · untick one to swap' : 'Other exercises'}</div>
       <SearchField value={query} onChange={setQuery} placeholder="Search all exercises" />
       <div className="mt-1">
         {others.map((e) => (
-          <button key={e.id} type="button" onClick={() => save([...pinnedIds, e.id])} className="flex min-h-[52px] w-full items-center gap-3 border-b border-line text-left active:bg-surface/60">
-            <Check on={false} />
+          <button
+            key={e.id}
+            type="button"
+            disabled={full}
+            onClick={() => save([...pinnedIds, e.id])}
+            className="flex min-h-[52px] w-full items-center gap-3 border-b border-line text-left active:bg-surface/60 disabled:opacity-40"
+          >
+            <Check on={false} disabled={full} />
             <span className="min-w-0 flex-1">
               <b className="block truncate text-[16px] font-semibold">{e.name}</b>
               <span className="text-[13px] text-fg2">{sessions(e.id) ? `${sessions(e.id)} sessions` : 'Not logged yet'}</span>
             </span>
           </button>
         ))}
-        {!others.length && <p className="py-4 text-[13px] text-fg2">{query ? 'No matches.' : 'Everything you’ve logged is pinned.'}</p>}
+        {!others.length && <p className="py-4 text-[13px] text-fg2">{query ? 'No matches.' : 'Everything you’ve logged is a focus lift.'}</p>}
       </div>
     </Screen>
   );
@@ -86,7 +109,7 @@ function PinnedRow({ exercise, sessions, onToggle }: { exercise: Exercise; sessi
       style={{ transform: CSS.Translate.toString(transform), transition }}
       className={cx('relative flex min-h-[52px] items-center gap-3 border-b border-line bg-bg', isDragging && 'z-10 rounded-[10px] border-transparent bg-surface px-2 outline-[1.5px] outline-accent')}
     >
-      <button type="button" onClick={onToggle} aria-label={`Unpin ${exercise.name}`} className="-ml-2 flex h-11 w-11 items-center justify-center">
+      <button type="button" onClick={onToggle} aria-label={`Remove ${exercise.name} from focus`} className="-ml-2 flex h-11 w-11 items-center justify-center">
         <Check on />
       </button>
       <span className="min-w-0 flex-1">

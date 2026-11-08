@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>OpenGym · Set fit zone (sketch)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#0b0d10;--card:#14171c;--line:#232830;--tx:#e8eaed;--mu:#8b93a1;--blue:#4f8cff;--green:#3ecf8e;--amber:#f5b041;--red:#ff6b6b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:28px 20px 60px}
+h1{font-size:22px;margin:0 0 4px}h2{font-size:15px;margin:0 0 10px}.mu{color:var(--mu)}
+.grid{display:grid;grid-template-columns:300px 1fr;gap:16px;margin-top:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+label{display:block;font-size:12px;color:var(--mu);margin:8px 0 3px}
+input{width:100%;background:#0f1216;border:1px solid var(--line);color:var(--tx);border-radius:7px;padding:6px 8px;font:inherit}
+.row3{display:grid;grid-template-columns:18px 1fr 1fr 1fr;gap:6px;align-items:center}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dot{width:12px;height:12px;border-radius:50%}
+.pre{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+button{background:#1c2129;border:1px solid var(--line);color:var(--tx);border-radius:999px;padding:5px 11px;font:inherit;font-size:12px;cursor:pointer}
+button.on{border-color:var(--blue);color:var(--blue)}
+.tabs{display:flex;gap:6px;margin-bottom:8px}
+svg text{fill:var(--mu);font-size:11px}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line)}th{color:var(--mu);font-weight:500;font-size:12px}
+.up{color:var(--green)}.keep{color:var(--tx)}.down{color:var(--amber)}
+.note{font-size:13px;color:var(--mu);margin-top:10px}
+.note b{color:var(--tx);font-weight:600}
+</style></head><body><div class="wrap">
+<h1>Set fit zone</h1>
+<div class="mu">Sketch for tuning. Each set gets its own strength estimate and its own target weight. Not approved.</div>
+
+<div class="grid">
+<div class="card">
+  <h2>Last session</h2>
+  <div class="row3 mu" style="font-size:12px"><span></span><span>lbs</span><span>reps</span><span>RIR</span></div>
+  <div id="sets"></div>
+  <div class="pre" id="presets"></div>
+  <label>Rep range</label>
+  <div class="row2"><input id="lo" type="number" value="8"><input id="hi" type="number" value="12"></div>
+  <label>Target RIR (min to max)</label>
+  <div class="row2"><input id="rmin" type="number" value="0"><input id="rmax" type="number" value="3"></div>
+  <label>Weight step (lbs)</label>
+  <input id="step" type="number" value="5">
+  <div class="note">Strength estimate per set: <b>e1RM = lbs × (1 + (reps + RIR) / 30)</b>. Same Epley formula as the logic doc, with RIR added to the reps.</div>
+</div>
+
+<div>
+  <div class="card">
+    <div class="tabs" id="tabs"></div>
+    <h2 id="ctitle">Lbs × reps for set 1</h2>
+    <svg id="chart" viewBox="0 0 700 400" width="100%"></svg>
+    <div class="note">Each curve shows every lbs × reps pair at the same strength for one RIR. The shaded area is where the curves for your target RIRs cross your rep range. Any weight under the shading lands in range with a target effort. The ring is what you logged, and the diamond is the suggested weight for next time.</div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h2>Third dimension: RIR as slices</h2>
+    <svg id="slices" viewBox="0 0 700 230" width="100%"></svg>
+    <div class="note">Each row is one RIR. The bar is the band of weights that keeps you in the rep range at that effort. More reps in reserve slides the band to lighter weights. Stacking these rows gives the 3D shape you described, and the target RIRs are the rows in the shaded zone above.</div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h2>Per set suggestion</h2>
+    <table id="tbl"></table>
+    <div class="note">Rule: if the logged set is already in range at a target RIR, <b>keep</b> the weight. Otherwise pick the weight that puts the middle of the rep range at the middle target RIR, rounded to the step. That gives up, keep or drop for each set on its own.</div>
+  </div>
+</div>
+</div>
+</div>
+<script>
+const COL=['#4f8cff','#3ecf8e','#f5b041'];
+const PRE={
+ 'Past / in / short':[[200,13,0],[200,10,0],[200,7,0]],
+ 'All at top, RIR 0':[[20,10,0],[20,10,0],[20,10,0]],
+ 'Short, lots left':[[200,7,4],[200,7,3],[200,6,3]],
+ 'Easy, RIR 5':[[135,12,5],[135,12,4],[135,11,4]],
+ 'Big drop-off':[[225,11,0],[225,7,0],[225,5,0]],
+};
+let sets=PRE['Past / in / short'].map(s=>s.slice()), sel=0;
+const $=id=>document.getElementById(id);
+function buildInputs(){
+  $('sets').innerHTML=sets.map((s,i)=>`<div class="row3" style="margin-bottom:6px"><span class="dot" style="background:${COL[i]}"></span>`+
+   s.map((v,k)=>`<input type="number" data-i="${i}" data-k="${k}" value="${v}">`).join('')+'</div>').join('');
+  $('sets').querySelectorAll('input').forEach(el=>el.oninput=()=>{sets[el.dataset.i][el.dataset.k]=+el.value;draw()});
+}
+$('presets').innerHTML=Object.keys(PRE).map(k=>`<button>${k}</button>`).join('');
+$('presets').querySelectorAll('button').forEach(b=>b.onclick=()=>{sets=PRE[b.textContent].map(s=>s.slice());buildInputs();draw()});
+['lo','hi','rmin','rmax','step'].forEach(id=>$(id).oninput=draw);
+const e1=(w,r,i)=>w*(1+(r+i)/30);
+const repsAt=(E,W,rir)=>30*(E/W-1)-rir;
+const wAt=(E,reps,rir)=>E/(1+(reps+rir)/30);
+function P(){return{lo:+$('lo').value,hi:+$('hi').value,rmin:+$('rmin').value,rmax:+$('rmax').value,step:+$('step').value||5}}
+function suggest(s,p){
+  const [w,r,i]=s,E=e1(w,r,i);
+  const inZone=r>=p.lo&&r<=p.hi&&i>=p.rmin&&i<=p.rmax;
+  const zone=[wAt(E,p.hi,p.rmax),wAt(E,p.lo,p.rmin)];
+  let nw;
+  if(inZone) nw=w; else{
+    const t=wAt(E,(p.lo+p.hi)/2,(p.rmin+p.rmax)/2);
+    nw=Math.round(t/p.step)*p.step;
+    if(nw>zone[1]) nw=Math.floor(zone[1]/p.step)*p.step;
+    if(nw<zone[0]) nw=Math.ceil(zone[0]/p.step)*p.step;
+  }
+  const pr=inZone?r:repsAt(E,nw,(p.rmin+p.rmax)/2);
+  return{E,zone,nw,inZone,pred:pr};
+}
+function cls(r,p){return r>p.hi?'past':r==p.hi?'top':r>=p.lo?'in':'short'}
+function draw(){
+  const p=P();
+  $('tabs').innerHTML=sets.map((_,i)=>`<button class="${i==sel?'on':''}" style="${i==sel?'border-color:'+COL[i]+';color:'+COL[i]:''}">Set ${i+1}</button>`).join('');
+  $('tabs').querySelectorAll('button').forEach((b,i)=>b.onclick=()=>{sel=i;draw()});
+  $('ctitle').textContent=`Lbs × reps for set ${sel+1}`;
+  const res=sets.map(s=>suggest(s,p));
+  // ---- main chart
+  const W=700,H=400,L=48,R=16,T=14,B=36;
+  const allE=res.map(r=>r.E), ws=sets.map(s=>s[0]).concat(res.map(r=>r.nw));
+  let x0=Math.min(...ws,...res.map(r=>r.zone[0]))*0.85, x1=Math.max(...ws,...res.map(r=>r.zone[1]))*1.12;
+  const y0=0,y1=Math.max(20,p.hi+6);
+  const X=v=>L+(v-x0)/(x1-x0)*(W-L-R), Y=v=>H-B-(v-y0)/(y1-y0)*(H-T-B);
+  let g='';
+  for(let k=0;k<=y1;k+=2) g+=`<line x1="${L}" x2="${W-R}" y1="${Y(k)}" y2="${Y(k)}" stroke="#1b2027"/><text x="${L-8}" y="${Y(k)+4}" text-anchor="end">${k}</text>`;
+  const st=(x1-x0)>120?20:(x1-x0)>40?10:(x1-x0)>15?5:1;
+  for(let v=Math.ceil(x0/st)*st;v<=x1;v+=st) g+=`<line x1="${X(v)}" x2="${X(v)}" y1="${T}" y2="${H-B}" stroke="#1b2027"/><text x="${X(v)}" y="${H-B+16}" text-anchor="middle">${v}</text>`;
+  g+=`<text x="${(W+L)/2}" y="${H-4}" text-anchor="middle">lbs</text><text x="12" y="${(H)/2}" transform="rotate(-90 12 ${H/2})" text-anchor="middle">reps</text>`;
+  g+=`<rect x="${L}" y="${Y(p.hi)}" width="${W-L-R}" height="${Y(p.lo)-Y(p.hi)}" fill="#4f8cff" opacity=".07"/>`;
+  g+=`<text x="${W-R-4}" y="${Y(p.hi)-4}" text-anchor="end">rep range ${p.lo}–${p.hi}</text>`;
+  const s=res[sel],c=COL[sel],E=s.E;
+  // zone polygon: between rir=rmin and rir=rmax curves, clipped to lo..hi
+  const pts=[];const N=40;
+  const curve=(rir,a,b)=>{const o=[];for(let k=0;k<=N;k++){const reps=a+(b-a)*k/N;o.push([wAt(E,reps,rir),reps])}return o};
+  const poly=curve(p.rmin,p.lo,p.hi).concat(curve(p.rmax,p.hi,p.lo));
+  g+=`<polygon points="${poly.map(q=>X(q[0])+','+Y(q[1])).join(' ')}" fill="${c}" opacity=".28"/>`;
+  // RIR curves
+  for(let rir=0;rir<=5;rir++){
+    let d='';for(let k=0;k<=80;k++){const w=x0+(x1-x0)*k/80;const reps=repsAt(E,w,rir);if(reps<y0||reps>y1){if(d)break;continue}d+=(d?'L':'M')+X(w)+','+Y(reps)}
+    const tgt=rir>=p.rmin&&rir<=p.rmax;
+    g+=`<path d="${d}" fill="none" stroke="${c}" stroke-width="${tgt?1.6:1}" opacity="${tgt?.9:.35}" ${tgt?'':'stroke-dasharray="4 4"'}/>`;
+    const ry=repsAt(E,x1,rir); if(ry>y0+0.5) g+=`<text x="${W-R-2}" y="${Y(ry)-4}" text-anchor="end" fill="${c}" style="fill:${c}">RIR ${rir}</text>`;
+  }
+  // other sets ghost points
+  sets.forEach((q,i)=>{if(i!=sel)g+=`<circle cx="${X(q[0])}" cy="${Y(q[1])}" r="5" fill="none" stroke="${COL[i]}" opacity=".45"/>`});
+  const [w,r,ir]=sets[sel];
+  g+=`<line x1="${X(w)}" y1="${Y(r)}" x2="${X(s.nw)}" y2="${Y(s.pred)}" stroke="${c}" stroke-dasharray="3 3"/>`;
+  g+=`<circle cx="${X(w)}" cy="${Y(r)}" r="7" fill="#0b0d10" stroke="${c}" stroke-width="2.5"/><text x="${X(w)+11}" y="${Y(r)+4}" style="fill:#e8eaed">${w}×${r} @${ir}</text>`;
+  const dx=X(s.nw),dy=Y(s.pred);
+  g+=`<path d="M${dx},${dy-8}L${dx+8},${dy}L${dx},${dy+8}L${dx-8},${dy}Z" fill="${c}"/><text x="${dx+12}" y="${dy+16}" style="fill:${c}">${s.nw} lbs → ~${s.pred.toFixed(0)} reps${s.inZone?' (keep)':' @'+((p.rmin+p.rmax)/2)}</text>`;
+  // zone bracket on x axis
+  g+=`<line x1="${X(s.zone[0])}" x2="${X(s.zone[1])}" y1="${H-B-3}" y2="${H-B-3}" stroke="${c}" stroke-width="4"/>`;
+  $('chart').innerHTML=g;
+  // ---- slices
+  const SH=230,ST=12,SB=30,rows=7;const rh=(SH-ST-SB)/rows;
+  let h='';
+  const sx0=x0,sx1=x1,SX=v=>70+(v-sx0)/(sx1-sx0)*(W-70-R);
+  for(let v=Math.ceil(sx0/st)*st;v<=sx1;v+=st) h+=`<line x1="${SX(v)}" x2="${SX(v)}" y1="${ST}" y2="${SH-SB}" stroke="#1b2027"/><text x="${SX(v)}" y="${SH-SB+16}" text-anchor="middle">${v}</text>`;
+  for(let rir=0;rir<rows;rir++){
+    const y=ST+rir*rh, a=wAt(E,p.hi,rir), b=wAt(E,p.lo,rir), tgt=rir>=p.rmin&&rir<=p.rmax;
+    h+=`<text x="60" y="${y+rh/2+4}" text-anchor="end" style="fill:${tgt?'#e8eaed':'#8b93a1'}">RIR ${rir}</text>`;
+    h+=`<rect x="${SX(a)}" y="${y+4}" width="${SX(b)-SX(a)}" height="${rh-8}" rx="4" fill="${c}" opacity="${tgt?.75:.2}"/>`;
+    h+=`<text x="${SX(a)-4}" y="${y+rh/2+4}" text-anchor="end">${a.toFixed(0)}</text><text x="${SX(b)+4}" y="${y+rh/2+4}">${b.toFixed(0)}</text>`;
+  }
+  h+=`<line x1="${SX(w)}" x2="${SX(w)}" y1="${ST}" y2="${SH-SB}" stroke="#e8eaed" stroke-dasharray="3 3"/><text x="${SX(w)}" y="${SH-4}" text-anchor="middle" style="fill:#e8eaed">logged ${w}</text>`;
+  $('slices').innerHTML=h;
+  // ---- table
+  let t='<tr><th>Set</th><th>Logged</th><th>Range</th><th>e1RM</th><th>Fit zone (lbs)</th><th>Next</th><th></th></tr>';
+  res.forEach((q,i)=>{const [w,r,ir]=sets[i];const d=q.nw-w;const k=d>0?'up':d<0?'down':'keep';
+    t+=`<tr><td><span class="dot" style="display:inline-block;background:${COL[i]}"></span> ${i+1}</td><td>${w}×${r} @${ir}</td><td>${cls(r,p)}</td><td>${q.E.toFixed(0)}</td><td>${q.zone[0].toFixed(0)}–${q.zone[1].toFixed(0)}</td><td>${q.nw} × ~${q.pred.toFixed(0)}</td><td class="${k}">${k=='up'?'up '+d:k=='down'?'drop '+(-d):'keep'}</td></tr>`});
+  $('tbl').innerHTML=t;
+}
+buildInputs();draw();
+</script></body></html>

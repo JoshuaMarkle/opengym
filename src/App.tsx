@@ -24,10 +24,14 @@ import { LiftDetail } from './screens/progress/LiftDetail';
 import { CardioMachine, DistanceRecords } from './screens/progress/Cardio';
 import { PinnedLifts } from './screens/progress/PinnedLifts';
 import { Progress } from './screens/progress/Progress';
+import { GoalDetail, NewGoal } from './screens/progress/Goals';
+import { LiftTrend } from './screens/progress/LiftTrend';
+import { MonthReview } from './screens/progress/MonthReview';
 import { ImportScreen } from './screens/settings/ImportScreen';
 import { SettingPicker } from './screens/settings/SettingPicker';
 import { Settings } from './screens/settings/Settings';
 import { EffortSettings } from './screens/settings/EffortSettings';
+import { EffortTargetScreen, PhaseScreen, TrainingSettings } from './screens/settings/Training';
 import { Summary } from './screens/workout/Summary';
 import { WorkoutScreen } from './screens/workout/WorkoutScreen';
 
@@ -55,14 +59,21 @@ function AppRoutes() {
         <Route path="history" element={<History />} />
         <Route path="progress" element={<Progress />} />
         <Route path="progress/lift/:id" element={<LiftDetail />} />
+        <Route path="progress/lift/:id/trend" element={<LiftTrend />} />
+        <Route path="progress/goal/:id" element={<GoalDetail />} />
+        <Route path="progress/month" element={<MonthReview />} />
         <Route path="progress/cardio/:id" element={<CardioMachine />} />
         <Route path="progress/cardio-records" element={<DistanceRecords />} />
         <Route path="settings" element={<Settings />} />
         <Route path="settings/effort" element={<EffortSettings />} />
+        <Route path="settings/training" element={<TrainingSettings />} />
+        <Route path="settings/effort-target" element={<EffortTargetScreen />} />
         <Route path="settings/:key" element={<SettingPicker />} />
       </Route>
       <Route path="settings/import" element={<ImportScreen />} />
       <Route path="progress/pinned" element={<PinnedLifts />} />
+      <Route path="settings/phase" element={<PhaseScreen />} />
+      <Route path="progress/goal/new" element={<NewGoal />} />
       <Route path="history/:id" element={<WorkoutDetail />} />
       <Route path="history/:id/edit" element={<EditWorkout />} />
       <Route path="plan/:id" element={<PlanScreen />} />

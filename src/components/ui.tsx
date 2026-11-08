@@ -422,6 +422,8 @@ export function TextField({
   onEnter,
   className = '',
   maxLength = 60,
+  inputMode,
+  label,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -431,10 +433,14 @@ export function TextField({
   onEnter?: () => void;
   className?: string;
   maxLength?: number;
+  inputMode?: 'text' | 'decimal' | 'numeric';
+  label?: string;
 }) {
   return (
     <input
       type="text"
+      inputMode={inputMode}
+      aria-label={label}
       value={value}
       autoFocus={autoFocus}
       maxLength={maxLength}

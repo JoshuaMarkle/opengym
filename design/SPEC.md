@@ -6,7 +6,7 @@ What the app does and the rules behind it. Screen IDs like **4.1** refer to `des
 
 A free, offline-first lifting log, built as a PWA and installed to the iPhone Home Screen. You plan routines, log sets fast, and see whether you're getting stronger. There's no account, no server, no ads and no subscription. All data lives on the phone, with backup and export.
 
-**Out of scope for v1:** goals, +weight hints, rest timer, volume/tonnage charts, timed (non-cardio) exercises, social features, training videos, diet plans, gym profiles, intervals, in-app cardio timers, a warm-up ramp, routine sharing.
+**Out of scope for v1:** rest timer, volume/tonnage charts, timed (non-cardio) exercises, social features, training videos, diet plans, gym profiles, intervals, in-app cardio timers, a warm-up ramp, routine sharing.
 
 ## 2. Stack
 
@@ -174,3 +174,23 @@ An optional effort rating per working set. Mockups: `design/proposals/effort-rpe
 - **Previous** shows last time's rating under the set (`185 × 8` over `@7`). History lines write each set as one unbreakable block (`185 × 8 @8`); a wrapped line never ends on a dot (7.11). Workout detail (6.6) and Edit past workout (6.7) show and edit it too.
 - **Est. 1RM with effort (7.10).** Epley / Brzycki on reps + RIR (185 × 8 @8 counts as 10 reps). The 12-rep cap still applies to the reps done. The chart label reads "Estimated 1RM · effort-adjusted".
 - **Same weight, easier (7.10).** When the newest session has a rated set whose weight and reps (or more) you did in the last 8 weeks at a higher RPE: "185 × 8 went from @9 to @8 since Oct 12. Ready for more weight."
+
+## 13. Training: suggestions, trends and goals (1.5–1.6, 3.6, 4.27–4.33, 5.5, 7.1, 7.5, 7.12–7.19, 9.9–9.11)
+
+The rules, constants and worked examples are in `design/training-logic.html` (revision 2), and they win over the mockups in `design/proposals/progressive-overload.html` where the two differ (the mockups' 60% set-1 weighting and back-off rule are superseded by the fit zone). The pure logic is `src/lib/training/`, ported from `design/training-logic-reference.py`; the doc's 24 example sessions are its test fixtures.
+
+- **Fit zone per set (§6–§8).** E = w × (1 + (reps + RIR) / 30); the zone is the weights that land the set in its rep range at the effort target. Topped out → one step up; in the zone → keep; otherwise move to the estimate. Set 1 leads; later sets share its weight when it still fits them and are never heavier. Missing RIR counts as 0. BW + added and assisted move one step at a time; bodyweight gets rep hints only. No rep range: last 5 sessions' set-1 reps ± 1 (once there are 3).
+- **Step (§5).** Barbell = the weight step; dumbbells 5 lb / 2 kg; machines and cables 10 lb / 5 kg; then learned from the weights you actually log.
+- **Modes (§9).** Settings › Training › Suggestions: Off, Suggest (default) or Auto. Suggest shows a bar above the sets ("▲ Next: 160 · 160 · 160", orange ▼ when lighter) with Why, ✕ and ✓; ✓ writes LBS on unticked working sets, Undo puts the old values back. Reps are never touched. Auto fills LBS when the exercise comes up, in blue until you change one (an edit is remembered). Two dismissals in a row of the same weights hide the bar until the numbers change. Three Auto sessions in a row edited → the Why sheet offers "Switch this lift to Suggest". Stored per exercise as `WorkoutExercise.suggestion`.
+- **Hints under Previous.** "try 160" (orange when lighter), "try 11 reps" where the weight stays, "aim 9" once the weights are in the boxes.
+- **Gaps (§11, 4.32–4.33).** 21+ days since a lift: "Back after N weeks?" — a break (start at 90%, 80% after 42 days, and ramp back over 3 sessions) or sessions that weren't logged (normal suggestions). Answer stored as `WorkoutExercise.gapAnswer`. Ramp sessions stay out of trends. The Coming back phase answers it for every lift.
+- **Effort target (§4).** Asked in setup (1.5), editable in Settings (9.11): RIR 0–1, 0–2 (default), 1–3, 2–4, plus "Only the last set to failure".
+- **Status (§15).** Per lift over the last 8 weeks, from set 1's effort-adjusted est. 1RM (reps for bodyweight, weight for assisted): Climbing, Holding, Steady (a slow lift), Slipping (a real drop with most recent sessions under the trend), Maintained, or Not sure yet (< 6 sessions). Judged against each lift's own wobble and pace (blended with a prior by lift type and experience); a new status needs two evaluations in a row. Shown on Progress (7.1) and the trend screen (7.13–7.14) with milestones and, for slipping, "What changed" from the log only.
+- **Focus lifts and Train everything (§21, 7.5).** Up to 5 focus lifts (the pinned lifts; default the 4 most-logged compound lifts) go first and feed Home "Lately". Train everything (on) gives every lift logged in the last 8 weeks a status; off, other lifts collapse to one row.
+- **Goals (§17–§18, 7.12, 7.16–7.19, 5.5).** `Goal { exerciseId, weight, reps, by?, startE1rm, startedAt, startRate, startTau, ownRate?, doneAt? }`, converted to an est. 1RM target so every set counts. Projection follows E₀ + r₀·τ·(1 − e^(−t/τ)) with a slow–fast band; verdicts Ready / Likely / Stretch / Unlikely. Only projected when the last 12 weeks look like a trend; otherwise you pick a pace. Behind = below the "should be here" tick for 2 weeks and not Likely, which offers a later date, a lighter target or keep it. A goal is done when a finished workout has a set at or above it; the summary shows it once with a Likely and a Stretch next step. Deleting a goal confirms first.
+- **Milestones (§19).** Plate numbers per equipment (barbell 135–495 × 1/5/10, …): the last 2 reached and the next 3, the highest "Ready" one when the est. 1RM covers it.
+- **Phase (§20, 9.10).** Building, Maintaining (topped-out sets keep their weight, Holding reads Maintained, slip threshold × 5/3, goal dates can pause) or Coming back, with an optional end date.
+- **Home "Lately" (3.6).** At most one goal line and one trend line, each shown on the day it first appears (`Settings.latelySeen`). Priority: goal done > goal behind > a focus lift turning Climbing or Slipping > a milestone ready. A 21-day gap in all training offers Coming back.
+- **Month in review (7.15).** Workouts, records, lifts up, one best moment and every lift against the month before. Leads Progress in the first week of a month.
+- **Tips (§23).** At most one per workout, dismissed for good from its ✕.
+

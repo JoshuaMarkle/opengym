@@ -2,6 +2,7 @@ import Dexie, { type EntityTable } from 'dexie';
 import type {
   Exercise,
   Folder,
+  Goal,
   Routine,
   RoutineExercise,
   RoutineSet,
@@ -22,6 +23,7 @@ export class OpenGymDB extends Dexie {
   workoutExercises!: EntityTable<WorkoutExercise, 'id'>;
   workoutSets!: EntityTable<WorkoutSet, 'id'>;
   settings!: EntityTable<Settings, 'id'>;
+  goals!: EntityTable<Goal, 'id'>;
 
   constructor(name = 'opengym') {
     super(name);
@@ -36,6 +38,8 @@ export class OpenGymDB extends Dexie {
       workoutSets: 'id, workoutExerciseId',
       settings: 'id',
     });
+    // Training goals (design/training-logic.html §18).
+    this.version(2).stores({ goals: 'id, exerciseId' });
   }
 
   get allTables() {
@@ -49,6 +53,7 @@ export class OpenGymDB extends Dexie {
       this.workoutExercises,
       this.workoutSets,
       this.settings,
+      this.goals,
     ];
   }
 }
@@ -65,5 +70,6 @@ export const TABLE_NAMES = [
   'workoutExercises',
   'workoutSets',
   'settings',
+  'goals',
 ] as const;
 export type TableName = (typeof TABLE_NAMES)[number];

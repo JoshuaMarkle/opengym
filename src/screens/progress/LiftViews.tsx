@@ -4,6 +4,8 @@ import { cx, DropBadge, Segmented, StatRow, Tag } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import type { HistorySession } from '../../data/history';
 import { liftPoints, type LiftPoint } from '../../data/lifts';
+import { liftTraining } from '../../data/training';
+import { MONTH_DAYS } from '../../lib/training';
 import type { Exercise, Units } from '../../db/types';
 import { availableChartRanges, rangeStart, RANGE_WORDS, type ChartRange } from '../../lib/chart';
 import { fmtMonthDay, fmtMonthYear, weekdayShort } from '../../lib/dates';
@@ -244,6 +246,15 @@ export function ChartsView({
     );
   }
 
+  const perMonth = useMemo(() => {
+    if (!showStats || exercise.type === 'cardio') return '—';
+    const fit = liftTraining(history, exercise, settings).fit;
+    if (!fit.n) return '—';
+    const v = fit.fitRate * (MONTH_DAYS / 7);
+    const d = exercise.type === 'bodyweight' ? v : toDisplay(v, units);
+    const unit = exercise.type === 'bodyweight' ? '' : ` ${unitLabel(units)}`;
+    return `${d >= 0 ? '+' : '−'}${formatNumber(Math.abs(d), Math.abs(d) < 10 ? 1 : 0)}${unit}`;
+  }, [showStats, exercise, history, settings, units]);
   const best = points.reduce<LiftPoint | undefined>((a, p) => (p.metric && (!a?.metric || p.metric.value > a.metric.value) ? p : a), undefined);
   const metrics = metricsFor(exercise);
   // A6: the same weight × reps at a lower effort than a few weeks ago.
@@ -273,9 +284,10 @@ export function ChartsView({
         <StatRow
           className="mt-4"
           items={[
+            // B1: the trend's slope as one number, the one most lifters want.
+            { label: 'Per month', value: perMonth },
             { label: 'Best set', value: best?.metric ? formatSet({ weight: best.metric.weight, reps: best.metric.reps }, exercise.type, units) : '—' },
             { label: 'Sessions', value: points.length },
-            { label: 'Last', value: last ? fmtMonthDay(points[points.length - 1].date) : '—' },
           ]}
         />
       )}

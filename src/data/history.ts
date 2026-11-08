@@ -23,6 +23,9 @@ export interface HistorySession {
   date: number;
   exerciseId: string;
   sets: WorkoutSet[];
+  /** Training (training-logic §9, §11): what was offered that day, and the gap answer. */
+  suggestion?: WorkoutExercise['suggestion'];
+  gapAnswer?: WorkoutExercise['gapAnswer'];
 }
 
 export interface HistoryIndex {
@@ -78,10 +81,15 @@ export function indexHistory(workouts: Workout[], wes: WorkoutExercise[], sets: 
     if (workout.routineId && !lastDoneByRoutine.has(workout.routineId)) lastDoneByRoutine.set(workout.routineId, workout.startedAt);
 
     const merged = new Map<string, WorkoutSet[]>();
-    for (const e of exercises) merged.set(e.we.exerciseId, [...(merged.get(e.we.exerciseId) ?? []), ...e.sets]);
+    const meta = new Map<string, Pick<HistorySession, 'suggestion' | 'gapAnswer'>>();
+    for (const e of exercises) {
+      merged.set(e.we.exerciseId, [...(merged.get(e.we.exerciseId) ?? []), ...e.sets]);
+      const m = meta.get(e.we.exerciseId) ?? {};
+      meta.set(e.we.exerciseId, { suggestion: m.suggestion ?? e.we.suggestion, gapAnswer: m.gapAnswer ?? e.we.gapAnswer });
+    }
     for (const [exerciseId, s] of merged) {
       const list = sessionsByExercise.get(exerciseId) ?? [];
-      list.push({ workoutId: workout.id, workoutName: workout.name, routineId: workout.routineId, date: workout.startedAt, exerciseId, sets: s });
+      list.push({ workoutId: workout.id, workoutName: workout.name, routineId: workout.routineId, date: workout.startedAt, exerciseId, sets: s, ...meta.get(exerciseId) });
       sessionsByExercise.set(exerciseId, list);
     }
   }

@@ -1,5 +1,6 @@
 import { db } from '../db/db';
-import type { ExerciseType, RoutineExercise, RoutineSet, Workout, WorkoutExercise, WorkoutSet } from '../db/types';
+import type { ExerciseType, RoutineExercise, RoutineSet, Workout, WorkoutExercise, WorkoutSet, WorkoutSuggestion } from '../db/types';
+import { meetsGoal } from '../lib/training/goals';
 import { uuid } from '../lib/id';
 import { indexSession } from '../lib/previous';
 import {
@@ -282,7 +283,8 @@ export async function replaceWorkoutExercise(weId: string, exerciseId: string): 
   const last = anyDone ? undefined : await lastSessionSets(exerciseId, we.workoutId);
   await db.transaction('rw', db.workoutExercises, db.workoutSets, async () => {
     const t = Date.now();
-    await db.workoutExercises.update(weId, { exerciseId, updatedAt: t });
+    // A different lift: its own suggestion and gap question (training-logic §10, variations).
+    await db.workoutExercises.update(weId, { exerciseId, suggestion: undefined, gapAnswer: undefined, updatedAt: t });
     if (anyDone) return;
     const prev = last ? indexSession(last).byKey : undefined;
     const keys = positionKeys(sets);
@@ -520,7 +522,7 @@ export async function routineChanges(workoutId: string, countUnticked: boolean):
  * routine's structure from what was actually done.
  */
 export async function finishWorkout(workoutId: string, opts: { countUnticked: boolean; updateRoutine: boolean }): Promise<void> {
-  await db.transaction('rw', [db.workouts, db.workoutExercises, db.workoutSets, db.routines, db.routineExercises, db.routineSets, db.exercises], async () => {
+  await db.transaction('rw', [db.workouts, db.workoutExercises, db.workoutSets, db.routines, db.routineExercises, db.routineSets, db.exercises, db.goals], async () => {
     const w = await db.workouts.get(workoutId);
     if (!w) return;
     const t = Date.now();
@@ -536,7 +538,64 @@ export async function finishWorkout(workoutId: string, opts: { countUnticked: bo
     await writeGrouping(await workoutExercises(workoutId));
     await db.workouts.update(workoutId, { status: 'done', endedAt: Math.max(t, w.startedAt), currentExerciseId: undefined, updatedAt: t });
     if (opts.updateRoutine && w.routineId) await applyWorkoutToRoutine(workoutId, w.routineId);
+    await markGoalsDone(workoutId, t);
   });
+}
+
+/** Goals met by a set in this workout are done (training-logic §18): C6 shows after the summary. */
+async function markGoalsDone(workoutId: string, t: number): Promise<void> {
+  const goals = (await db.goals.toArray()).filter((g) => !g.doneAt && !g.deletedAt);
+  if (!goals.length) return;
+  for (const we of await workoutExercises(workoutId)) {
+    const sets = (await setsOf(we.id)).filter((s) => s.kind === 'working' && s.completed);
+    for (const g of goals) {
+      if (g.exerciseId !== we.exerciseId || !sets.some((s) => meetsGoal(s, g))) continue;
+      await db.goals.update(g.id, { doneAt: t, doneWorkoutId: workoutId, updatedAt: t });
+    }
+  }
+}
+
+// ───────────────────────────── training suggestions (training-logic §9)
+
+/**
+ * Fill LBS on unticked working sets with the next weights (Suggest ✓, or Auto) and
+ * remember what was there for Undo / Ignore. Reps are never touched.
+ */
+export async function applySuggestion(weId: string, weights: Record<string, number>, record: Omit<WorkoutSuggestion, 'prev'>): Promise<void> {
+  await db.transaction('rw', db.workoutExercises, db.workoutSets, async () => {
+    const t = Date.now();
+    const prev: Record<string, number | null> = {};
+    for (const [setId, w] of Object.entries(weights)) {
+      const s = await db.workoutSets.get(setId);
+      if (!s || s.completed) continue;
+      prev[setId] = s.weight ?? null;
+      await db.workoutSets.update(setId, { weight: w, updatedAt: t });
+    }
+    await db.workoutExercises.update(weId, { suggestion: { ...record, prev }, updatedAt: t });
+  });
+}
+
+/** Undo after ✓ (or Ignore in Auto): put back the earlier LBS on sets still unticked. */
+export async function revertSuggestion(weId: string, outcome?: WorkoutSuggestion['outcome']): Promise<void> {
+  await db.transaction('rw', db.workoutExercises, db.workoutSets, async () => {
+    const we = await db.workoutExercises.get(weId);
+    const sg = we?.suggestion;
+    if (!we || !sg) return;
+    const t = Date.now();
+    for (const [setId, w] of Object.entries(sg.prev ?? {})) {
+      const s = await db.workoutSets.get(setId);
+      if (s && !s.completed) await db.workoutSets.update(setId, { weight: w ?? undefined, updatedAt: t });
+    }
+    await db.workoutExercises.update(weId, { suggestion: { weights: sg.weights, auto: sg.auto, outcome }, updatedAt: t });
+  });
+}
+
+export async function setSuggestion(weId: string, suggestion: WorkoutSuggestion | undefined): Promise<void> {
+  await db.workoutExercises.update(weId, { suggestion, updatedAt: Date.now() });
+}
+
+export async function setGapAnswer(weId: string, gapAnswer: WorkoutExercise['gapAnswer']): Promise<void> {
+  await db.workoutExercises.update(weId, { gapAnswer, updatedAt: Date.now() });
 }
 
 /**

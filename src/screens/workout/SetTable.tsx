@@ -9,6 +9,7 @@ import { asksEffort, effortBadge, effortSpoken, effortText, takesEffort, type Ef
 import { matchPrevious } from '../../lib/previous';
 import { formatRepRange, formatSet, hasWeightColumn, setLabels, weightColumnLabel } from '../../lib/sets';
 import { formatWeight, unitColumn } from '../../lib/units';
+import type { SetHint } from './Training';
 
 /** 'effort' is the rpe / rir tab on a reps box (SPEC §12). */
 export type Field = 'weight' | 'reps' | 'effort';
@@ -64,6 +65,8 @@ export function SetTable({
   effort = 'off',
   effortAsk = 'every',
   narrow,
+  hints,
+  autoIds,
   onEdit,
   onToggle,
   onToggleWarmup,
@@ -81,6 +84,10 @@ export function SetTable({
   effortAsk?: EffortAsk;
   /** Superset rows: RIR halves drop the R. */
   narrow?: boolean;
+  /** Training (4.27): a green line under Previous per set, "try 205" / "aim 11". */
+  hints?: Map<string, SetHint>;
+  /** Training, Auto (4.31): weights the app filled in, blue until edited. */
+  autoIds?: Set<string>;
   onEdit: (set: WorkoutSet, field: Field) => void;
   onToggle: (set: WorkoutSet) => void;
   onToggleWarmup: (set: WorkoutSet) => void;
@@ -125,6 +132,7 @@ export function SetTable({
                 ? formatWeight(barPlaceholderLb, units)
                 : '';
           const rPlaceholder = c?.reps != null ? String(c.reps) : formatRepRange(s.repsMin, s.repsMax);
+          const hint = s.completed ? undefined : hints?.get(s.id);
           return (
             <SwipeRow
               key={s.id}
@@ -165,8 +173,17 @@ export function SetTable({
                   {label}
                 </button>
                 <span className="flex min-w-0 items-center gap-1.5 pl-1 text-[13.5px] whitespace-nowrap text-fg2">
-                  {/* Last time's effort sits under the set, small (A2): "185 × 8" over "@7". */}
-                  {effort !== 'off' && p?.prev?.rpe != null && takesEffort(p.prev) ? (
+                  {hint ? (
+                    // Training hint under the set (4.27): "185 × 8 @9" over "try 190".
+                    <span className="flex min-w-0 flex-col leading-[1.15]">
+                      <span className="truncate">
+                        {p?.prev ? formatSet(p.prev, exercise.type, units) : '—'}
+                        {effort !== 'off' && p?.prev?.rpe != null && takesEffort(p.prev) && <small className="ml-1 text-[11px] text-fg3">{effortText(p.prev.rpe, effort)}</small>}
+                      </span>
+                      <small className={cx('truncate text-[11.5px] font-bold', hint.down ? 'text-warn' : 'text-tip')}>{hint.text}</small>
+                    </span>
+                  ) : /* Last time's effort sits under the set, small (A2): "185 × 8" over "@7". */
+                  effort !== 'off' && p?.prev?.rpe != null && takesEffort(p.prev) ? (
                     <span className="flex min-w-0 flex-col leading-[1.15]">
                       <span className="truncate">{formatSet(p.prev, exercise.type, units)}</span>
                       <small className="truncate text-[11px] text-fg3">{effortText(p.prev.rpe, effort)}</small>
@@ -184,6 +201,7 @@ export function SetTable({
                     tone={s.completed ? 'done' : isCur ? 'current' : ghost ? 'ghost' : 'current'}
                     onClick={() => onEdit(s, 'weight')}
                     label={`Set ${label} weight`}
+                    filled={!s.completed && !editW && !!autoIds?.has(s.id)}
                   />
                 )}
                 <Cell
@@ -252,6 +270,7 @@ export function Cell({
   onClick,
   label,
   badge,
+  filled,
 }: {
   text: string;
   placeholder?: string;
@@ -261,6 +280,8 @@ export function Cell({
   label: string;
   /** Effort badge on the lower right of the box. */
   badge?: ReactNode;
+  /** Filled in by the app (Auto suggestions): blue text until you change it. */
+  filled?: boolean;
 }) {
   const cell = (
     <button type="button" aria-label={label} onClick={onClick} className="flex h-11 w-full items-center justify-center px-[3px]">
@@ -269,7 +290,8 @@ export function Cell({
           'flex h-[32px] w-full items-center justify-center rounded-[7px] text-[16px] font-semibold',
           editing ? 'border-2 border-accent bg-edit text-fg' : tone === 'done' ? 'bg-transparent' : 'bg-surface',
           !editing && tone === 'current' && 'ring-[1.5px] ring-accent/70 ring-inset',
-          !editing && tone === 'ghost' && 'text-fg2',
+          !editing && tone === 'ghost' && !filled && 'text-fg2',
+          filled && 'text-accent',
         )}
       >
         {text ? (

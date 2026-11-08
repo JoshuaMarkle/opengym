@@ -5,6 +5,7 @@ import { BarButton, cx, Screen, StatRow, TopBar } from '../../components/ui';
 import { exerciseOrMissing, useData } from '../../data/DataProvider';
 import { db } from '../../db/db';
 import { cardioSessions, workoutTotals, type HistoryIndex } from '../../data/history';
+import { GoalDoneBlock } from '../progress/Goals';
 import { cardioSummary, cardioTotals, longDistance, longDistanceWord } from '../../lib/cardio';
 import { fmtDay, fmtDuration, startOfWeek } from '../../lib/dates';
 import { formatNumber } from '../../lib/units';
@@ -109,6 +110,9 @@ export function Summary() {
         <div className="text-[28px] leading-tight font-bold tracking-[-0.01em]">{headline}</div>
         <div className="mt-1.5 text-[13px] text-fg2">{sub}</div>
       </div>
+
+      {/* 5.5 (C6): shown once, for the workout that hit a goal. */}
+      <GoalDoneBlock workoutId={w.id} />
 
       <div className="mt-5">
         {rows.map((r) => (

@@ -13,6 +13,7 @@ import { EFFORT_LABEL } from '../../lib/effort';
 import { formatNumber } from '../../lib/units';
 import { usePinned } from '../progress/Progress';
 import { useRestoreFlow } from './RestoreFlow';
+import { SUGGEST_LABEL } from './Training';
 
 declare const __APP_VERSION__: string;
 
@@ -72,8 +73,9 @@ export function Settings() {
       </div>
 
       <SectionLabel>Progress & exercises</SectionLabel>
+      <Item label="Training" value={SUGGEST_LABEL[settings.suggestMode]} to="/settings/training" />
       <Item label="1RM formula" value={settings.oneRmFormula === 'epley' ? 'Epley' : 'Brzycki'} to="/settings/oneRmFormula" />
-      <Item label="Pinned lifts" value={pinned.length} to="/progress/pinned" />
+      <Item label="Focus lifts" value={pinned.length} to="/progress/pinned" />
       <Item label="Exercise library" value={exercises.length} to="/exercises" />
 
       <SectionLabel tone={overdue ? 'warn' : undefined}>Data · last backup {fmtAgo(settings.lastBackupAt)}</SectionLabel>

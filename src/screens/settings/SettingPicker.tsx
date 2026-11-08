@@ -19,7 +19,11 @@ interface PickerDef {
   options: (s: Settings) => Option[];
   current: (s: Settings) => string | number;
   apply: (v: string | number, s: Settings) => Promise<void>;
+  /** Where Back goes (default Settings). */
+  back?: { label: string; to: string };
 }
+
+const TRAINING = { label: 'Training', to: '/settings/training' };
 
 const PICKERS: Record<string, PickerDef> = {
   units: {
@@ -84,6 +88,31 @@ const PICKERS: Record<string, PickerDef> = {
     current: (s) => s.oneRmFormula,
     apply: (v) => updateSettings({ oneRmFormula: v as Settings['oneRmFormula'] }),
   },
+  // Settings › Training (9.9, training-logic §9, §14)
+  suggestMode: {
+    title: 'Suggestions',
+    note: 'Suggest shows the next weights in a bar above the sets; ✓ fills them in. Auto fills them in for you, in blue until you change one. After a break, it always asks first. Trends and goals work either way.',
+    options: () => [
+      { value: 'off', label: 'Off', detail: 'Previous only' },
+      { value: 'suggest', label: 'Suggest', detail: 'A bar to accept' },
+      { value: 'auto', label: 'Auto', detail: 'Filled in' },
+    ],
+    current: (s) => s.suggestMode,
+    apply: (v) => updateSettings({ suggestMode: v as Settings['suggestMode'] }),
+    back: TRAINING,
+  },
+  experience: {
+    title: 'Lifting experience',
+    note: 'Sets the starting pace for each lift until your own log takes over, after about 8 weeks. An import from Strong or Hevy counts fully.',
+    options: () => [
+      { value: 'new', label: 'Under a year', detail: 'faster' },
+      { value: 'some', label: '1 to 3 years' },
+      { value: 'lots', label: '3+ years', detail: 'slower' },
+    ],
+    current: (s) => s.experience ?? '',
+    apply: (v) => updateSettings({ experience: v as Settings['experience'] }),
+    back: TRAINING,
+  },
 };
 
 function barNote(n: number, units: Settings['units']) {
@@ -101,7 +130,7 @@ export function SettingPicker() {
   const cur = def.current(settings);
 
   return (
-    <Screen header={<TopBar left={<BackButton label="Settings" onClick={() => navigate('/settings')} />} title={def.title} />}>
+    <Screen header={<TopBar left={<BackButton label={def.back?.label ?? 'Settings'} onClick={() => navigate(def.back?.to ?? '/settings')} />} title={def.title} />}>
       <div className="mt-2">
         {def.options(settings).map((o) => (
           <button

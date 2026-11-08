@@ -13,6 +13,7 @@ import { pickNextUp } from '../../lib/nextUp';
 import { doItTodayPatch, missedYesterday, type PlanDay } from '../../lib/schedule';
 import { setLabels } from '../../lib/sets';
 import { DaySheet, dayLabel } from '../plans/PlanParts';
+import { Lately } from './Lately';
 
 /** 3.1 / 3.2 / 1.4: this week, the running workout, and the active folder one tap from starting. */
 export function Home() {
@@ -95,6 +96,7 @@ export function Home() {
           <button type="button" onClick={start.startBlank} className="flex h-[54px] w-full items-center text-[16px] font-semibold text-accent active:opacity-70">
             + Blank workout
           </button>
+          <Lately now={now} />
         </>
       )}
     </Screen>

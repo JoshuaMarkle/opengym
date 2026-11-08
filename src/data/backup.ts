@@ -10,8 +10,11 @@ import { toCsv } from '../lib/csv';
 import { formatWeight, fromDisplay } from '../lib/units';
 import { getSettings, updateSettings } from './settings';
 
-/** 2: cardio fields on sets, cardio columns on exercises, superset groups. Older backups load as is. */
-export const SCHEMA_VERSION = 2;
+/**
+ * 2: cardio fields on sets, cardio columns on exercises, superset groups.
+ * 3: training goals, suggestions on workout exercises, training settings. Older backups load as is.
+ */
+export const SCHEMA_VERSION = 3;
 
 export interface BackupFile {
   app: 'opengym';

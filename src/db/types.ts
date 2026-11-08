@@ -2,6 +2,7 @@
 // Every record has id (uuid), createdAt and updatedAt (epoch ms).
 
 import type { EffortAsk, EffortMode } from '../lib/effort';
+import type { Experience, PhaseKind } from '../lib/training';
 
 export type ID = string;
 
@@ -139,6 +140,21 @@ export interface WorkoutExercise extends BaseRecord {
   order: number;
   /** Exercises sharing a letter (contiguous, 2–3 of them) are a superset. */
   supersetGroup?: string;
+  /** Training (training-logic §9): the next weights the app offered, and what you did with them. */
+  suggestion?: WorkoutSuggestion;
+  /** After a gap of 21+ days (§11): a real break, or training that wasn't logged. */
+  gapAnswer?: 'break' | 'notLogged';
+}
+
+export interface WorkoutSuggestion {
+  /** Next weight per working set (lb), in order. */
+  weights: number[];
+  /** accepted = ✓ in Suggest; dismissed = ✕; edited = a filled box changed in Auto. Unset = shown, no answer. */
+  outcome?: 'accepted' | 'dismissed' | 'edited';
+  /** Auto mode filled the boxes itself. */
+  auto?: boolean;
+  /** LBS before ✓ (or before Auto filled them), by set id, for Undo / Ignore. null = was empty. */
+  prev?: Record<string, number | null>;
 }
 
 export interface WorkoutSet extends BaseRecord {
@@ -201,8 +217,58 @@ export interface Settings {
   /** The "RPE and RIR" sheet (A5) has been shown once. */
   effortExplained?: boolean;
   onboarded: boolean;
+  // ── Training (design/training-logic.html §22)
+  /** How next weights reach the LBS boxes: off, a bar to accept (default), or filled in. */
+  suggestMode: SuggestMode;
+  /** Effort target as RIR min–max (default 0–2, "Close to failure"). */
+  effortTarget: [number, number];
+  /** Only the last set to failure: earlier sets aim one rep further. */
+  failureLastSetOnly: boolean;
+  /** Statuses, milestones and goals for every lift (on) or focus lifts only. */
+  trainEverything: boolean;
+  /** Lifting experience from setup; unset = inferred from history, else "some". */
+  experience?: Experience;
+  /** Training phase; falls back to Building after `until`. */
+  phase?: TrainingPhase;
+  /** Coaching tips dismissed for good. */
+  dismissedTips: string[];
+  /** Lifts switched from Auto to Suggest ("Auto keeps missing here"). */
+  suggestOnlyIds?: string[];
+  /** Home "Lately" lines already shown (so slipping shows once). */
+  latelySeen?: string[];
   createdAt: number;
   updatedAt: number;
+}
+
+export type SuggestMode = 'off' | 'suggest' | 'auto';
+
+export interface TrainingPhase {
+  kind: PhaseKind;
+  since: number;
+  until?: number;
+  /** Maintaining: goal deadlines move by the time spent here. */
+  pauseGoals?: boolean;
+}
+
+/** A goal: weight × reps on one lift, optionally by a date (training-logic §18, proposal C). */
+export interface Goal extends BaseRecord {
+  exerciseId: ID;
+  /** lb */
+  weight: number;
+  reps: number;
+  by?: number;
+  /** Trend value, rate (per week) and τ when the goal was set: the "should be here" curve. */
+  startE1rm: number;
+  startedAt: number;
+  startRate: number;
+  startTau: number;
+  /** Set with your own rate (C3) because the data was too messy to project. */
+  ownRate?: boolean;
+  doneAt?: number;
+  doneWorkoutId?: ID;
+  /** The goal-done screen (C6) has been shown. */
+  celebrated?: boolean;
+  deletedAt?: number;
 }
 
 export const DEFAULT_SETTINGS: Omit<Settings, 'createdAt' | 'updatedAt'> = {
@@ -222,6 +288,11 @@ export const DEFAULT_SETTINGS: Omit<Settings, 'createdAt' | 'updatedAt'> = {
   effortAsk: 'every',
   effortIn1rm: false,
   onboarded: false,
+  suggestMode: 'suggest',
+  effortTarget: [0, 2],
+  failureLastSetOnly: false,
+  trainEverything: true,
+  dismissedTips: [],
 };
 
 export const MUSCLES: { id: Muscle; label: string }[] = [

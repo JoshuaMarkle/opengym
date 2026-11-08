@@ -6,6 +6,8 @@ import { BackButton, EmptyState, Screen, Segmented, TopBar } from '../../compone
 import { useData } from '../../data/DataProvider';
 import { variationLabels } from '../../lib/variations';
 import { ChartsView, HistoryView, RecordsView, useVariations, type LiftMetric } from './LiftViews';
+import { liftTraining } from '../../data/training';
+import { changeText, NavRow, STATUS_TONE, statusText } from './TrainingViews';
 
 type Tab = 'e1rm' | 'top' | 'records' | 'history';
 
@@ -13,7 +15,7 @@ type Tab = 'e1rm' | 'top' | 'records' | 'history';
 export function LiftDetail() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
-  const { exerciseMap } = useData();
+  const { exerciseMap, history, settings } = useData();
   const exercise = exerciseMap.get(id);
   const variations = useVariations(exercise);
   const labels = useMemo(() => variationLabels(variations), [variations]);
@@ -21,6 +23,8 @@ export function LiftDetail() {
   const [varOpen, setVarOpen] = useState(false);
   const [tab, setTab] = useState<Tab>(exercise?.type === 'weight' ? 'e1rm' : 'top');
   const back = () => (window.history.length > 1 ? navigate(-1) : navigate('/progress'));
+  // D1: the status, linking to the trend (7.13). Cardio has none.
+  const trend = useMemo(() => (exercise && exercise.type !== 'cardio' ? liftTraining(history, exercise, settings).trend : undefined), [exercise, history, settings]);
 
   if (!exercise)
     return (
@@ -57,6 +61,20 @@ export function LiftDetail() {
         />
       }
     >
+      {trend && (
+        <div className="mt-1">
+          <NavRow
+            title={
+              <>
+                <span className="text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase">Trend · 8 wk </span>
+                <span className={STATUS_TONE[trend.status]}>{statusText(trend.status)}</span>
+              </>
+            }
+            detail={changeText(trend, exercise) || undefined}
+            onClick={() => navigate(`/progress/lift/${exercise.id}/trend`)}
+          />
+        </div>
+      )}
       <Segmented className="mt-3" options={tabs} value={tab} onChange={setTab} />
       {(tab === 'e1rm' || tab === 'top') && (
         <ChartsView key={`${ids.join()}-${tab}`} exercise={exercise} exerciseIds={ids} metric={tab as LiftMetric} showMetricChips={false} showStats defaultRange="6M" />

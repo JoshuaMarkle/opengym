@@ -10,8 +10,9 @@ export async function seedSampleDataIfEmpty(): Promise<void> {
 
 /** Testing mode only: wipe workouts and routines, then write fresh sample history. */
 export async function resetSampleData(): Promise<void> {
-  await db.transaction('rw', [db.folders, db.routines, db.routineExercises, db.routineSets, db.workouts, db.workoutExercises, db.workoutSets], async () => {
-    await Promise.all([db.folders, db.routines, db.routineExercises, db.routineSets, db.workouts, db.workoutExercises, db.workoutSets].map((t) => t.clear()));
+  const tables = [db.folders, db.routines, db.routineExercises, db.routineSets, db.workouts, db.workoutExercises, db.workoutSets, db.goals];
+  await db.transaction('rw', tables, async () => {
+    await Promise.all(tables.map((t) => t.clear()));
   });
   await writeSampleData();
 }
