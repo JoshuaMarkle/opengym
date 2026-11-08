@@ -18,6 +18,7 @@ export function ExerciseMenu({
   onLookback,
   onSettings,
   onRemove,
+  superset,
 }: {
   exercise: Exercise | undefined;
   open: boolean;
@@ -28,6 +29,8 @@ export function ExerciseMenu({
   onLookback: () => void;
   onSettings: () => void;
   onRemove: () => void;
+  /** B2: "Superset with…", or "Unlink superset" once it's in one. Leave out for cardio. */
+  superset?: { tag?: string; onLink: () => void; onUnlink: () => void; canAdd: boolean };
 }) {
   const [variationsOpen, setVariationsOpen] = useState(false);
   const variations = useVariations(exercise);
@@ -60,6 +63,23 @@ export function ExerciseMenu({
             Link a variation…
           </SheetOption>
         )}
+        {superset &&
+          (superset.tag ? (
+            <>
+              {superset.canAdd && (
+                <SheetOption onClick={run(superset.onLink)} detail={<ChevronRight size={12} />}>
+                  Add to superset…
+                </SheetOption>
+              )}
+              <SheetOption onClick={run(superset.onUnlink)} detail={superset.tag}>
+                Unlink superset
+              </SheetOption>
+            </>
+          ) : (
+            <SheetOption onClick={run(superset.onLink)} detail={<ChevronRight size={12} />}>
+              Superset with…
+            </SheetOption>
+          ))}
         <SheetOption onClick={run(onReplace)}>Replace exercise…</SheetOption>
         <SheetOption onClick={run(onLookback)} detail={<ChevronRight size={12} />}>
           History, charts & records

@@ -1,4 +1,5 @@
 import type { ExerciseType, SetKind, Units } from '../db/types';
+import { isEmptySegment, type CardioValues } from './cardio';
 import { formatWeight } from './units';
 
 /** The minimal shape the set helpers need. WorkoutSet satisfies it. */
@@ -151,15 +152,16 @@ export function parseRepRange(text: string): { repsMin?: number; repsMax?: numbe
   return Number.isFinite(n) && n > 0 ? { repsMin: n, repsMax: n } : {};
 }
 
-/** A set with nothing in it worth keeping (no reps). */
-export function isEmptySet(s: { reps?: number }): boolean {
-  return s.reps == null || s.reps <= 0;
+/** A set with nothing in it worth keeping: no reps (lifts) and no time, distance or calories (cardio). */
+export function isEmptySet(s: { reps?: number } & CardioValues): boolean {
+  return (s.reps == null || s.reps <= 0) && isEmptySegment(s);
 }
 
 /** Does this exercise type need a weight to log a set? */
 export const needsWeight = (type: ExerciseType) => type === 'weight';
 /** Does the table show a weight column for this type? */
-export const hasWeightColumn = (type: ExerciseType) => type !== 'bodyweight';
+export const hasWeightColumn = (type: ExerciseType) => type !== 'bodyweight' && type !== 'cardio';
+export const isCardio = (type: ExerciseType) => type === 'cardio';
 
 export function weightColumnLabel(type: ExerciseType, unitCol: string): string {
   if (type === 'bodyweight_plus') return `+${unitCol}`;
@@ -178,4 +180,5 @@ export const TYPE_LABEL: Record<ExerciseType, string> = {
   bodyweight: 'Bodyweight',
   bodyweight_plus: 'Bodyweight + added',
   assisted: 'Assisted',
+  cardio: 'Cardio',
 };

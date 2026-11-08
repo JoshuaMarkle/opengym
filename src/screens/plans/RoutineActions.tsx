@@ -184,6 +184,15 @@ export function FolderSheet({ folder, count, onClose }: { folder: Folder | null;
           </SheetOption>
           <SheetOption
             onClick={() => {
+              close();
+              if (folder) navigate(`/plan/${folder.id}/schedule`);
+            }}
+            detail={<ChevronRight size={12} />}
+          >
+            Schedule…
+          </SheetOption>
+          <SheetOption
+            onClick={() => {
               if (folder) void setFolderArchived(folder.id, !folder.archived);
               close();
             }}

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 import { Alert, Sheet, SheetOption, useToast } from '../../components/overlays';
 import { BackButton, BarButton, Button, cx, EmptyState, Screen, StatRow, Tag, TopBar } from '../../components/ui';
 import { exerciseOrMissing, useData } from '../../data/DataProvider';
+import { workoutTotals } from '../../data/history';
 import { routineFromWorkout } from '../../data/routines';
 import { deleteWorkout } from '../../data/workouts';
 import { useStartWorkout } from '../../hooks/StartWorkout';
@@ -10,7 +11,10 @@ import { fmtDay, fmtDuration, fmtTime, fmtTimeRange } from '../../lib/dates';
 import { sessionMetric } from '../../lib/oneRm';
 import { recordSetIds } from '../../lib/records';
 import { formatSet, setLabels, TYPE_TAG } from '../../lib/sets';
+import { supersetBlocks, supersetTags } from '../../lib/supersets';
 import { formatNumber, toDisplay } from '../../lib/units';
+import { CardioMiniTable } from '../workout/CardioTable';
+import { TagPill } from '../workout/WorkoutScreen';
 
 /** 6.6: every set, drops included. Repeat, Edit, Delete. */
 export function WorkoutDetail() {
@@ -47,6 +51,9 @@ export function WorkoutDetail() {
 
   const w = hw.workout;
   const recordCount = hw.exercises.reduce((n, e) => n + e.sets.filter((s) => records.has(s.id)).length, 0);
+  const totals = workoutTotals(hw, (eid) => exerciseMap.get(eid)?.type);
+  const items = hw.exercises.map((e) => ({ key: e.we.id, supersetGroup: e.we.supersetGroup, e }));
+  const tags = supersetTags(items);
 
   return (
     <Screen
@@ -76,20 +83,35 @@ export function WorkoutDetail() {
         className="mt-3"
         items={[
           { label: 'Time', value: w.endedAt ? fmtDuration(w.endedAt - w.startedAt) : '—' },
-          { label: 'Sets', value: hw.setCount },
-          { label: 'Records', value: <span className={recordCount ? 'text-tip' : ''}>{recordCount}</span> },
+          ...(totals.liftCount || !totals.cardioCount ? [{ label: 'Sets', value: totals.liftSets }] : []),
+          ...(totals.cardioCount
+            ? [{ label: 'Cardio', value: `${Math.round(totals.cardioSec / 60)} min` }]
+            : [{ label: 'Records', value: <span className={recordCount ? 'text-tip' : ''}>{recordCount}</span> }]),
         ]}
       />
 
-      {hw.exercises.map((e) => {
+      {supersetBlocks(items).map((b) => {
+        const section = ({ e }: (typeof items)[number]) => {
         const ex = exerciseOrMissing(exerciseMap, e.we.exerciseId);
+        const tag = tags.get(e.we.id);
+        if (ex.type === 'cardio')
+          return (
+            <section key={e.we.id} className="mt-4">
+              <button type="button" onClick={() => navigate(`/exercises/${ex.id}`)} className="mb-1 flex w-full items-baseline justify-between gap-3 text-left">
+                <b className="min-w-0 truncate text-[16px] font-semibold">{ex.name}</b>
+                <span className="flex-none text-[12.5px] text-fg2">cardio</span>
+              </button>
+              <CardioMiniTable exercise={ex} sets={e.sets} units={units} />
+            </section>
+          );
         const labels = setLabels(e.sets);
         const metric = ex.type === 'weight' ? sessionMetric(e.sets, ex.type, settings.oneRmFormula) : null;
         return (
           <section key={e.we.id} className="mt-4">
             <button type="button" onClick={() => navigate(`/exercises/${ex.id}`)} className="mb-1 flex w-full items-baseline justify-between gap-3 text-left">
-              <b className="min-w-0 truncate text-[16px] font-semibold">
-                {ex.name}
+              <b className="flex min-w-0 items-center gap-2 truncate text-[16px] font-semibold">
+                <TagPill tag={tag} on />
+                <span className="truncate">{ex.name}</span>
                 {TYPE_TAG[ex.type] && <Tag>{TYPE_TAG[ex.type]}</Tag>}
               </b>
               {metric && <span className="flex-none text-[12.5px] text-fg2">est. 1RM {formatNumber(Math.round(toDisplay(metric.value, units)), 0)}</span>}
@@ -105,6 +127,14 @@ export function WorkoutDetail() {
               );
             })}
           </section>
+        );
+        };
+        if (!b.letter) return section(b.items[0]);
+        return (
+          <div key={`ss-${b.items[0].key}`} className="mt-4 border-l-2 border-accent pl-3">
+            <div className="text-[11px] font-bold tracking-[0.07em] text-accent uppercase">Superset {b.letter}</div>
+            <div className="-mt-2">{b.items.map(section)}</div>
+          </div>
         );
       })}
       {!hw.exercises.length && <p className="py-10 text-center text-[14px] text-fg2">No sets in this workout.</p>}

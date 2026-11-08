@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import { CalendarIcon, ChevronRight, HistoryIcon, ListIcon } from '../../components/icons';
 import { Chips, cx, EmptyState, LargeHeader, Screen, SearchField, Segmented, StatRow } from '../../components/ui';
 import { useActiveWorkout, useData } from '../../data/DataProvider';
-import type { HistoryWorkout } from '../../data/history';
+import { workoutLine, type HistoryWorkout } from '../../data/history';
 import { updateSettings } from '../../data/settings';
 import { useNow } from '../../hooks/useNow';
 import {
@@ -178,7 +178,8 @@ function MonthView({
   now: number;
 }) {
   const navigate = useNavigate();
-  const { history } = useData();
+  const { history, exerciseMap } = useData();
+  const typeOf = (id: string) => exerciseMap.get(id)?.type;
   const d = new Date(month);
   const days = daysInMonth(d.getFullYear(), d.getMonth());
   const lead = (d.getDay() - weekStart + 7) % 7;
@@ -248,7 +249,7 @@ function MonthView({
               <b className="block truncate text-[16px] font-semibold">{w.workout.name}</b>
               <span className="block truncate text-[13px] text-fg2">
                 {fmtDay(w.workout.startedAt)}
-                {w.workout.endedAt ? ` · ${fmtDuration(w.workout.endedAt - w.workout.startedAt)}` : ''} · {w.setCount} sets
+                {w.workout.endedAt ? ` · ${fmtDuration(w.workout.endedAt - w.workout.startedAt)}` : ''} · {workoutLine(w, typeOf, false)}
               </span>
             </span>
             <ChevronRight size={13} className="flex-none text-fg3" />
@@ -585,14 +586,14 @@ function DateBlock({ ts }: { ts: number }) {
 }
 
 function ListRow({ w, onClick }: { w: HistoryWorkout; onClick: () => void }) {
-  const ex = w.exercises.length;
+  const { exerciseMap } = useData();
   return (
     <button type="button" onClick={onClick} className="flex min-h-[56px] w-full items-center gap-3 border-b border-line text-left active:bg-surface/60">
       <DateBlock ts={w.workout.startedAt} />
       <span className="min-w-0 flex-1">
         <b className="block truncate text-[16px] font-semibold">{w.workout.name}</b>
         <span className="block truncate text-[13px] text-fg2">
-          {ex} {ex === 1 ? 'exercise' : 'exercises'} · {w.setCount} sets
+          {workoutLine(w, (id) => exerciseMap.get(id)?.type)}
         </span>
       </span>
       <span className="flex-none text-[13px] text-fg2">{w.workout.endedAt ? fmtDuration(w.workout.endedAt - w.workout.startedAt) : ''}</span>

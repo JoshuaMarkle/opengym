@@ -8,22 +8,28 @@ import { lastSession } from '../../data/history';
 import { loadRoutineDraft } from '../../data/routines';
 import { usePlans } from '../../data/usePlans';
 import { useStartWorkout } from '../../hooks/StartWorkout';
-import { fmtDay } from '../../lib/dates';
+import { cardioSummary } from '../../lib/cardio';
+import { fmtDay, fmtMonthDay } from '../../lib/dates';
 import { prefillFromRoutine } from '../../lib/prefill';
 import { matchPrevious } from '../../lib/previous';
 import { formatRepRange, formatSet, formatSetWeight, hasWeightColumn, setLabels, TYPE_TAG, weightColumnLabel } from '../../lib/sets';
+import { supersetBlocks, supersetTags } from '../../lib/supersets';
 import { unitColumn } from '../../lib/units';
+import { TagPill } from '../workout/WorkoutScreen';
 import { useEffect, useRef, useState } from 'react';
 import { useRoutineActions } from './RoutineActions';
 
-/** "~55 min": the routine's own average if it has history, else ~3 min a set. */
-export function estimateMinutes(history: HistoryIndex, routineId: string | undefined, sets: number): number {
+/**
+ * "~55 min": the routine's own average if it has history, else ~3 min a set.
+ * Sets inside a superset share the rest, so they count ~2 min.
+ */
+export function estimateMinutes(history: HistoryIndex, routineId: string | undefined, sets: number, supersetSets = 0): number {
   const past = routineId ? history.workouts.filter((w) => w.workout.routineId === routineId && w.workout.endedAt).slice(0, 5) : [];
   if (past.length) {
     const avg = past.reduce((n, w) => n + (w.workout.endedAt! - w.workout.startedAt), 0) / past.length / 60_000;
     return Math.max(5, Math.round(avg / 5) * 5);
   }
-  return Math.max(5, Math.round((sets * 3) / 5) * 5);
+  return Math.max(5, Math.round((sets * 3 - supersetSets) / 5) * 5);
 }
 
 /** 2.11: every set with last time (Previous) and what it will start at. Start pinned at the bottom. */
@@ -62,11 +68,15 @@ export function RoutineScreen() {
   const sets = draft.exercises.reduce((n, e) => n + e.sets.length, 0);
   const working = draft.exercises.reduce((n, e) => n + e.sets.filter((s) => s.kind === 'working').length, 0);
   const last = history.lastDoneByRoutine.get(routine.id);
+  const blocks = supersetBlocks(draft.exercises);
+  const tags = supersetTags(draft.exercises);
+  const supersets = blocks.filter((b) => b.letter).length;
+  const supersetSets = draft.exercises.filter((e) => tags.has(e.key)).reduce((n, e) => n + e.sets.length, 0);
   const meta = [
     folder?.name ?? 'No folder',
-    `${draft.exercises.length} ${draft.exercises.length === 1 ? 'exercise' : 'exercises'}`,
+    `${draft.exercises.length} ${draft.exercises.length === 1 ? 'exercise' : 'exercises'}${supersets ? ` (${supersets} ${supersets === 1 ? 'superset' : 'supersets'})` : ''}`,
     `${working} sets`,
-    `~${estimateMinutes(history, routine.id, sets)} min`,
+    `~${estimateMinutes(history, routine.id, sets, supersetSets)} min`,
     last ? `last done ${fmtDay(last)}` : 'never done',
   ].join(' · ');
 
@@ -104,8 +114,26 @@ export function RoutineScreen() {
         </EmptyState>
       )}
 
-      {draft.exercises.map((e, i) => {
+      {blocks.map((block, bi) => {
+        const section = (e: (typeof draft.exercises)[number]) => {
         const ex = exerciseOrMissing(exerciseMap, e.exerciseId);
+        const tag = tags.get(e.key);
+        if (ex.type === 'cardio') {
+          const lastC = lastSession(history, ex.id);
+          const line = lastC ? cardioSummary(lastC.sets, ex, units) : '';
+          return (
+            <section key={e.key} className="border-b border-line py-3 last:border-b-0">
+              <button type="button" onClick={() => navigate(`/exercises/${ex.id}`)} className="flex w-full items-baseline justify-between gap-3 text-left">
+                <b className="min-w-0 truncate text-[16px] font-semibold">
+                  <span className="mr-2 text-fg2">{bi + 1}</span>
+                  {ex.name}
+                </b>
+                <span className="flex-none text-[13px] text-fg2">{e.sets.length > 1 ? `${e.sets.length} segments` : 'cardio'}</span>
+              </button>
+              <p className="mt-1 text-[13px] text-fg2">{line ? `Last: ${line} · ${fmtMonthDay(lastC!.date)}` : 'First time. Numbers fill in from here on.'}</p>
+            </section>
+          );
+        }
         const prevSets = lastSession(history, ex.id)?.sets;
         const rsets = e.sets.map((s, j) => ({ id: s.key, order: j, kind: s.kind, weight: s.weight, repsMin: s.repsMin, repsMax: s.repsMax }));
         const start = prefillFromRoutine(rsets, prevSets);
@@ -121,11 +149,19 @@ export function RoutineScreen() {
           <section key={e.key} className="border-b border-line py-3 last:border-b-0">
             <button type="button" onClick={() => navigate(`/exercises/${ex.id}`)} className="flex w-full items-baseline justify-between gap-3 text-left">
               <b className="min-w-0 truncate text-[16px] font-semibold">
-                <span className="mr-2 text-fg2">{i + 1}</span>
+                {tag ? (
+                  <span className="mr-2 inline-flex align-[2px]">
+                    <TagPill tag={tag} on />
+                  </span>
+                ) : (
+                  <span className="mr-2 text-fg2">{bi + 1}</span>
+                )}
                 {ex.name}
                 {TYPE_TAG[ex.type] && <Tag>{TYPE_TAG[ex.type]}</Tag>}
               </b>
-              <span className="flex-none text-[13px] text-fg2">{warm ? `W + ${work} sets` : `${work} ${work === 1 ? 'set' : 'sets'}`}</span>
+              <span className="flex-none text-[13px] text-fg2">
+                {tag && !warm && e.sets[0] && (e.sets[0].repsMin || e.sets[0].repsMax) ? `${work} × ${formatRepRange(e.sets[0].repsMin, e.sets[0].repsMax)}` : warm ? `W + ${work} sets` : `${work} ${work === 1 ? 'set' : 'sets'}`}
+              </span>
             </button>
             {e.sets.length > 0 && (
               <div className="mt-1.5 text-[14px]">
@@ -155,6 +191,17 @@ export function RoutineScreen() {
               </div>
             )}
           </section>
+        );
+        };
+        if (!block.letter) return section(block.items[0]);
+        const rounds = Math.max(...block.items.map((x) => x.sets.filter((s) => s.kind === 'working').length));
+        return (
+          <div key={`ss-${block.items[0].key}`} className="mt-3 border-b border-line border-l-2 border-l-accent pb-1 pl-3 last:border-b-0">
+            <div className="pt-1 text-[11px] font-bold tracking-[0.07em] text-accent uppercase">
+              Superset {block.letter} · {rounds} {rounds === 1 ? 'round' : 'rounds'}
+            </div>
+            {block.items.map(section)}
+          </div>
         );
       })}
 

@@ -169,6 +169,15 @@ export function ShareGlyph({ size = 16, ...p }: P) {
   );
 }
 
+/** → on the keypad's Next button */
+export function ArrowGlyph({ size = 14, ...p }: P) {
+  return (
+    <svg viewBox="0 0 14 14" {...svg(size, p)}>
+      <path d="M2 7h9.5M7.6 3 11.6 7l-4 4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function PlusGlyph({ size = 14, ...p }: P) {
   return (
     <svg viewBox="0 0 14 14" {...svg(size, p)}>
@@ -200,11 +209,11 @@ export function LogoMark({ size = 40, rounded = true }: { size?: number; rounded
       <g clipPath="url(#og-logo-clip)">
         {/* Brand logo: dark or light version follows the theme (brand/logos/opengym-logo-{dark,light}.svg). */}
         <rect width="1024" height="1024" fill="var(--og-bg)" />
-        <rect x="-60" y="480" width="786" height="64" rx="32" fill="var(--og-logo-bar)" />
-        <rect x="278" y="435" width="38" height="154" rx="14" fill="var(--og-logo-bar)" />
-        <rect x="338" y="202" width="104" height="620" rx="30" fill="#2E8BFF" />
-        <rect x="460" y="202" width="104" height="620" rx="30" fill="#2E8BFF" />
-        <rect x="582" y="312" width="88" height="400" rx="30" fill="#2E8BFF" />
+        <rect x="-60" y="480" width="830" height="64" rx="32" fill="var(--og-logo-bar)" />
+        <rect x="174" y="435" width="38" height="154" rx="14" fill="var(--og-logo-bar)" />
+        <rect x="234" y="202" width="156" height="620" rx="30" fill="#2E8BFF" />
+        <rect x="408" y="202" width="156" height="620" rx="30" fill="#2E8BFF" />
+        <rect x="582" y="312" width="132" height="400" rx="30" fill="#2E8BFF" />
       </g>
     </svg>
   );

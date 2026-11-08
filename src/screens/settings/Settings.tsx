@@ -7,6 +7,7 @@ import { cx, LargeHeader, Screen, SectionLabel, TextField, Toggle } from '../../
 import { useData } from '../../data/DataProvider';
 import { backUpNow, dataCounts, deleteAllData, exportCsv, shareOrDownload } from '../../data/backup';
 import { updateSettings } from '../../data/settings';
+import { TEST_MODE } from '../../db/testMode';
 import { DAY_MS, fmtAgo } from '../../lib/dates';
 import { formatNumber } from '../../lib/units';
 import { usePinned } from '../progress/Progress';
@@ -28,6 +29,7 @@ export function Settings() {
   const [deleting, setDeleting] = useState(false);
   const [typed, setTyped] = useState('');
   const [busy, setBusy] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   const overdue = !settings.lastBackupAt || Date.now() - settings.lastBackupAt > 7 * DAY_MS;
   const unit = settings.units;
@@ -87,6 +89,17 @@ export function Settings() {
         {overdue && <span className="font-semibold text-warn"> It's been a while. Back up now.</span>}
       </p>
 
+      {import.meta.env.DEV && TEST_MODE && (
+        <>
+          <SectionLabel tone="warn">Testing mode · this laptop only</SectionLabel>
+          <Item label="Reset sample data" onClick={() => setResetting(true)} />
+          <p className="mt-2.5 text-[13px] leading-normal text-fg2">
+            The dev server on localhost uses a separate test database filled with workouts from July 2024. Production and your phone never see it. Run{' '}
+            <code>npm run dev:real</code> to turn it off.
+          </p>
+        </>
+      )}
+
       <div className="mt-10 flex flex-col items-center gap-2 text-center">
         <LogoMark size={36} />
         <div className="text-[13px] text-fg2">
@@ -103,6 +116,27 @@ export function Settings() {
       </div>
 
       {restore.element}
+      {import.meta.env.DEV && TEST_MODE && (
+        <Alert
+          open={resetting}
+          title="Reset sample data?"
+          message="Workouts and routines in the test database are replaced with fresh sample history."
+          onClose={() => setResetting(false)}
+          actions={[
+            {
+              label: 'Reset',
+              kind: 'danger',
+              onClick: async () => {
+                setResetting(false);
+                const m = await import('../../data/sampleData');
+                await m.resetSampleData();
+                toast({ message: 'Sample data reset' });
+              },
+            },
+            { label: 'Cancel', onClick: () => setResetting(false) },
+          ]}
+        />
+      )}
       <Alert
         open={deleting}
         title="Delete all data?"

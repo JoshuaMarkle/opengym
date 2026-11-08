@@ -1,0 +1,515 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>OpenGym — Plate pad, supersets & cardio (final)</title><style>
+:root{--accent:#2e8bff;--tip:#2ee66b;--warn:#ff8c1a;--danger:#ff3b3b;--bg:#000;--fg:#fff;--fg2:#8e8e8e;--line:#1f1f1f;--surf:#0e0e0e;--surf2:#161616;--doneTint:color-mix(in srgb,var(--accent) 14%,#000);--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050505;font-family:var(--font);color:var(--fg);padding:40px 24px 80px;font-variant-numeric:tabular-nums}
+.board{max-width:1100px;margin:0 auto;background:#0a0a0a;border:1px solid #1c1c1c;border-radius:16px;padding:40px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg2);font-weight:600}
+h1{font-size:36px;font-weight:700;letter-spacing:-.02em;margin:6px 0 6px}
+.lead{color:var(--fg2);font-size:15px;max-width:800px;line-height:1.55}
+.toc{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:24px}
+.toc a{display:block;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surf);text-decoration:none;color:#fff;font-size:13px;font-weight:600;line-height:1.35}
+.toc a small{display:block;color:var(--fg2);font-weight:500;font-size:11px;margin-top:2px}
+.toc a i{font-style:normal;color:var(--accent);font-weight:700;margin-right:4px}
+.flow{display:flex;align-items:center;gap:8px;margin-top:18px;flex-wrap:wrap;font-size:12.5px;color:#cfcfcf}
+.flow span{border:1px solid #2a2a2a;border-radius:999px;padding:5px 11px}
+.flow b{color:#555}
+.section{margin-top:52px;padding-top:30px;border-top:1px solid var(--line)}
+.stag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;color:#000;background:#fff;border-radius:6px;padding:3px 8px;margin-bottom:10px}
+.section h2{font-size:24px;font-weight:700;margin-bottom:4px}
+.section > p{color:var(--fg2);font-size:14px;max-width:800px;line-height:1.55}
+.row{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:26px;align-items:start}
+.cap{width:300px;margin:12px auto 0}
+.cap b{font-size:14px;display:block}
+.cap b em{font-style:normal;color:var(--accent);margin-right:6px}
+.cap p{font-size:12px;color:var(--fg2);line-height:1.5;margin-top:4px}
+.cap .flag{color:var(--warn)}
+.phone{width:300px;height:620px;margin:0 auto;border-radius:44px;border:10px solid #2a2a2a;background:var(--bg);overflow:hidden;position:relative;display:flex;flex-direction:column;font-size:15px}
+.status{height:34px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:12px;font-weight:600}
+.island{width:84px;height:22px;background:#1a1a1a;border-radius:12px}
+.body{flex:1;overflow:hidden;padding:0 16px;position:relative}
+.homebar{flex:none;height:5px;width:110px;background:#fff;opacity:.85;border-radius:3px;margin:6px auto 8px;position:relative;z-index:20}
+.tabbar{flex:none;display:flex;justify-content:space-around;border-top:1px solid var(--line);padding:8px 6px 0}
+.tabbar span{font-size:9.5px;font-weight:600;color:var(--fg2);display:flex;flex-direction:column;align-items:center;gap:3px}
+.tabbar span i{width:18px;height:18px;border-radius:5px;border:1.5px solid currentColor;display:block}
+.tabbar span.on{color:var(--accent)}
+.fade{position:absolute;left:0;right:0;bottom:0;height:46px;background:linear-gradient(transparent,#000);pointer-events:none}
+.nh{flex:none;display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;padding:6px 16px 10px;border-bottom:1px solid var(--line)}
+.nh .t{font-size:16px;font-weight:700;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.nh .l{justify-self:start;white-space:nowrap}.nh .r{justify-self:end;white-space:nowrap}
+.tb{color:var(--accent);font-weight:600;font-size:15px}
+.tb.g{color:var(--fg2);font-weight:500}.tb.b{font-weight:700}.tb.big{font-size:22px;line-height:.8}
+.bh{flex:none;padding:4px 16px 6px;display:flex;justify-content:space-between;align-items:flex-end}
+.bh .t{font-size:28px;font-weight:700;letter-spacing:-.02em}
+.bh .s{font-size:12px;color:var(--fg2);margin-top:1px}
+.date{font-size:12px;font-weight:600;color:var(--fg2);margin-top:4px;letter-spacing:.02em}
+.ttl{font-size:28px;font-weight:700;letter-spacing:-.02em;margin-top:1px}
+.lbl{font-size:10px;font-weight:700;letter-spacing:.07em;color:var(--fg2);margin-top:16px;padding-bottom:6px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
+.lbl span{letter-spacing:0;color:var(--accent);font-weight:600;font-size:11.5px}
+.btn{height:46px;border-radius:12px;background:var(--accent);color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn.g{background:#1c1c1c}.btn.red{background:var(--danger)}.btn.sm{height:40px;font-size:14px;border-radius:10px}
+.btn.ghost{background:transparent;color:var(--accent)}
+.stack{display:flex;flex-direction:column;gap:8px}
+.play{width:30px;height:30px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;flex:none}
+.play.g{background:#222}
+.play i{width:0;height:0;border-left:9px solid #fff;border-top:6px solid transparent;border-bottom:6px solid transparent;margin-left:2px}
+.play.g i{border-left-color:#cfcfcf}
+.note{font-size:11.5px;color:var(--fg2);line-height:1.5;margin-top:10px}
+/* workout header */
+.wh{flex:none;display:flex;justify-content:space-between;align-items:center;padding:6px 16px 10px;border-bottom:1px solid var(--line)}
+.wh .t{font-size:17px;font-weight:700}.wh .s{font-size:12px;color:var(--fg2)}
+.finish{background:var(--accent);color:#fff;font-weight:600;font-size:13px;border-radius:8px;padding:6px 12px}
+.exh{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+.exn{font-size:20px;font-weight:700}.exp{font-size:12px;color:var(--fg2);margin-top:2px}
+.hbtns{display:flex;gap:6px}
+.ib{font-size:12px;font-weight:600;color:var(--accent);border:1px solid var(--line);border-radius:8px;padding:5px 9px;display:flex;align-items:center;height:28px}
+.ib.hl{background:var(--accent);border-color:var(--accent);color:#fff}
+.vars{display:flex;gap:6px;margin-top:10px}
+.vars span{font-size:12px;font-weight:600;border-radius:8px;padding:6px 10px;border:1px solid var(--line);color:var(--fg2)}
+.vars span.on{border-color:var(--accent);color:#fff;background:var(--doneTint)}
+.tbl{margin-top:12px;font-size:14px}
+.tr{display:grid;grid-template-columns:28px 1fr 58px 44px 34px;align-items:center;height:40px;border-radius:8px;padding:0 4px;background:var(--bg);position:relative}
+.th{height:24px;font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--fg2)}
+.c{text-align:center}
+.prev{color:var(--fg2);font-size:13px;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.db{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:4px;background:var(--warn);color:#000;font-size:9.5px;font-weight:800;flex:none}
+.tr.done{background:var(--doneTint)}
+.in{background:var(--surf2);border-radius:6px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:600;margin:0 3px}
+.done .in{background:transparent}
+.cur .in{border:1.5px solid var(--accent)}
+.ghost .in{color:var(--fg2)}
+.in.edit{border:2px solid var(--accent) !important;background:#0b1a2e;color:#fff}
+.in.edit::after{content:"";width:1.5px;height:15px;background:var(--accent);margin-left:2px}
+.chk{width:26px;height:26px;border-radius:7px;border:1.5px solid #333;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
+.chk.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.sn{font-weight:700;font-size:13px;text-align:center}
+.sn.w{color:var(--fg2)}.sn.d{color:var(--warn)}
+.tr.drop{margin-left:14px;width:calc(100% - 14px);grid-template-columns:22px 1fr 58px 44px 34px;border-left:2px solid var(--warn);border-radius:0 8px 8px 0}
+.quick{display:flex;gap:6px;margin-top:6px}
+.quick span{flex:1;height:34px;border-radius:8px;background:var(--surf2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--accent)}
+.quick span.dr{color:var(--warn)}
+.nav{flex:none;display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px solid var(--line);padding:10px 12px 4px}
+.nav .nb{height:44px;border-radius:10px;background:var(--surf2);display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:600;gap:8px;white-space:nowrap}
+.nav .nb small{display:block;font-size:9px;color:var(--fg2);font-weight:600;letter-spacing:.04em}
+.nav .nb.r{justify-content:flex-end;text-align:right}
+.nav .nb.list{background:#fff;color:#000}.nav .nb.list small{color:#555}
+.arrow{font-size:16px;color:var(--fg2)}
+.lines{display:block;width:14px;height:2px;background:#000;border-radius:1px;box-shadow:0 -4px 0 #000,0 4px 0 #000;margin:0 2px}
+.swipe{position:relative;height:40px;border-radius:8px;overflow:hidden}
+.swipe.left{background:var(--danger)}.swipe.right{background:#3a3a3a}
+.swipe .act{position:absolute;top:0;bottom:0;width:96px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;gap:6px}
+.swipe.left .act{right:0}.swipe.right .act{left:0}
+.swipe.left .tr{transform:translateX(-86px);border-radius:0;background:#0b0b0b}
+.swipe.right .tr{transform:translateX(96px);border-radius:0;background:#0b0b0b}
+.wchip{display:inline-flex;width:18px;height:18px;border-radius:5px;background:#fff;color:#000;font-size:11px;font-weight:800;align-items:center;justify-content:center}
+.toast{position:absolute;left:12px;right:12px;bottom:66px;background:#1e1e1e;border:1px solid #2c2c2c;border-radius:12px;height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-size:13px;z-index:8;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+.toast b{color:var(--accent)}
+/* keypad */
+.kp{flex:none;background:#0d0d0d;border-top:1px solid #222;padding:8px 8px 4px}
+.kpt{display:flex;justify-content:space-between;align-items:center;padding:2px 6px 8px;font-size:11px;color:var(--fg2);font-weight:600}
+.kpt b{color:#fff}
+.kpt .tabs{display:flex;gap:4px}
+.kpt .tabs span{padding:3px 8px;border-radius:6px;border:1px solid #2a2a2a}
+.kpt .tabs span.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.kg{display:grid;grid-template-columns:1fr 1fr 1fr 64px;gap:6px}
+.k{height:44px;border-radius:9px;background:#1e1e1e;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:500;flex-direction:column;line-height:1}
+.k small{font-size:8.5px;color:var(--fg2);font-weight:600;margin-top:3px}
+.k.fn{background:#2a2a2a;font-size:17px;font-weight:600}
+.k.hl{box-shadow:inset 0 0 0 1.5px var(--accent)}
+.chev{width:12px;height:12px;border-right:2.5px solid #fff;border-bottom:2.5px solid #fff;transform:rotate(45deg) translate(-2px,-2px)}
+/* overlays */
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.6);z-index:5}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#101010;border-top-left-radius:18px;border-top-right-radius:18px;border-top:1px solid #262626;z-index:6;display:flex;flex-direction:column;padding:0 16px 28px}
+.grab{width:36px;height:5px;border-radius:3px;background:#3a3a3a;margin:8px auto 10px;flex:none}
+.sheet h4{font-size:17px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+.sheet .sub{font-size:12px;color:var(--fg2);margin:3px 0 8px;line-height:1.45}
+.opt{display:flex;justify-content:space-between;align-items:center;min-height:46px;border-bottom:1px solid #1e1e1e;font-size:15px;gap:10px}
+.opt:last-child{border-bottom:0}
+.opt span{font-size:12px;color:var(--fg2)}
+.opt.red{color:var(--danger)}.opt.blue{color:var(--accent);font-weight:600}
+.menu{position:absolute;left:16px;right:16px;background:#1c1c1c;border:1px solid #2c2c2c;border-radius:12px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.6);z-index:7}
+.menu div{height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-size:14px;border-bottom:1px solid #2a2a2a}
+.menu div:last-child{border-bottom:0}
+.menu div span{font-size:13px;color:var(--fg2)}
+.menu .red{color:var(--danger)}.menu .blue{color:var(--accent);font-weight:600}
+.lifted{position:relative;z-index:6;outline:1.5px solid var(--accent);background:#141414 !important}
+.alert{position:absolute;left:28px;right:28px;top:180px;background:#1c1c1c;border-radius:16px;z-index:7;overflow:hidden;text-align:center;border:1px solid #2c2c2c}
+.alert .in2{padding:16px 16px 12px}
+.alert b{font-size:16px;display:block}
+.alert p{font-size:12.5px;color:#bdbdbd;margin-top:6px;line-height:1.45}
+.alert .ab{border-top:1px solid #2c2c2c;height:44px;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--accent)}
+.alert .ab.red{color:var(--danger);font-weight:600}.alert .ab.b{font-weight:700}
+.tinput{height:40px;border-radius:10px;background:#1c1c1c;display:flex;align-items:center;padding:0 12px;font-size:15px;margin-top:6px}
+.tinput.f{border:1.5px solid var(--accent)}
+.tinput.f::after{content:"";width:1.5px;height:18px;background:var(--accent);margin-left:2px}
+/* big sheet popup */
+.bigsheet{position:absolute;left:0;right:0;bottom:0;top:58px;background:#101010;border-top-left-radius:18px;border-top-right-radius:18px;border-top:1px solid #262626;z-index:6;display:flex;flex-direction:column}
+.shh{display:flex;justify-content:space-between;align-items:center;padding:0 16px;flex:none}
+.shh b{font-size:18px}.shh small{display:block;font-size:11px;color:var(--fg2);font-weight:500}
+.xb{width:28px;height:28px;border-radius:50%;background:#262626;display:flex;align-items:center;justify-content:center;font-size:13px;color:#cfcfcf}
+.stabs{display:flex;margin:12px 16px 4px;background:#1a1a1a;border-radius:10px;padding:3px;flex:none}
+.stabs span{flex:1;text-align:center;font-size:12.5px;font-weight:600;padding:7px 0;border-radius:8px;color:var(--fg2)}
+.stabs span.on{background:#333;color:#fff}
+.shb{flex:1;overflow:hidden;padding:0 16px;position:relative}
+.dt{text-align:center;line-height:1.1}.dt small{display:block;font-size:9.5px;color:var(--fg2);font-weight:700}.dt b{font-size:17px}
+.mh{display:grid;grid-template-columns:40px 1fr;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #1c1c1c}
+.mh .sets{font-size:13px;line-height:1.55;color:#e6e6e6}
+.mh .x{color:#555;margin:0 3px}
+.mh .dr{color:var(--warn);display:block}
+.mh .dr .db{width:14px;height:14px;font-size:9px;vertical-align:-2px;margin-right:3px;display:inline-flex}
+.vtag{font-size:9.5px;font-weight:700;color:var(--fg2);border:1px solid #333;border-radius:4px;padding:0 4px;margin-left:4px;vertical-align:1px}
+/* progress */
+.metric{display:flex;gap:6px;margin-top:12px}
+.metric span{font-size:11.5px;font-weight:600;border-radius:999px;padding:5px 10px;border:1px solid var(--line);color:var(--fg2);white-space:nowrap}
+.metric span.on{background:#fff;color:#000;border-color:#fff}
+.hero{margin-top:12px}
+.hero .hk{font-size:11px;font-weight:700;letter-spacing:.05em;color:var(--fg2)}
+.hero .v{font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.hero .v small{font-size:15px;color:var(--fg2);font-weight:600;margin-left:3px}
+.up{color:var(--tip);font-size:13px;font-weight:700}.flat{color:var(--fg2);font-size:13px;font-weight:700}.dn{color:var(--danger);font-size:13px;font-weight:700}
+.seg{display:flex;background:var(--surf2);border-radius:9px;padding:2px;margin-top:8px}
+.seg span{flex:1;text-align:center;font-size:11.5px;font-weight:600;padding:5px 0;border-radius:7px;color:var(--fg2)}
+.seg span.on{background:#2c2c2c;color:#fff}
+.flatstats{display:grid;grid-template-columns:repeat(3,1fr);margin-top:12px;border-top:1px solid var(--line)}
+.flatstats div{padding:9px 0 0}
+.flatstats div+div{padding-left:10px;border-left:1px solid var(--line)}
+.flatstats small{display:block;font-size:9.5px;color:var(--fg2);font-weight:700;letter-spacing:.04em}
+.flatstats b{font-size:15px}
+.rmt{margin-top:8px;font-size:13px}
+.rmt .rr{display:grid;grid-template-columns:42px 1fr 40px 48px;align-items:center;height:26px;gap:8px;border-bottom:1px solid #1a1a1a;white-space:nowrap}
+.rmt .rr.h{height:22px;font-size:9.5px;font-weight:700;letter-spacing:.05em;color:var(--fg2)}
+.rmt .bar{height:7px;border-radius:4px;background:#262626;position:relative}
+.rmt .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:#5a5a5a}
+.rmt .rr.new .bar i{background:var(--accent)}
+.rmt .date2{font-size:11px;color:var(--fg2);text-align:right}
+.rmt .rr.new .date2{color:var(--accent);font-weight:700}
+.rmt .rr.cur{background:color-mix(in srgb,var(--accent) 10%,transparent);border-radius:6px}
+.recpair{display:grid;grid-template-columns:1fr 1fr;margin-top:12px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.recpair div{padding:9px 0}
+.recpair div+div{padding-left:12px;border-left:1px solid var(--line)}
+.recpair small{display:block;font-size:9.5px;font-weight:700;color:var(--fg2);letter-spacing:.04em}
+.recpair b{font-size:18px}.recpair span{display:block;font-size:10.5px;color:var(--fg2)}
+.lift{display:grid;grid-template-columns:1fr 70px 64px;gap:10px;align-items:center;height:56px;border-bottom:1px solid var(--line)}
+.lift b{font-size:14.5px;display:block}.lift .vv{font-size:12px;color:var(--fg2)}
+.lift .ch{text-align:right;font-size:12.5px;font-weight:700;white-space:nowrap}
+/* home */
+.wstrip{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:14px;text-align:center}
+.wstrip small{display:block;font-size:10px;font-weight:700;color:var(--fg2)}
+.wstrip i{display:flex;width:31px;height:31px;border-radius:50%;margin:5px auto 0;align-items:center;justify-content:center;font-style:normal;font-size:12.5px;font-weight:700;color:#777;background:#141414}
+.wstrip i.d{background:var(--accent);color:#fff}
+.wstrip i.t{background:transparent;box-shadow:inset 0 0 0 2px #fff;color:#fff}
+.wstrip i.tp{background:transparent;box-shadow:inset 0 0 0 2px var(--tip);color:#fff}
+.wstrip i.f{background:transparent;color:#555}
+.qrow{display:flex;align-items:center;gap:12px;height:54px;border-bottom:1px solid var(--line)}
+.qrow .m{flex:1;min-width:0}
+.qrow b{font-size:15px;display:block}
+.qrow span{font-size:11.5px;color:var(--fg2)}
+.qrow .tag{font-size:9.5px;font-weight:700;color:#fff;background:var(--accent);border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:2px}
+.live{margin-top:10px;padding:10px 0 12px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.live .top{display:flex;justify-content:space-between;align-items:center}
+.dotl{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;letter-spacing:.07em;color:var(--tip)}
+.dotl i{width:7px;height:7px;border-radius:50%;background:var(--tip)}
+.live .time{font-size:13px;font-weight:700}
+.live b.n{font-size:22px;display:block;margin-top:2px}
+.live .now{font-size:12.5px;color:#cfcfcf;margin-top:2px}
+.live .now span{color:var(--fg2)}
+.exdots{display:flex;gap:4px;margin-top:8px}
+.exdots i{flex:1;height:5px;border-radius:3px;background:#222}
+.exdots i.d{background:var(--accent)}.exdots i.c{background:#fff}
+.resbar{flex:none;margin:0 10px 6px;height:44px;border-radius:12px;background:#0b1a2e;border:1px solid color-mix(in srgb,var(--accent) 50%,#000);display:flex;align-items:center;justify-content:space-between;padding:0 12px}
+.resbar b{font-size:13.5px}.resbar span{font-size:11.5px;color:var(--fg2);margin-left:6px}
+.resbar em{font-style:normal;font-size:13px;font-weight:700;color:var(--accent)}
+/* plans */
+.fold{display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.fold .fl{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.05em;color:#cfcfcf}
+.fold .fl small{font-weight:600;color:var(--fg2);letter-spacing:0}
+.fold .fa{color:var(--accent);font-size:13px;font-weight:700;letter-spacing:1px}
+.chevd{display:inline-block;width:7px;height:7px;border-right:2px solid #8e8e8e;border-bottom:2px solid #8e8e8e;transform:rotate(45deg);margin:0 2px 3px 0}
+.chevr{display:inline-block;width:7px;height:7px;border-right:2px solid #8e8e8e;border-bottom:2px solid #8e8e8e;transform:rotate(-45deg);margin:0 3px 1px 0}
+.rrow{display:flex;align-items:center;gap:10px;height:52px;border-bottom:1px solid var(--line)}
+.rrow .m{flex:1;min-width:0}
+.rrow b{font-size:15px;display:block}
+.rrow .m span{font-size:11.5px;color:var(--fg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.rrow .go{color:#555;font-size:17px}
+.minus{width:22px;height:22px;border-radius:50%;background:var(--danger);flex:none;display:flex;align-items:center;justify-content:center}
+.minus i{width:10px;height:2px;background:#fff;border-radius:1px;display:block}
+.handle{display:flex;flex-direction:column;gap:3px;flex:none}
+.handle i{display:block;width:14px;height:2px;background:#4a4a4a;border-radius:1px}
+.pill{font-size:10px;font-weight:700;background:#222;border-radius:5px;padding:2px 6px;color:#cfcfcf}
+.pill.on{background:var(--accent);color:#fff}
+.newrow{height:44px;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--accent);border-bottom:1px solid var(--line)}
+.newrow i{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:15px}
+/* builder */
+.namef{margin-top:12px;padding-bottom:6px;border-bottom:1px solid #2a2a2a;font-size:24px;font-weight:700;display:flex;justify-content:space-between;align-items:baseline}
+.namef span{font-size:11px;color:var(--fg2);font-weight:500}
+.metaline{font-size:11.5px;color:var(--fg2);margin-top:6px;display:flex;justify-content:space-between}
+.exsec{padding:12px 0 10px;border-bottom:1px solid var(--line)}
+.exr{display:flex;align-items:center;gap:10px}
+.exr b{font-size:15px;flex:1}
+.exr .dots{color:var(--accent);font-size:13px;font-weight:700;letter-spacing:1px}
+.mt{margin-top:6px;padding-left:24px}
+.mt .r{display:grid;grid-template-columns:30px 1fr 1fr;gap:8px;align-items:center;height:32px;font-size:14px}
+.mt .r.h{height:18px;font-size:9.5px;font-weight:700;color:var(--fg2);letter-spacing:.05em}
+.mt .r.h span{text-align:center}
+.mt .n{text-align:center;font-weight:700;font-size:13px}.mt .n.w{color:var(--fg2)}.mt .n.d{color:var(--warn)}
+.cell{background:var(--surf2);border-radius:7px;height:27px;display:flex;align-items:center;justify-content:center;font-weight:600}
+.cell.ph{color:#5a5a5a;font-weight:500;font-size:12.5px}
+.cell.edit{border:2px solid var(--accent);background:#0b1a2e}
+.cell.edit::after{content:"";width:1.5px;height:15px;background:var(--accent);margin-left:2px}
+.addset{font-size:12.5px;font-weight:600;color:var(--accent);margin:6px 0 0 24px}
+.search{height:36px;border-radius:10px;background:#1a1a1a;display:flex;align-items:center;padding:0 12px;font-size:13px;color:var(--fg2);gap:8px;margin-top:10px}
+.search.typed{color:#fff}
+.chips{display:flex;gap:6px;margin-top:10px;white-space:nowrap;overflow:hidden}
+.chips span{font-size:12px;font-weight:600;border-radius:999px;padding:5px 11px;background:var(--surf2);color:var(--fg2);flex:none}
+.chips span.on{background:#fff;color:#000}
+.pgrp{font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--fg2);margin-top:14px;display:flex;justify-content:space-between}
+.pgrp span{letter-spacing:0;font-weight:600}
+.prow{display:grid;grid-template-columns:1fr 24px;gap:10px;align-items:center;height:44px;border-bottom:1px solid #1a1a1a}
+.prow b{font-size:14px;display:block}.prow span{font-size:11px;color:var(--fg2)}
+.prow.off b{color:#6a6a6a;text-decoration:line-through}
+.cb{width:22px;height:22px;border-radius:50%;border:1.5px solid #444;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+.cb.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.radio{width:20px;height:20px;border-radius:50%;border:1.5px solid #444;flex:none}
+.radio.on{border:6px solid var(--accent)}
+/* routine detail */
+.rdt{font-size:30px;font-weight:700;letter-spacing:-.02em;margin-top:10px}
+.rdm{font-size:12px;color:var(--fg2);margin-top:2px}
+.rdx{padding:10px 0;border-bottom:1px solid var(--line)}
+.rdx .t{display:flex;justify-content:space-between;align-items:baseline}
+.rdx .t b{font-size:15px}.rdx .t span{font-size:12px;color:var(--fg2)}
+.num{display:inline-flex;width:20px;height:20px;border-radius:6px;background:#1c1c1c;font-size:11px;font-weight:700;align-items:center;justify-content:center;color:var(--fg2);margin-right:8px;vertical-align:1px}
+.ro{margin-top:6px}
+.ro .r{display:grid;grid-template-columns:26px 1fr 1fr 1fr;gap:6px;font-size:13px;height:23px;align-items:center}
+.ro .r span{text-align:center}
+.ro .r .n{color:var(--fg2);font-weight:700;font-size:12px}
+.ro .r .p{color:var(--fg2);font-size:12px}
+.ro .r.h{height:16px;font-size:9px;font-weight:700;color:var(--fg2);letter-spacing:.05em}
+.startbar{flex:none;padding:10px 16px 0;border-top:1px solid var(--line)}
+/* history */
+.vt{display:flex;background:#1a1a1a;border-radius:9px;padding:2px;margin-bottom:4px}
+.vt span{width:34px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center}
+.vt span.on{background:#333}
+.rng{display:flex;background:var(--surf2);border-radius:9px;padding:2px;margin-top:4px}
+.rng span{flex:1;text-align:center;font-size:12px;font-weight:600;padding:6px 0;border-radius:7px;color:var(--fg2)}
+.rng span.on{background:#2c2c2c;color:#fff}
+.calh{display:flex;justify-content:space-between;align-items:center;margin:12px 0 8px}
+.calh b{font-size:16px}.calh span{color:var(--accent);font-size:16px;padding:0 6px}
+.g7{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.g7 .dn{font-size:10px;font-weight:700;color:var(--fg2);padding-bottom:4px}
+.g7 .d{height:31px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#9a9a9a;position:relative}
+.g7 .d.w{background:#1c1c1c;color:#fff}
+.g7 .d.w::after{content:"";position:absolute;bottom:4px;width:4px;height:4px;border-radius:50%;background:var(--accent)}
+.g7 .d.sel{background:var(--accent);color:#fff}.g7 .d.sel::after{background:#fff}
+.dayrow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--line);margin-top:10px}
+.dayrow b{font-size:15px;display:block}.dayrow span{font-size:11.5px;color:var(--fg2)}
+.minis{display:grid;gap:12px 10px;margin-top:12px}
+.mini .ml{font-size:10.5px;font-weight:700;color:#cfcfcf;margin-bottom:4px;display:flex;justify-content:space-between}
+.mini .ml span{color:var(--fg2);font-weight:600}
+.mini .mg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.mini .mg i{display:block;aspect-ratio:1;border-radius:2px;background:#1a1a1a}
+.mini .mg i.w{background:var(--accent)}.mini .mg i.e{background:transparent}.mini .mg i.f{background:transparent;box-shadow:inset 0 0 0 1px #1a1a1a}
+.yrow{display:grid;grid-template-columns:38px 1fr 34px;gap:8px;align-items:end;margin-top:14px}
+.yrow .yl{font-size:13px;font-weight:700;padding-bottom:12px}.yrow .yt{font-size:13px;font-weight:700;text-align:right;padding-bottom:12px}
+.bars{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;align-items:end;height:74px}
+.bars i{display:block;background:var(--accent);border-radius:2px 2px 0 0;min-height:2px}
+.bars i.z{background:#262626}.bars i.f{background:transparent;border-bottom:1px dashed #333}
+.blbl{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;font-size:8px;color:var(--fg2);text-align:center;margin-top:3px}
+.wk{font-size:10.5px;font-weight:700;color:var(--fg2);letter-spacing:.05em;margin-top:12px;display:flex;justify-content:space-between}
+.crow{display:grid;grid-template-columns:40px 1fr auto 12px;gap:10px;align-items:center;height:50px;border-bottom:1px solid var(--line)}
+.crow .mid b{font-size:14px;display:block}.crow .mid span{font-size:11px;color:var(--fg2)}
+.crow .rt{font-size:11.5px;color:var(--fg2);text-align:right}.crow .go{color:#555}
+.dstat{display:grid;grid-template-columns:repeat(3,1fr);margin-top:10px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.dstat div{padding:8px 0}.dstat div+div{padding-left:10px;border-left:1px solid var(--line)}
+.dstat small{display:block;font-size:9.5px;color:var(--fg2);font-weight:700}.dstat b{font-size:15px}
+.dex{margin-top:12px}
+.dex .nm{display:flex;justify-content:space-between;font-size:14px;font-weight:700;margin-bottom:4px}
+.dex .nm span{font-size:11px;color:var(--fg2);font-weight:500}
+.dset{display:grid;grid-template-columns:24px 1fr auto;font-size:13px;height:23px;align-items:center}
+.dset .n{color:var(--fg2);font-weight:700;font-size:12px}
+.dset.drop{padding-left:10px;border-left:2px solid var(--warn);margin-left:4px}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;height:100%;padding:0 18px 40px}
+.empty .ic{width:56px;height:56px;border-radius:16px;border:1.5px dashed #333;display:flex;align-items:center;justify-content:center;font-size:24px;color:#555}
+.empty b{font-size:18px;margin-top:14px}
+.empty p{font-size:13px;color:var(--fg2);margin-top:6px;line-height:1.5}
+/* settings */
+.sgrp{font-size:10.5px;font-weight:700;letter-spacing:.06em;color:var(--fg2);margin:10px 4px 4px}
+.slist{border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.srow{display:flex;justify-content:space-between;align-items:center;min-height:34px;border-bottom:1px solid var(--line);font-size:14px;gap:10px}
+.srow:last-child{border-bottom:0}
+.srow .v{color:var(--fg2);font-size:13px;display:flex;align-items:center;gap:6px}
+.srow .v::after{content:"›";color:#555;font-size:16px}
+.srow.nc .v::after{content:""}
+.srow.blue{color:var(--accent)}.srow.red{color:var(--danger)}
+.tog{width:34px;height:20px;border-radius:10px;background:#333;position:relative;flex:none}
+.tog::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff}
+.tog.on{background:var(--accent)}.tog.on::after{left:16px}
+.check{color:var(--accent);font-weight:800}
+.mseg{display:flex;background:#1c1c1c;border-radius:8px;padding:2px;margin-top:6px}
+.mseg span{flex:1;text-align:center;font-size:13px;font-weight:600;padding:7px 0;border-radius:6px;color:var(--fg2)}
+.mseg span.on{background:#3a3a3a;color:#fff}
+.flab{font-size:10.5px;font-weight:700;letter-spacing:.06em;color:var(--fg2);margin-top:16px}
+.typeopt{display:grid;grid-template-columns:20px 1fr auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.typeopt b{font-size:14px;display:block}.typeopt span{font-size:11px;color:var(--fg2)}
+.typeopt em{font-style:normal;font-size:11px;color:#bdbdbd;background:#1a1a1a;border-radius:5px;padding:2px 6px}
+.welcome{display:flex;flex-direction:column;height:100%;padding:30px 4px 10px}
+.welcome .big{font-size:38px;font-weight:700;letter-spacing:-.03em;line-height:1.05}
+.welcome ul{list-style:none;margin-top:22px}
+.welcome li{font-size:14px;color:#cfcfcf;padding:10px 0;border-bottom:1px solid var(--line);display:flex;gap:10px}
+.welcome li i{font-style:normal;color:var(--accent);font-weight:700}
+.step{display:grid;grid-template-columns:28px 1fr;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);align-items:start}
+.step .sn2{width:26px;height:26px;border-radius:50%;background:#1c1c1c;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.step b{font-size:14.5px;display:block}.step span{font-size:12px;color:var(--fg2);line-height:1.45}
+.shareic{display:inline-flex;width:22px;height:22px;border-radius:5px;background:#1c1c1c;align-items:center;justify-content:center;vertical-align:-6px;margin:0 2px}
+.safari{flex:none;height:40px;border-top:1px solid #222;background:#111;display:flex;justify-content:space-around;align-items:center;color:var(--accent);font-size:16px}
+.safari .sh{width:30px;height:30px;border-radius:8px;box-shadow:0 0 0 2px var(--accent);display:flex;align-items:center;justify-content:center}
+.fileic{width:40px;height:48px;border-radius:6px;background:#1c1c1c;border:1px solid #333;display:flex;align-items:flex-end;justify-content:center;font-size:9px;font-weight:700;color:var(--fg2);padding-bottom:6px;flex:none}
+.shareapps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0 6px;text-align:center;font-size:10.5px;color:#cfcfcf}
+.shareapps i{display:block;width:50px;height:50px;border-radius:12px;background:#1c1c1c;margin:0 auto 5px}
+.match{display:grid;grid-template-columns:1fr 16px 1fr;gap:6px;align-items:center;font-size:12.5px;padding:9px 0;border-bottom:1px solid var(--line)}
+.match .a{color:#cfcfcf}.match .b{color:#fff;font-weight:600}.match .b.q{color:var(--warn)}.match .b.n{color:var(--accent)}
+.match i{font-style:normal;color:#555;text-align:center}
+.cmp .cr{display:grid;grid-template-columns:1fr auto 54px;gap:10px;align-items:center;height:46px;border-bottom:1px solid var(--line)}
+.cmp .cr b{font-size:14px;display:block}.cmp .cr small{font-size:11px;color:var(--fg2)}
+.pl{display:inline-block;font-size:11px;font-weight:700;border-radius:6px;padding:3px 7px;white-space:nowrap}
+.pl.up{background:color-mix(in srgb,var(--tip) 18%,#000)}.pl.fl{background:#1c1c1c;color:var(--fg2)}.pl.dn{background:color-mix(in srgb,var(--danger) 18%,#000)}
+.sumhead{text-align:center;margin-top:16px}
+.sumhead .big{font-size:26px;font-weight:700;letter-spacing:-.01em}
+.sumhead .sub{font-size:12px;color:var(--fg2);margin-top:5px}
+.chg{font-size:13px;padding:8px 0;border-bottom:1px solid #1e1e1e;display:flex;gap:10px}
+.chg i{font-style:normal;font-weight:800;width:14px}
+.chg .p{color:var(--tip)}.chg .m{color:var(--danger)}.chg .e{color:var(--accent)}
+/* principles */
+.pr{display:grid;grid-template-columns:repeat(2,1fr);gap:0 40px;margin-top:22px}
+.pr div{padding:14px 0;border-bottom:1px solid var(--line)}
+.pr b{font-size:15px;display:block}
+.pr b i{font-style:normal;color:var(--accent);margin-right:8px}
+.pr p{font-size:13px;color:#bdbdbd;line-height:1.55;margin-top:4px}
+.tok{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:26px}
+.tok h4{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--fg2);margin-bottom:10px}
+.sw{display:flex;align-items:center;gap:10px;font-size:12.5px;padding:5px 0;color:#cfcfcf}
+.sw i{width:26px;height:26px;border-radius:6px;border:1px solid #333;flex:none}
+.sw small{color:var(--fg2);display:block;font-size:11px}
+.tl{font-size:12.5px;color:#cfcfcf;line-height:1.5;padding:5px 0;border-bottom:1px solid #161616}
+.tl b{color:#fff}
+.notv1{margin-top:26px;border:1px dashed #333;border-radius:12px;padding:14px 16px;font-size:13px;color:#cfcfcf;line-height:1.6}
+.notv1 b{color:#fff}
+
+.pk{flex:none;background:#0d0d0d;border-top:1px solid #222;padding:8px 10px 4px}
+.pkt{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#8e8e8e;font-weight:600;padding:0 2px 6px}
+.mode{display:flex;background:#1c1c1c;border-radius:7px;padding:2px}
+.mode span{padding:3px 10px;border-radius:5px;font-size:11px;font-weight:700;color:#8e8e8e}
+.mode span.on{background:#3a3a3a;color:#fff}
+.total{display:flex;align-items:baseline;justify-content:space-between;padding:0 2px}
+.total b{font-size:26px;letter-spacing:-.02em}.total b small{font-size:13px;color:#8e8e8e;font-weight:600;margin-left:2px}
+.total span{font-size:11.5px;color:#8e8e8e}
+.pbtns{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;align-items:center;margin-top:6px}
+.pb{display:flex;flex-direction:column;align-items:center;justify-content:center}
+.pb i{display:flex;align-items:center;justify-content:center;border-radius:50%;background:#2a2a2a;font-style:normal;font-weight:800;color:#fff;box-shadow:inset 0 0 0 3px #1a1a1a}
+.pb i.bl{background:#2E8BFF}
+.pkrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px}
+.pkrow span{height:38px;border-radius:9px;background:#1e1e1e;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+.pkrow span.p{background:#2E8BFF}
+.pills{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
+.pills span{height:40px;border-radius:9px;background:#1e1e1e;display:flex;align-items:center;justify-content:space-between;padding:0 10px;font-size:15px;font-weight:700}
+.pills span small{font-size:11px;color:#8e8e8e;font-weight:600}
+.pills span.has{box-shadow:inset 0 0 0 1.5px #3a3a3a}
+.pills span.bl{color:#2E8BFF}
+.prs{display:grid;grid-template-columns:44px 1fr auto;align-items:center;height:30px;font-size:14px;font-weight:700;border-bottom:1px solid #1a1a1a}
+.prs .g{display:flex;align-items:center}
+.stp2{display:flex;align-items:center;background:#1c1c1c;border-radius:8px;overflow:hidden}
+.stp2 span{width:28px;height:24px;display:flex;align-items:center;justify-content:center;color:#cfcfcf;font-size:15px}
+.stp2 b{min-width:24px;text-align:center;font-size:13px}
+.chipg{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:#cfcfcf;background:#1a1a1a;border-radius:999px;padding:4px 9px}
+.chipg i{width:6px;height:6px;border-radius:50%;background:#2ee66b}
+.gymrow{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid #1e1e1e}
+.gymrow b{font-size:15px;display:block}.gymrow span{font-size:11.5px;color:#8e8e8e}
+.mprof{padding:11px 0;border-bottom:1px solid #1f1f1f}
+.mprof .t{display:flex;justify-content:space-between;align-items:baseline}
+.mprof .t b{font-size:15px}.mprof .t span{font-size:11.5px;color:#8e8e8e}
+.mprof .kv{display:grid;grid-template-columns:repeat(3,1fr);margin-top:8px;font-size:12px;color:#cfcfcf}
+.mprof .kv small{display:block;font-size:9.5px;color:#8e8e8e;font-weight:700;letter-spacing:.04em}
+.banner{margin-top:10px;font-size:12px;line-height:1.45;color:#cfcfcf;padding:9px 10px;border-left:2px solid #8e8e8e;background:#0e0e0e}
+.banner b{color:#fff}
+.ss{display:flex;align-items:center;gap:8px;margin-top:14px}
+.ss .tag{font-size:10.5px;font-weight:800;color:#000;background:#2E8BFF;border-radius:5px;padding:2px 6px}
+.ss b{font-size:16px}
+.ssline{border-left:2px solid #2E8BFF;padding-left:10px;margin-top:4px}
+.qr{width:170px;height:170px;margin:12px auto 0;background:#fff;border-radius:12px;padding:12px}
+.idea{font-size:13px;color:#cfcfcf;line-height:1.6}
+
+.pkt2{display:flex;justify-content:space-between;align-items:center;padding:0 2px 6px}
+.barsel{font-size:11.5px;font-weight:700;color:#cfcfcf;background:#1c1c1c;border-radius:7px;padding:4px 9px}
+.side{display:grid;grid-template-columns:112px 1fr;gap:10px;align-items:center}
+.side .tot{text-align:center;margin-top:2px}
+.side .tot b{font-size:22px;letter-spacing:-.02em}.side .tot b small{font-size:11px;color:#8e8e8e;margin-left:2px}
+.side .tot span{display:block;font-size:10px;color:#8e8e8e}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.g2 span{height:40px;border-radius:9px;background:#1e1e1e;display:flex;align-items:center;justify-content:space-between;padding:0 10px;font-size:15px;font-weight:700}
+.g2 span small{font-size:11px;color:#8e8e8e;font-weight:600}
+.g2 span.has{box-shadow:inset 0 0 0 1.5px #3a3a3a}.g2 span.bl{color:#2E8BFF}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 4px;justify-items:center}
+.sizecmp{display:flex;gap:6px;align-items:center;font-size:11px;color:#8e8e8e;margin-top:6px}
+.sizecmp i{display:inline-block;height:8px;border-radius:2px;background:#2E8BFF}
+/* supersets */
+.sg{border-left:2px solid #2E8BFF;padding-left:10px;margin-top:10px}
+.sgh{display:flex;align-items:center;justify-content:space-between;font-size:10.5px;font-weight:800;letter-spacing:.06em;color:#2E8BFF;margin-top:14px}
+.sgh span{color:#8e8e8e;font-weight:600;letter-spacing:0;font-size:11px}
+.tag2{font-size:10.5px;font-weight:800;color:#000;background:#2E8BFF;border-radius:5px;padding:2px 6px;flex:none}
+.tag2.g{background:#2a2a2a;color:#cfcfcf}
+.bx{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #1a1a1a}
+.bx b{font-size:15px;flex:1}.bx small{font-size:11.5px;color:#8e8e8e}
+.mini2{display:grid;grid-template-columns:24px 1fr 1fr;gap:6px;font-size:12.5px;height:24px;align-items:center;color:#cfcfcf;padding-left:30px}
+.mini2 span{text-align:center}.mini2 .n{color:#8e8e8e;font-weight:700}
+.collapsed{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #1a1a1a}
+.collapsed b{font-size:14px;flex:1;color:#cfcfcf}.collapsed span{font-size:12px;color:#8e8e8e}
+.jump{position:absolute;left:12px;right:12px;bottom:84px;z-index:8;background:#0b1a2e;border:1px solid #2E8BFF;border-radius:12px;height:40px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:700;color:#cfe3ff;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+.cmp2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
+.flowrow{display:flex;align-items:center;justify-content:center;gap:10px;color:#555;font-size:22px}
+
+.kph{display:flex;justify-content:space-between;align-items:center;padding:2px 2px 8px;gap:6px}
+.kph .lbl2{font-size:11px;color:#8e8e8e;font-weight:600}
+.kph .lbl2 b{color:#fff}
+.seg2{display:flex;background:#1c1c1c;border-radius:7px;padding:2px}
+.seg2 span{padding:4px 9px;border-radius:5px;font-size:11px;font-weight:700;color:#8e8e8e;display:flex;align-items:center;height:22px}
+.seg2 span.on{background:#3a3a3a;color:#fff}
+.seg2 span.blue{background:#2E8BFF;color:#fff}
+.rt{display:flex;gap:4px;align-items:center}
+.ik{width:30px;height:26px;border-radius:7px;background:#1c1c1c;display:flex;align-items:center;justify-content:center}
+.ik.ck{background:#2E8BFF}
+.ik.wide{width:auto;padding:0 9px;gap:5px}.ik.wide em{font-style:normal;font-size:11px;font-weight:700;color:#fff}
+.sideF{display:grid;grid-template-columns:128px 1fr;gap:10px;align-items:stretch}
+.sideF .barbox{border-radius:10px;background:#090909;overflow:hidden;display:flex;align-items:center}
+.totF{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px}
+.totF b{font-size:24px;letter-spacing:-.02em}.totF b small{font-size:12px;color:#8e8e8e;font-weight:600;margin-left:2px}
+.totF span{font-size:11px;color:#8e8e8e}
+.g2 span.has small{color:#cfcfcf}
+.cr2{display:grid;grid-template-columns:24px 1fr 1fr 1fr 34px;align-items:center;height:42px;border-radius:8px;padding:0 4px;font-size:14px}
+.cr2.th{height:24px;font-size:10px;font-weight:700;letter-spacing:.06em;color:#8e8e8e}
+.cr2 .c{text-align:center}
+.cr2 .in{background:#161616;border-radius:6px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:600;margin:0 3px}
+.cr2.done{background:color-mix(in srgb,#2e8bff 14%,#000)}.cr2.done .in{background:transparent}
+.cr2.cur .in{border:1.5px solid #2e8bff}.cr2.cur .in.auto{border:0}
+.cr2 .in.ph{color:#555;font-weight:500}
+.cr2 .in.auto{background:transparent;color:#8e8e8e;font-weight:500;font-size:12.5px}
+.cr2 .in.edit{border:2px solid #2e8bff;background:#0b1a2e}
+.cr2 .in.edit::after{content:"";width:1.5px;height:15px;background:#2e8bff;margin-left:2px}
+.cr2.tot{height:34px;border-top:1px solid #1f1f1f;border-radius:0;margin-top:6px;font-size:13px;color:#cfcfcf}
+.cr2.tot .lab{font-size:10px;font-weight:700;color:#8e8e8e;letter-spacing:.05em}
+.lastline{font-size:12px;color:#8e8e8e;margin-top:2px}
+.lastline b{color:#cfcfcf;font-weight:600}
+.colpick{display:flex;justify-content:space-between;align-items:center;min-height:42px;border-bottom:1px solid #1f1f1f;font-size:14px}
+.colpick span.n{font-size:11px;color:#8e8e8e;margin-right:8px}
+.colnum{width:22px;height:22px;border-radius:6px;background:#2E8BFF;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.colnum.off{background:transparent;border:1.5px solid #3a3a3a}
+.prevcols{display:grid;grid-template-columns:repeat(4,1fr);margin-top:8px;border:1px solid #1f1f1f;border-radius:8px;overflow:hidden;font-size:11px;text-align:center}
+.prevcols span{padding:6px 0;color:#8e8e8e;font-weight:700;border-right:1px solid #1f1f1f}
+.prevcols span:last-child{border-right:0}
+.prevcols span.on{color:#fff}
+.ptable{margin-top:6px}
+.ptable .r{display:grid;grid-template-columns:20px 1fr 1fr 1fr;font-size:13px;height:22px;align-items:center}
+.ptable .r span{text-align:center}.ptable .r .n{color:#8e8e8e;font-weight:700;font-size:12px;text-align:left}
+.ptable .r.h{height:16px;font-size:9px;font-weight:700;color:#8e8e8e;letter-spacing:.05em}
+.ptable .r.t{border-top:1px solid #1f1f1f;margin-top:3px;padding-top:3px;color:#cfcfcf;height:24px}
+.sess{display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #1c1c1c}
+.sess .v{font-size:13px;color:#e6e6e6}.sess .v small{display:block;font-size:11px;color:#8e8e8e}
+.sess .d{font-size:12px;font-weight:700}
+</style></head><body><div class="board"><div class="eyebrow">OpenGym · Extra features · v14 · Final · Dark</div><h1>Plate pad, supersets and cardio, finished</h1><p class="lead">Your feedback applied: the plate pad is the side-by-side layout with the total on top, a bar that slides left when it fills up, and → / ✓ keys on both keypads. Supersets are as approved. The keypad's → and ✓ are now one Next / Done button. Cardio: no intervals, no Previous column, Σ only with 2+ segments, and progress measured in amount, with race-distance records.</p><div class="section"><span class="stag">A · PLATE PAD</span><h2>Final: side by side, one Next / Done key</h2><p>Built from S1 with S2's top total: bar left, total and pills right, Undo kept. Both keypads share the header: mode tabs on the left; field tabs and one Next / ✓ Done button on the right.</p><div class="row"><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="wh"><div><div class="t">Push A <span style="color:var(--fg2);font-size:12px">▾</span></div><div class="s">32:18 · 1 of 5 done</div></div><span class="finish">Finish</span></div><div class="body" style=""><div class="exh"><div><div class="exn">Bench Press</div><div class="exp">Exercise 2 of 5</div></div><div class="hbtns"><span class="ib "><svg width="16" height="12" viewBox="0 0 16 12"><polyline points="1,10 5,6 8,8 14,2" fill="none" stroke="#2e8bff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ib">•••</span></div></div><div class="tbl"><div class="tr th"><span class="c">SET</span><span>PREVIOUS</span><span class="c">LBS</span><span class="c">REPS</span><span class="c">✓</span></div><div class="tr done " ><span class="sn ">1</span><span class="prev">185 × 8</span><span class="in ">185</span><span class="in ">8</span><span class="chk on">✓</span></div><div class="tr done " ><span class="sn ">2</span><span class="prev">185 × 7</span><span class="in ">185</span><span class="in ">7</span><span class="chk on">✓</span></div><div class="tr cur " ><span class="sn ">3</span><span class="prev">185 × 6</span><span class="in edit">18</span><span class="in ">7</span><span class="chk"></span></div></div></div><div class="kp"><div class="kph"><div class="seg2"><span class="on">123</span><span class="">Plates</span></div><div class="rt"><div class="seg2"><span class="blue">lbs</span><span class="">reps</span></div><span class="ik ck wide"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 7h9M7.5 3.5 11 7l-3.5 3.5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><em>Next</em></span></div></div><div class="kg"><div class="k">1</div><div class="k">2</div><div class="k">3</div><div class="k fn"><span class="chev"></span></div><div class="k">4</div><div class="k">5</div><div class="k">6</div><div class="k fn">+<small>5 lb</small></div><div class="k">7</div><div class="k">8</div><div class="k">9</div><div class="k fn">−<small>5 lb</small></div><div class="k">−</div><div class="k">0</div><div class="k">.</div><div class="k fn"><svg width="26" height="18" viewBox="0 0 26 18"><path d="M8 1h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H8L1 9z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 5.5l7 7M19 5.5l-7 7" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg></div></div></div><div class="homebar"></div></div><div class="cap"><b><em>A1</em>Number keypad</b><p>Header: 123 / Plates on the left; lbs · reps and one blue <strong>Next</strong> button on the right. On the weight box, Next (→) moves to reps. You never need to close the keypad between sets.</p></div></div><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="wh"><div><div class="t">Push A <span style="color:var(--fg2);font-size:12px">▾</span></div><div class="s">32:18 · 1 of 5 done</div></div><span class="finish">Finish</span></div><div class="body" style=""><div class="exh"><div><div class="exn">Bench Press</div><div class="exp">Exercise 2 of 5</div></div><div class="hbtns"><span class="ib "><svg width="16" height="12" viewBox="0 0 16 12"><polyline points="1,10 5,6 8,8 14,2" fill="none" stroke="#2e8bff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ib">•••</span></div></div><div class="tbl"><div class="tr th"><span class="c">SET</span><span>PREVIOUS</span><span class="c">LBS</span><span class="c">REPS</span><span class="c">✓</span></div><div class="tr done " ><span class="sn ">1</span><span class="prev">185 × 8</span><span class="in ">185</span><span class="in ">8</span><span class="chk on">✓</span></div><div class="tr done " ><span class="sn ">2</span><span class="prev">185 × 7</span><span class="in ">185</span><span class="in ">7</span><span class="chk on">✓</span></div><div class="tr cur " ><span class="sn ">3</span><span class="prev">185 × 6</span><span class="in ">185</span><span class="in edit">7</span><span class="chk"></span></div></div></div><div class="kp"><div class="kph"><span class="lbl2">Set 3 · <b>Reps</b></span><div class="rt"><div class="seg2"><span class="">lbs</span><span class="blue">reps</span></div><span class="ik ck wide"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M2.5 7.5l3 3 6-6.5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><em>Done</em></span></div></div><div class="kg"><div class="k">1</div><div class="k">2</div><div class="k">3</div><div class="k fn"><span class="chev"></span></div><div class="k">4</div><div class="k">5</div><div class="k">6</div><div class="k fn">+<small>1 rep</small></div><div class="k">7</div><div class="k">8</div><div class="k">9</div><div class="k fn">−<small>1 rep</small></div><div class="k" style="color:#444">−</div><div class="k">0</div><div class="k" style="color:#444">.</div><div class="k fn"><svg width="26" height="18" viewBox="0 0 26 18"><path d="M8 1h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H8L1 9z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 5.5l7 7M19 5.5l-7 7" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg></div></div></div><div class="homebar"></div></div><div class="cap"><b><em>A2</em>Number keypad, reps</b><p>On the last box of a set the same button turns into <strong>✓ Done</strong>: it ticks set 3 and jumps to set 4's weight. One button, always in the same spot. The Plates tab becomes a label here (plates are only for weight).</p></div></div><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="wh"><div><div class="t">Push A <span style="color:var(--fg2);font-size:12px">▾</span></div><div class="s">32:18 · 1 of 5 done</div></div><span class="finish">Finish</span></div><div class="body" style=""><div class="exh"><div><div class="exn">Bench Press</div><div class="exp">Exercise 2 of 5</div></div><div class="hbtns"><span class="ib "><svg width="16" height="12" viewBox="0 0 16 12"><polyline points="1,10 5,6 8,8 14,2" fill="none" stroke="#2e8bff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ib">•••</span></div></div><div class="tbl"><div class="tr th"><span class="c">SET</span><span>PREVIOUS</span><span class="c">LBS</span><span class="c">REPS</span><span class="c">✓</span></div><div class="tr done " ><span class="sn ">1</span><span class="prev">185 × 8</span><span class="in ">185</span><span class="in ">8</span><span class="chk on">✓</span></div><div class="tr done " ><span class="sn ">2</span><span class="prev">185 × 7</span><span class="in ">185</span><span class="in ">7</span><span class="chk on">✓</span></div><div class="tr cur " ><span class="sn ">3</span><span class="prev">185 × 6</span><span class="in edit">185</span><span class="in ">7</span><span class="chk"></span></div></div></div><div class="pk"><div class="kph"><div class="seg2"><span class="">123</span><span class="on">Plates</span></div><span class="barsel">Bar 45 lb ▾</span></div><div class="sideF"><div class="barbox"><svg width="128" height="156" style="display:block"><rect x="0" y="74.0" width="124" height="8" rx="4" fill="#2a2a2a"/><rect x="24" y="61.0" width="8" height="34" rx="3" fill="#4a4a4a"/><rect x="36" y="8.0" width="15" height="140.0" rx="3.5" fill="#5A5A5A"/><rect x="53" y="25.5" width="12" height="105.0" rx="3.5" fill="#7A7A7A"/></svg></div><div><div class="totF"><b>185<small>lb</small></b><span>70 / side</span></div><div class="g2"><span class="has ">45<small>×1</small></span><span class=" ">35<small></small></span><span class="has ">25<small>×1</small></span><span class=" ">10<small></small></span><span class=" ">5<small></small></span><span class=" bl">2.5<small></small></span></div></div></div><div class="pkrow"><span>Undo</span><span>Clear</span><span class="p">Done</span></div></div><div class="homebar"></div></div><div class="cap"><b><em>A3</em>Plates mode</b><p>Side by side: bar on the left, total on top right (like S2), pills with counts below it, Undo / Clear / Done. Tap a pill to add a plate to each side; tap a plate on the bar to take it off. Same height as the number keypad.</p></div></div></div><div class="row"><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="wh"><div><div class="t">Pull A <span style="color:var(--fg2);font-size:12px">▾</span></div><div class="s">12:02 · 0 of 5 done</div></div><span class="finish">Finish</span></div><div class="body" style=""><div class="exh"><div><div class="exn">Deadlift</div><div class="exp">Exercise 1 of 5</div></div><div class="hbtns"><span class="ib "><svg width="16" height="12" viewBox="0 0 16 12"><polyline points="1,10 5,6 8,8 14,2" fill="none" stroke="#2e8bff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ib">•••</span></div></div><div class="tbl"><div class="tr th"><span class="c">SET</span><span>PREVIOUS</span><span class="c">LBS</span><span class="c">REPS</span><span class="c">✓</span></div><div class="tr done " ><span class="sn ">1</span><span class="prev">455 × 3</span><span class="in ">455</span><span class="in ">3</span><span class="chk on">✓</span></div><div class="tr cur " ><span class="sn ">2</span><span class="prev">455 × 3</span><span class="in ">490</span><span class="in ">3</span><span class="chk"></span></div></div></div><div class="pk"><div class="kph"><div class="seg2"><span class="">123</span><span class="on">Plates</span></div><span class="barsel">Bar 45 lb ▾</span></div><div class="sideF"><div class="barbox"><svg width="128" height="156" style="display:block"><rect x="0" y="74.0" width="124" height="8" rx="4" fill="#2a2a2a"/><rect x="-9" y="61.0" width="8" height="34" rx="3" fill="#4a4a4a"/><rect x="3" y="8.0" width="15" height="140.0" rx="3.5" fill="#5A5A5A"/><rect x="20" y="8.0" width="15" height="140.0" rx="3.5" fill="#5A5A5A"/><rect x="37" y="8.0" width="15" height="140.0" rx="3.5" fill="#5A5A5A"/><rect x="54" y="8.0" width="15" height="140.0" rx="3.5" fill="#5A5A5A"/><rect x="71" y="25.5" width="12" height="105.0" rx="3.5" fill="#7A7A7A"/><rect x="85" y="40.2" width="10" height="75.6" rx="3.5" fill="#8E8E8E"/><rect x="97" y="49.3" width="8" height="57.4" rx="3.5" fill="#A0A0A0"/><rect x="107" y="57.0" width="7" height="42.0" rx="3.5" fill="#2E8BFF"/><path d="M6 144 l-4 -4 4 -4" fill="none" stroke="#8e8e8e" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="totF"><b>490<small>lb</small></b><span>222.5 / side</span></div><div class="g2"><span class="has ">45<small>×4</small></span><span class=" ">35<small></small></span><span class="has ">25<small>×1</small></span><span class="has ">10<small>×1</small></span><span class="has ">5<small>×1</small></span><span class="has bl">2.5<small>×1</small></span></div></div></div><div class="pkrow"><span>Undo</span><span>Clear</span><span class="p">Done</span></div></div><div class="homebar"></div></div><div class="cap"><b><em>A4</em>Full bar</b><p>When plates run out of room, the whole stack slides left (collar and inner plates go off the edge, a small ‹ shows there's more). The newest, outermost plates always stay visible, which is the end you're loading.</p></div></div><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="wh"><div><div class="t">Pull A <span style="color:var(--fg2);font-size:12px">▾</span></div><div class="s">12:02 · 0 of 5 done</div></div><span class="finish">Finish</span></div><div class="body" style=""><div class="exh"><div><div class="exn">Deadlift</div><div class="exp">Exercise 1 of 5</div></div><div class="hbtns"><span class="ib "><svg width="16" height="12" viewBox="0 0 16 12"><polyline points="1,10 5,6 8,8 14,2" fill="none" stroke="#2e8bff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ib">•••</span></div></div></div><div class="scrim"></div><div class="sheet" style=""><div class="grab"></div><h4>Bar for Deadlift</h4><div class="sub">Remembered per exercise. Plates are added on top of this.</div><div class="opt" style="min-height:44px"><span style="color:#fff;font-size:15px">Barbell</span><span style="display:flex;gap:10px;align-items:center">45 lb<span class="radio on"></span></span></div><div class="opt" style="min-height:44px"><span style="color:#fff;font-size:15px">Women's / light bar</span><span style="display:flex;gap:10px;align-items:center">35 lb<span class="radio "></span></span></div><div class="opt" style="min-height:44px"><span style="color:#fff;font-size:15px">EZ curl bar</span><span style="display:flex;gap:10px;align-items:center">25 lb<span class="radio "></span></span></div><div class="opt" style="min-height:44px"><span style="color:#fff;font-size:15px">Trap / hex bar</span><span style="display:flex;gap:10px;align-items:center">60 lb<span class="radio "></span></span></div><div class="opt" style="min-height:44px"><span style="color:#fff;font-size:15px">Custom…</span><span style="display:flex;gap:10px;align-items:center"><span class="radio "></span></span></div><div class="opt" style="min-height:44px"><span style="color:#fff;font-size:15px">No bar (machine)</span><span style="display:flex;gap:10px;align-items:center">0 lb<span class="radio "></span></span></div></div><div class="homebar"></div></div><div class="cap"><b><em>A5</em>Bar picker</b><p>From "Bar 45 lb ▾". The choice sticks to the exercise (EZ bar for curls, trap bar for shrugs). "No bar" makes the pad work for plate-loaded machines: just the plates you hung.</p></div></div></div></div><div class="section"><span class="stag">B · SUPERSETS</span><h2>As approved</h2><p>Unchanged from the last board.</p><div class="row"><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="nh"><span class="l"><span class="tb g">Cancel</span></span><div class="t">Push A</div><span class="r"><span class="tb b">Save</span></span></div><div class="body" style=""><div class="namef">Push A<span>PPL folder ›</span></div><div class="exsec" style=""><div class="exr"><span class="handle"><i></i><i></i><i></i></span><b>Lateral Raise</b><span class="dots">•••</span></div><div class="mt"><div class="r h"><span>SET</span><span>LBS</span><span>REPS</span></div><div class="r"><span class="n">1</span><span class="cell ph">last</span><span class="cell">12–15</span></div><div class="r"><span class="n">2</span><span class="cell ph">last</span><span class="cell">12–15</span></div></div></div><div class="sgh">SUPERSET A<span>alternate sets · ••• to unlink</span></div><div class="sg"><div class="exsec" style="border-bottom:0;padding-bottom:4px"><div class="exr"><span class="handle"><i></i><i></i><i></i></span><span class="tag2">A1</span><b>Bench Press</b><span class="dots">•••</span></div><div class="mt"><div class="r h"><span>SET</span><span>LBS</span><span>REPS</span></div><div class="r"><span class="n">1</span><span class="cell ph">last</span><span class="cell">6–8</span></div><div class="r"><span class="n">2</span><span class="cell ph">last</span><span class="cell">6–8</span></div><div class="r"><span class="n">3</span><span class="cell ph">last</span><span class="cell">6–8</span></div></div></div><div class="exsec" style="border-bottom:0;padding-bottom:4px"><div class="exr"><span class="handle"><i></i><i></i><i></i></span><span class="tag2">A2</span><b>Barbell Row</b><span class="dots">•••</span></div><div class="mt"><div class="r h"><span>SET</span><span>LBS</span><span>REPS</span></div><div class="r"><span class="n">1</span><span class="cell ph">last</span><span class="cell">8–10</span></div><div class="r"><span class="n">2</span><span class="cell ph">last</span><span class="cell">8–10</span></div><div class="r"><span class="n">3</span><span class="cell ph">last</span><span class="cell">8–10</span></div></div></div></div><div class="fade"></div></div><div class="homebar"></div></div><div class="cap"><b><em>B1</em>Superset in the builder</b><p>Linked exercises sit inside a blue bracket labelled "Superset A", tagged A1 and A2. Dragging one out of the bracket unlinks it; dragging an exercise in adds it (up to 3). The routine keeps each exercise's own sets.</p></div></div><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="nh"><span class="l"><span class="tb g">Cancel</span></span><div class="t">Push A</div><span class="r"><span class="tb b">Save</span></span></div><div class="body" style=""><div class="exsec" style=""><div class="exr"><span class="handle"><i></i><i></i><i></i></span><b>Bench Press</b><span class="dots">•••</span></div><div class="mt"><div class="r h"><span>SET</span><span>LBS</span><span>REPS</span></div><div class="r"><span class="n">1</span><span class="cell ph">last</span><span class="cell">6–8</span></div></div></div></div><div class="scrim"></div><div class="sheet" style="top:110px;"><div class="grab"></div><h4>Superset Bench Press with…</h4><div class="sub">They'll alternate: a set of one, then a set of the other.</div><div class="prow"><div><b>Lateral Raise</b><span>in this routine</span></div><span class="cb "></span></div><div class="prow"><div><b>Incline DB Press</b><span>in this routine</span></div><span class="cb "></span></div><div class="prow"><div><b>Dips</b><span>in this routine</span></div><span class="cb "></span></div><div class="prow"><div><b>Cable Fly</b><span>in this routine</span></div><span class="cb "></span></div><div class="prow"><div><b style="color:var(--accent)">+ Another exercise…</b><span>adds it to the routine</span></div><span></span></div><div class="prow"><div><b>Barbell Row</b><span>just added</span></div><span class="cb on">✓</span></div><div class="btn" style="margin-top:12px">Make superset</div></div><div class="homebar"></div></div><div class="cap"><b><em>B2</em>Creating one</b><p>From an exercise's "•••" → "Superset with…". Pick from the routine or add a new exercise. The same menu later shows "Unlink superset". Works the same mid-workout from the logging "•••".</p></div></div><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="wh"><div><div class="t">Push A <span style="color:var(--fg2);font-size:12px">▾</span></div><div class="s">24:02 · 1 of 4 done</div></div><span class="finish">Finish</span></div><div class="body" style=""><div class="sgh" style="margin-top:12px">SUPERSET A · ROUND 2 OF 3<span>A1 → A2</span></div><div class="sg"><div class="ss" style="margin-top:6px"><span class="tag2">A1</span><b>Bench Press</b></div><div class="tbl" style="margin-top:4px"><div class="tr th"><span class="c">SET</span><span>PREVIOUS</span><span class="c">LBS</span><span class="c">REPS</span><span class="c">✓</span></div><div class="tr done " ><span class="sn ">1</span><span class="prev">185 × 8</span><span class="in ">185</span><span class="in ">8</span><span class="chk on">✓</span></div><div class="tr cur " ><span class="sn ">2</span><span class="prev">185 × 7</span><span class="in ">185</span><span class="in ">7</span><span class="chk"></span></div><div class="tr ghost " ><span class="sn ">3</span><span class="prev">185 × 6</span><span class="in ">185</span><span class="in "><span style="color:var(--fg2)">6–8</span></span><span class="chk"></span></div></div><div class="ss" style="margin-top:10px"><span class="tag2 g">A2</span><b style="color:#cfcfcf">Barbell Row</b></div><div class="tbl" style="margin-top:4px"><div class="tr th"><span class="c">SET</span><span>PREVIOUS</span><span class="c">LBS</span><span class="c">REPS</span><span class="c">✓</span></div><div class="tr done " ><span class="sn ">1</span><span class="prev">155 × 10</span><span class="in ">155</span><span class="in ">10</span><span class="chk on">✓</span></div><div class="tr ghost " ><span class="sn ">2</span><span class="prev">155 × 10</span><span class="in ">155</span><span class="in ">10</span><span class="chk"></span></div></div></div></div><div class="nav"><div class="nb"><span class="arrow">‹</span><span><small>PREV</small>Lateral Raise</span></div><div class="nb r"><span><small>NEXT</small>A2 · Row set 2</span><span class="arrow">›</span></div></div><div class="homebar"></div></div><div class="cap"><b><em>B3</em>Logging: on A1</b><p>Both exercises on one screen inside the bracket. The one you're on is highlighted (blue tag); the other is dimmed. "Round 2 of 3" = which pass through the pair. Next points to A2, not the next exercise.</p></div></div></div><div class="row"><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="wh"><div><div class="t">Push A <span style="color:var(--fg2);font-size:12px">▾</span></div><div class="s">25:40 · 1 of 4 done</div></div><span class="finish">Finish</span></div><div class="body" style=""><div class="sgh" style="margin-top:12px">SUPERSET A · ROUND 2 OF 3<span>A2 → A1</span></div><div class="sg"><div class="collapsed"><span class="tag2 g">A1</span><b>Bench Press</b><span>185 × 8 · 185 × 7 ✓</span></div><div class="ss" style="margin-top:10px"><span class="tag2">A2</span><b>Barbell Row</b></div><div class="tbl" style="margin-top:4px"><div class="tr th"><span class="c">SET</span><span>PREVIOUS</span><span class="c">LBS</span><span class="c">REPS</span><span class="c">✓</span></div><div class="tr done " ><span class="sn ">1</span><span class="prev">155 × 10</span><span class="in ">155</span><span class="in ">10</span><span class="chk on">✓</span></div><div class="tr cur " ><span class="sn ">2</span><span class="prev">155 × 10</span><span class="in ">155</span><span class="in ">10</span><span class="chk"></span></div><div class="tr ghost " ><span class="sn ">3</span><span class="prev">155 × 9</span><span class="in ">155</span><span class="in "><span style="color:var(--fg2)">8–10</span></span><span class="chk"></span></div></div></div></div><div class="nav"><div class="nb"><span class="arrow">‹</span><span><small>PREV</small>A1 · Bench</span></div><div class="nb r"><span><small>NEXT</small>A1 · Bench set 3</span><span class="arrow">›</span></div></div><div class="jump">↓ A2 · Barbell Row, set 2</div><div class="homebar"></div></div><div class="cap"><b><em>B4</em>Logging: after ticking A1</b><p>Ticking A1 set 2 jumps to A2 set 2 (a brief banner says where you went). The finished exercise folds into one line so the active table has room. Uneven set counts are fine: when A2 runs out, the rest of A1's sets just continue on their own.</p></div></div><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="nh"><span class="l"></span><div class="t">Exercises</div><span class="r"><span class="tb ">Close</span></span></div><div class="body" style=""><div class="note" style="margin-top:12px">Plan order. Tap one to open it.</div><div class="rrow" style="height:52px"><span style="width:30px;height:30px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;font-size:13px;font-weight:700">✓</span><div class="m"><b>Lateral Raise</b><span>3 sets · 20 × 15</span></div><span style="color:#555">›</span></div><div class="sgh">SUPERSET A</div><div class="sg" style="margin-top:4px"><div class="rrow" style="height:50px"><span class="tag2">A1</span><div class="m"><b style="color:var(--accent)">Bench Press</b><span>2 of 3 sets</span></div><span style="color:#555">›</span></div><div class="rrow" style="height:50px;border-bottom:0"><span class="tag2 g">A2</span><div class="m"><b>Barbell Row</b><span>1 of 3 sets</span></div><span style="color:#555">›</span></div></div><div class="rrow" style="height:52px"><span style="width:30px;height:30px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;border:2px solid #333;color:var(--fg2);font-size:10px;font-weight:700">0/3</span><div class="m"><b>Dips</b><span>Last: BW × 12</span></div><span style="color:#555">›</span></div><div class="rrow" style="height:52px"><span style="width:30px;height:30px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;border:2px solid #333;color:var(--fg2);font-size:10px;font-weight:700">0/3</span><div class="m"><b>Cable Fly</b><span>Last: 30 × 12</span></div><span style="color:#555">›</span></div></div><div class="homebar"></div></div><div class="cap"><b><em>B5</em>All exercises</b><p>The superset shows as one bracketed group. Tapping either opens the shared superset screen at that exercise. In edit mode the group moves as one block.</p></div></div><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="nh"><span class="l"><span class="tb ">‹ Plans</span></span><div class="t"></div><span class="r"><span class="tb ">Edit</span></span></div><div class="body" style=""><div class="rdt" style="margin-top:4px">Push A</div><div class="rdm">PPL · 4 exercises (1 superset) · ~45 min</div><div class="rdx"><div class="t"><b><span class="num">1</span>Lateral Raise</b><span>3 sets</span></div></div><div class="sgh">SUPERSET A · 3 ROUNDS</div><div class="sg" style="margin-top:4px"><div class="bx"><span class="tag2">A1</span><b>Bench Press</b><small>3 × 6–8</small></div><div class="mini2"><span class="n">1</span><span>185 × 8</span><span>→ 185</span></div><div class="mini2"><span class="n">2</span><span>185 × 7</span><span>→ 185</span></div><div class="bx" style="margin-top:4px"><span class="tag2 g">A2</span><b>Barbell Row</b><small>3 × 8–10</small></div><div class="mini2"><span class="n">1</span><span>155 × 10</span><span>→ 155</span></div><div class="mini2"><span class="n">2</span><span>155 × 10</span><span>→ 155</span></div></div><div class="rdx"><div class="t"><b><span class="num">3</span>Dips</b><span>3 sets</span></div></div><div class="rdx" style="border-bottom:0"><div class="t"><b><span class="num">4</span>Cable Fly</b><span>3 sets</span></div></div></div><div class="startbar"><div class="btn">Start workout</div></div><div class="homebar"></div></div><div class="cap"><b><em>B6</em>Routine screen</b><p>The routine preview groups the pair under one heading with the number of rounds, and the time estimate drops because supersets save rest. History and workout detail use the same grouping.</p></div></div></div></div><div class="section"><span class="stag">C · CARDIO · LOGGING</span><h2>Cardio inside the row</h2><p>No Previous column, no text spilling under rows: each cardio exercise picks Time plus up to two columns, and everything lives inside the row. No intervals.</p><div class="row"><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="wh"><div><div class="t">Push A <span style="color:var(--fg2);font-size:12px">▾</span></div><div class="s">52:10 · 4 of 5 done</div></div><span class="finish">Finish</span></div><div class="body" style=""><div class="exh"><div><div class="exn">Treadmill</div><div class="lastline">Last: <b>25:00 · 2.0 mi · Oct 29</b></div></div><div class="hbtns"><span class="ib"><svg width="16" height="12" viewBox="0 0 16 12"><polyline points="1,10 5,6 8,8 14,2" fill="none" stroke="#2e8bff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ib">•••</span></div></div><div class="tbl"><div class="cr2 th"><span>#</span><span class="c">TIME</span><span class="c">MI</span><span class="c">MPH</span><span class="c">✓</span></div><div class="cr2 done"><span class="sn">1</span><span class="in">5:00</span><span class="in">0.3</span><span class="in">3.5</span><span class="chk on">✓</span></div><div class="cr2 done"><span class="sn">2</span><span class="in">15:00</span><span class="in">1.4</span><span class="in">5.6</span><span class="chk on">✓</span></div><div class="cr2 cur"><span class="sn">3</span><span class="in ph">5:00</span><span class="in ph">0.3</span><span class="in ph">3.0</span><span class="chk"></span></div><div class="cr2 tot"><span class="lab">Σ</span><span class="c">20:00</span><span class="c">1.7</span><span class="c">avg 5.1</span><span></span></div></div><div class="quick"><span>+ Segment</span></div></div><div class="nav"><div class="nb"><span class="arrow">‹</span><span><small>PREV</small>Cable Fly</span></div><div class="nb r list"><span><small>LAST ONE</small>All exercises</span><span class="lines"></span></div></div><div class="homebar"></div></div><div class="cap"><b><em>C1</em>Treadmill</b><p>Everything inside the row: TIME · MI · MPH, no Previous column. Last session is one line under the name. Empty boxes show last time's values in grey; ✓ accepts them. With two or more segments a Σ row adds up time and distance and averages speed.</p></div></div><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="wh"><div><div class="t">Push A <span style="color:var(--fg2);font-size:12px">▾</span></div><div class="s">52:10 · 4 of 5 done</div></div><span class="finish">Finish</span></div><div class="body" style=""><div class="exh"><div><div class="exn">Treadmill</div><div class="lastline">Last: <b>25:00 · 2.0 mi · Oct 29</b></div></div><div class="hbtns"><span class="ib"><svg width="16" height="12" viewBox="0 0 16 12"><polyline points="1,10 5,6 8,8 14,2" fill="none" stroke="#2e8bff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ib">•••</span></div></div><div class="tbl"><div class="cr2 th"><span>#</span><span class="c">TIME</span><span class="c">MI</span><span class="c">MPH</span><span class="c">✓</span></div><div class="cr2 done"><span class="sn">1</span><span class="in">5:00</span><span class="in">0.3</span><span class="in">3.5</span><span class="chk on">✓</span></div><div class="cr2 done"><span class="sn">2</span><span class="in">15:00</span><span class="in">1.4</span><span class="in">5.6</span><span class="chk on">✓</span></div><div class="cr2 cur"><span class="sn">3</span><span class="in edit">5:3</span><span class="in ph">0.3</span><span class="in ph">3.0</span><span class="chk"></span></div><div class="cr2 tot"><span class="lab">Σ</span><span class="c">20:00</span><span class="c">1.7</span><span class="c">avg 5.1</span><span></span></div></div><div class="quick"><span>+ Segment</span></div></div><div class="kp"><div class="kph"><span class="lbl2"><b>Time</b></span><div class="rt"><div class="seg2"><span class="blue">time</span><span class="">mi</span><span class="">mph</span></div><span class="ik ck wide"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 7h9M7.5 3.5 11 7l-3.5 3.5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><em>Next</em></span></div></div><div class="kg"><div class="k">1</div><div class="k">2</div><div class="k">3</div><div class="k fn"><span class="chev"></span></div><div class="k">4</div><div class="k">5</div><div class="k">6</div><div class="k fn">+<small>1 min</small></div><div class="k">7</div><div class="k">8</div><div class="k">9</div><div class="k fn">−<small>1 min</small></div><div class="k hl">:<small>min:sec</small></div><div class="k">0</div><div class="k">.</div><div class="k fn"><svg width="26" height="18" viewBox="0 0 26 18"><path d="M8 1h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H8L1 9z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 5.5l7 7M19 5.5l-7 7" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg></div></div></div><div class="homebar"></div></div><div class="cap"><b><em>C2</em>Cardio keypad</b><p>The same keypad. Field tabs follow the exercise's columns; Next walks time → mi → mph, then turns into ✓ Done. In time the bottom-left key types ":" and ± step by a minute; in mph ± step by 0.1.</p></div></div><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="wh"><div><div class="t">Cardio <span style="color:var(--fg2);font-size:12px">▾</span></div><div class="s">33:10 · 1 of 1 done</div></div><span class="finish">Finish</span></div><div class="body" style=""><div class="exh"><div><div class="exn">Bike</div><div class="lastline">Last: <b>32:00 · 8.8 mi · L7</b></div></div><div class="hbtns"><span class="ib"><svg width="16" height="12" viewBox="0 0 16 12"><polyline points="1,10 5,6 8,8 14,2" fill="none" stroke="#2e8bff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ib">•••</span></div></div><div class="tbl"><div class="cr2 th"><span>#</span><span class="c">TIME</span><span class="c">MI</span><span class="c">LEVEL</span><span class="c">✓</span></div><div class="cr2 done"><span class="sn">1</span><span class="in">32:00</span><span class="in">9.4</span><span class="in">8</span><span class="chk on">✓</span></div></div><div class="quick"><span>+ Segment</span></div><div class="note" style="margin-top:14px">Most cardio is a single row. Segments are there for warm-up / main / cool-down if you want them.</div></div><div class="nav"><div class="nb list"><span class="lines"></span><span><small>NO PREVIOUS</small>All exercises</span></div><div class="nb r" style="opacity:.3"><span><small>NEXT</small>—</span></div></div><div class="homebar"></div></div><div class="cap"><b><em>C3</em>Bike, one row</b><p>Columns change with the exercise: Bike tracks LEVEL instead of speed. One segment, so no Σ row. A cardio-only day (started as a blank workout) works the same way.</p></div></div></div><div class="row"><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="wh"><div><div class="t">Pull A <span style="color:var(--fg2);font-size:12px">▾</span></div><div class="s">58:40 · 4 of 5 done</div></div><span class="finish">Finish</span></div><div class="body" style=""><div class="exh"><div><div class="exn">Rower</div><div class="lastline">Last: <b>3 × 2:00 · 1,495 m</b></div></div><div class="hbtns"><span class="ib"><svg width="16" height="12" viewBox="0 0 16 12"><polyline points="1,10 5,6 8,8 14,2" fill="none" stroke="#2e8bff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ib">•••</span></div></div><div class="tbl"><div class="cr2 th"><span>#</span><span class="c">TIME</span><span class="c">METERS</span><span class="c">/500M</span><span class="c">✓</span></div><div class="cr2 done"><span class="sn">1</span><span class="in">2:00</span><span class="in">520</span><span class="in auto">1:55</span><span class="chk on">✓</span></div><div class="cr2 done"><span class="sn">2</span><span class="in">2:00</span><span class="in">510</span><span class="in auto">1:58</span><span class="chk on">✓</span></div><div class="cr2 cur"><span class="sn">3</span><span class="in">2:00</span><span class="in">500</span><span class="in auto">2:00</span><span class="chk"></span></div><div class="cr2 tot"><span class="lab">Σ</span><span class="c">6:00</span><span class="c">1,530</span><span class="c">1:58</span><span></span></div></div><div class="quick"><span>+ Segment</span></div></div><div class="nav"><div class="nb"><span class="arrow">‹</span><span><small>PREV</small>Face Pull</span></div><div class="nb r list"><span><small>LAST ONE</small>All exercises</span><span class="lines"></span></div></div><div class="homebar"></div></div><div class="cap"><b><em>C4</em>Rower</b><p>A worked-out column: split per 500 m is calculated from time and meters (grey, not editable). Pieces like 3 × 2:00 are just three rows.</p></div></div><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="nh"><span class="l"><span class="tb g">Cancel</span></span><div class="t">Edit exercise</div><span class="r"><span class="tb b">Save</span></span></div><div class="body" style=""><div class="flab" style="margin-top:12px">NAME</div><div class="tinput">Treadmill</div><div class="flab">TYPE</div><div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><span style="font-size:12px;font-weight:600;border-radius:8px;padding:6px 10px;border:1px solid #2a2a2a;color:#8e8e8e;">Weight × reps</span><span style="font-size:12px;font-weight:600;border-radius:8px;padding:6px 10px;border:1px solid #2a2a2a;color:#8e8e8e;">Bodyweight</span><span style="font-size:12px;font-weight:600;border-radius:8px;padding:6px 10px;border:1px solid #2e8bff;color:#fff;background:color-mix(in srgb,#2e8bff 12%,#000)">Cardio</span></div><div class="flab">COLUMNS · TIME + UP TO 2</div><div class="colpick">Time<span style="display:flex;align-items:center"><span class="n">always</span><span class="colnum">1</span></span></div><div class="colpick">Distance<span style="display:flex;align-items:center"><span class="n">mi</span><span class="colnum ">2</span></span></div><div class="colpick">Speed<span style="display:flex;align-items:center"><span class="n">mph</span><span class="colnum ">3</span></span></div><div class="colpick">Incline<span style="display:flex;align-items:center"><span class="n">%</span><span class="colnum off"></span></span></div><div class="colpick">Level<span style="display:flex;align-items:center"><span class="n"></span><span class="colnum off"></span></span></div><div class="colpick">Calories<span style="display:flex;align-items:center"><span class="n"></span><span class="colnum off"></span></span></div><div class="colpick">Split /500m<span style="display:flex;align-items:center"><span class="n">auto</span><span class="colnum off"></span></span></div><div class="prevcols"><span class="on">#</span><span class="on">TIME</span><span class="on">MI</span><span class="on">MPH</span></div></div><div class="homebar"></div></div><div class="cap"><b><em>C5</em>Cardio exercise setup</b><p>Time plus up to two more columns, numbered in the order they appear; the preview shows the row. Three value columns is the most that fits a phone row, which is why extras no longer spill under it.</p></div></div><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="nh"><span class="l"><span class="tb g">Cancel</span></span><div class="t">Add exercises</div><span class="r"><span class="tb b">Done</span></span></div><div class="body" style=""><div class="chips"><span>All</span><span class="on">Cardio</span><span>Chest</span><span>Back</span><span>Legs</span></div><div class="search"><svg width="13" height="13" viewBox="0 0 13 13"><circle cx="5.5" cy="5.5" r="4.3" stroke="#8e8e8e" stroke-width="1.6" fill="none"/><line x1="8.6" y1="8.6" x2="12" y2="12" stroke="#8e8e8e" stroke-width="1.6" stroke-linecap="round"/></svg>Search cardio</div><div class="rrow" style="height:48px"><div class="m"><b style="font-size:14.5px">Treadmill</b><span>time · mi · mph</span></div><span class="cb on">✓</span></div><div class="rrow" style="height:48px"><div class="m"><b style="font-size:14.5px">Bike</b><span>time · mi · level</span></div><span class="cb "></span></div><div class="rrow" style="height:48px"><div class="m"><b style="font-size:14.5px">Rower</b><span>time · meters · /500m</span></div><span class="cb "></span></div><div class="rrow" style="height:48px"><div class="m"><b style="font-size:14.5px">Stair climber</b><span>time · level · floors</span></div><span class="cb "></span></div><div class="rrow" style="height:48px"><div class="m"><b style="font-size:14.5px">Elliptical</b><span>time · mi · level</span></div><span class="cb "></span></div><div class="rrow" style="height:48px"><div class="m"><b style="font-size:14.5px">Run / walk outside</b><span>time · mi · pace</span></div><span class="cb "></span></div><div class="rrow" style="height:48px"><div class="m"><b style="font-size:14.5px">Jump rope</b><span>time · rounds</span></div><span class="cb "></span></div><div class="rrow" style="height:48px"><div class="m"><b style="font-size:14.5px">Generic cardio</b><span>time</span></div><span class="cb "></span></div><div class="note">Presets are ordinary cardio exercises with columns picked. Edit any of them (C5).</div></div><div class="homebar"></div></div><div class="cap"><b><em>C6</em>Cardio in the picker</b><p>A "Cardio" filter in the normal exercise picker, each preset showing its columns. No separate cardio mode: you add it to a workout like any exercise.</p></div></div></div></div><div class="section"><span class="stag">D · CARDIO · AFTERWARDS</span><h2>Summary, Progress, records, History</h2><p>Cardio progress is about how much you do: minutes, miles and sessions per week, with 4W / 3M / 6M / 1Y / All ranges. The only "bests" are classic race distances. No speed charts.</p><div class="row"><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="nh"><span class="l"></span><div class="t">Summary</div><span class="r"><span class="tb b">Done</span></span></div><div class="body" style=""><div class="sumhead"><div class="big">Stronger on 3 of 4</div><div class="sub">Push A vs your last Push A (Thu, Oct 29)</div></div><div class="cmp" style="margin-top:10px"><div class="cr"><div><b>Bench Press</b><small>185 × 8 vs 180 × 8</small></div><span class="up">▲</span><span style="text-align:right"><span class="pl up">+5 lb</span></span></div><div class="cr"><div><b>Incline DB Press</b><small>65 × 11 vs 65 × 10</small></div><span class="up">▲</span><span style="text-align:right"><span class="pl up">+1 rep</span></span></div><div class="cr"><div><b>Dips</b><small>BW × 14 vs BW × 12</small></div><span class="up">▲</span><span style="text-align:right"><span class="pl up">+2 reps</span></span></div><div class="cr"><div><b>Cable Fly</b><small>30 × 12 vs 30 × 12</small></div><span class="flat">=</span><span style="text-align:right"><span class="pl fl">same</span></span></div></div><div class="lbl" style="margin-top:14px">CARDIO</div><div class="cmp"><div class="cr"><div><b>Treadmill</b><small>20:00 · 1.7 mi</small></div><span></span><span></span></div><div class="cr"><div><b>Bike</b><small>10:00 · 2.9 mi</small></div><span></span><span></span></div><div style="display:flex;justify-content:space-between;font-size:12px;color:#8e8e8e;padding:8px 0;border-bottom:1px solid #1f1f1f"><span>Cardio this week</span><b style="color:#fff">65 min · 7.5 mi</b></div></div><div class="flatstats" style="margin-top:10px"><div><small>TIME</small><b>82 min</b></div><div><small>SETS</small><b>14</b></div><div><small>CARDIO</small><b>30 min</b></div></div></div><div class="homebar"></div></div><div class="cap"><b><em>D1</em>Finish summary</b><p>Lifts keep the headline. Cardio shows what you did and your running total for the week, not a faster / slower verdict. Cardio minutes join the stats row.</p></div></div><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="nh"><span class="l"><span class="tb ">‹ Progress</span></span><div class="t">Cardio</div><span class="r"></span></div><div class="body" style=""><div class="metric"><span>Lifts</span><span class="on">Cardio</span></div><div class="metric" style="margin-top:8px"><span class="on">Minutes</span><span>Miles</span><span>Sessions</span></div><div class="hero"><div class="hk">PER WEEK · LAST 3 MONTHS</div><div class="v" style="font-size:28px">65<small>min avg</small></div><span class="up">▲ 12 min vs the 3 months before</span></div><svg width="248" height="130" style="display:block;margin-top:8px"><line x1="26" x2="248" y1="110.0" y2="110.0" stroke="#1c1c1c"/><text x="0" y="113.0" fill="#8e8e8e" font-size="9.5" font-family="-apple-system,Arial">0</text><line x1="26" x2="248" y1="60.0" y2="60.0" stroke="#1c1c1c"/><text x="0" y="63.0" fill="#8e8e8e" font-size="9.5" font-family="-apple-system,Arial">50</text><line x1="26" x2="248" y1="10.0" y2="10.0" stroke="#1c1c1c"/><text x="0" y="13.0" fill="#8e8e8e" font-size="9.5" font-family="-apple-system,Arial">100</text><rect x="29.3" y="65.0" width="11.8" height="45.0" rx="2.5" fill="#2E8BFF"/><rect x="47.8" y="50.0" width="11.8" height="60.0" rx="2.5" fill="#2E8BFF"/><rect x="66.3" y="80.0" width="11.8" height="30.0" rx="2.5" fill="#2E8BFF"/><rect x="84.8" y="35.0" width="11.8" height="75.0" rx="2.5" fill="#2E8BFF"/><rect x="103.3" y="50.0" width="11.8" height="60.0" rx="2.5" fill="#2E8BFF"/><rect x="121.8" y="20.0" width="11.8" height="90.0" rx="2.5" fill="#2E8BFF"/><rect x="140.3" y="65.0" width="11.8" height="45.0" rx="2.5" fill="#2E8BFF"/><rect x="158.8" y="50.0" width="11.8" height="60.0" rx="2.5" fill="#2E8BFF"/><rect x="177.3" y="30.0" width="11.8" height="80.0" rx="2.5" fill="#2E8BFF"/><rect x="195.8" y="40.0" width="11.8" height="70.0" rx="2.5" fill="#2E8BFF"/><rect x="214.3" y="15.0" width="11.8" height="95.0" rx="2.5" fill="#2E8BFF"/><rect x="232.8" y="70.0" width="11.8" height="40.0" rx="2.5" fill="#fff"/><line x1="26" x2="248" y1="45.5" y2="45.5" stroke="#cfcfcf" stroke-dasharray="3 3"/><text x="35.2" y="126" text-anchor="middle" fill="#8e8e8e" font-size="9.5" font-family="-apple-system,Arial">Aug</text><text x="109.2" y="126" text-anchor="middle" fill="#8e8e8e" font-size="9.5" font-family="-apple-system,Arial">Sep</text><text x="183.2" y="126" text-anchor="middle" fill="#8e8e8e" font-size="9.5" font-family="-apple-system,Arial">Oct</text><text x="238.8" y="126" text-anchor="end" fill="#8e8e8e" font-size="9.5" font-family="-apple-system,Arial">Now</text></svg><div class="seg" style="margin-top:6px"><span class="">4W</span><span class="on">3M</span><span class="">6M</span><span class="">1Y</span><span class="">All</span></div><div class="lbl" style="margin-top:10px">BY MACHINE · 3 MONTHS<span>Records ›</span></div><div class="lift" style="grid-template-columns:1fr auto"><div><b>Treadmill</b><span class="vv">14 sessions</span></div><span style="font-size:13px;font-weight:700;text-align:right">5 h 10 m<br><small style="font-size:11px;color:#8e8e8e;font-weight:500">21.4 mi</small></span></div><div class="lift" style="grid-template-columns:1fr auto"><div><b>Bike</b><span class="vv">9 sessions</span></div><span style="font-size:13px;font-weight:700;text-align:right">4 h 40 m<br><small style="font-size:11px;color:#8e8e8e;font-weight:500">80.2 mi</small></span></div><div class="lift" style="grid-template-columns:1fr auto"><div><b>Rower</b><span class="vv">5 sessions</span></div><span style="font-size:13px;font-weight:700;text-align:right">45 m<br><small style="font-size:11px;color:#8e8e8e;font-weight:500">9,800 m</small></span></div></div><div class="tabbar"><span class=""><i></i>Home</span><span class=""><i></i>Plans</span><span class=""><i></i>History</span><span class="on"><i></i>Progress</span><span class=""><i></i>Settings</span></div><div class="homebar"></div></div><div class="cap"><b><em>D2</em>Progress: cardio</b><p>About how much, not how fast. Switch the graph between minutes, miles and sessions per week; the range under it goes from 4 weeks to all time (ranges you don't have history for are hidden). Each machine shows its totals.</p></div></div><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="nh"><span class="l"><span class="tb ">‹ Cardio</span></span><div class="t">Treadmill</div><span class="r"></span></div><div class="body" style=""><div class="metric"><span class="on">Miles</span><span>Minutes</span></div><div class="hero"><div class="hk">TREADMILL · MILES PER WEEK</div><div class="v">4.3<small>mi avg</small></div><span class="up">▲ 1.1 mi vs the 3 months before</span></div><svg width="248" height="130" style="display:block;margin-top:8px"><line x1="26" x2="248" y1="110.0" y2="110.0" stroke="#1c1c1c"/><text x="0" y="113.0" fill="#8e8e8e" font-size="9.5" font-family="-apple-system,Arial">0</text><line x1="26" x2="248" y1="67.1" y2="67.1" stroke="#1c1c1c"/><text x="0" y="70.1" fill="#8e8e8e" font-size="9.5" font-family="-apple-system,Arial">3</text><line x1="26" x2="248" y1="24.3" y2="24.3" stroke="#1c1c1c"/><text x="0" y="27.3" fill="#8e8e8e" font-size="9.5" font-family="-apple-system,Arial">6</text><rect x="29.3" y="64.3" width="11.8" height="45.7" rx="2.5" fill="#2E8BFF"/><rect x="47.8" y="52.9" width="11.8" height="57.1" rx="2.5" fill="#2E8BFF"/><rect x="66.3" y="80.0" width="11.8" height="30.0" rx="2.5" fill="#2E8BFF"/><rect x="84.8" y="41.4" width="11.8" height="68.6" rx="2.5" fill="#2E8BFF"/><rect x="103.3" y="47.1" width="11.8" height="62.9" rx="2.5" fill="#2E8BFF"/><rect x="121.8" y="35.7" width="11.8" height="74.3" rx="2.5" fill="#2E8BFF"/><rect x="140.3" y="67.1" width="11.8" height="42.9" rx="2.5" fill="#2E8BFF"/><rect x="158.8" y="44.3" width="11.8" height="65.7" rx="2.5" fill="#2E8BFF"/><rect x="177.3" y="31.4" width="11.8" height="78.6" rx="2.5" fill="#2E8BFF"/><rect x="195.8" y="40.0" width="11.8" height="70.0" rx="2.5" fill="#2E8BFF"/><rect x="214.3" y="22.9" width="11.8" height="87.1" rx="2.5" fill="#2E8BFF"/><rect x="232.8" y="44.3" width="11.8" height="65.7" rx="2.5" fill="#fff"/><line x1="26" x2="248" y1="47.9" y2="47.9" stroke="#cfcfcf" stroke-dasharray="3 3"/><text x="35.2" y="126" text-anchor="middle" fill="#8e8e8e" font-size="9.5" font-family="-apple-system,Arial">Aug</text><text x="109.2" y="126" text-anchor="middle" fill="#8e8e8e" font-size="9.5" font-family="-apple-system,Arial">Sep</text><text x="183.2" y="126" text-anchor="middle" fill="#8e8e8e" font-size="9.5" font-family="-apple-system,Arial">Oct</text><text x="238.8" y="126" text-anchor="end" fill="#8e8e8e" font-size="9.5" font-family="-apple-system,Arial">Now</text></svg><div class="seg" style="margin-top:6px"><span class="">4W</span><span class="on">3M</span><span class="">6M</span><span class="">1Y</span><span class="">All</span></div><div class="lbl" style="margin-top:8px">RECENT</div><div class="sess"><div class="dt"><small>THU</small><b>5</b></div><div class="v">20:00 · 1.7 mi<small>2 segments · today</small></div><span style="font-size:12px;color:#8e8e8e"></span></div><div class="sess"><div class="dt"><small>THU</small><b>29</b></div><div class="v">25:00 · 2.0 mi<small>1 segment</small></div><span style="font-size:12px;color:#8e8e8e"></span></div><div class="sess"><div class="dt"><small>MON</small><b>26</b></div><div class="v">20:00 · 1.6 mi<small>2 segments</small></div><span style="font-size:12px;color:#8e8e8e"></span></div></div><div class="tabbar"><span class=""><i></i>Home</span><span class=""><i></i>Plans</span><span class=""><i></i>History</span><span class="on"><i></i>Progress</span><span class=""><i></i>Settings</span></div><div class="homebar"></div></div><div class="cap"><b><em>D3</em>Machine detail</b><p>The same idea for one machine: miles (or minutes) per week across the chosen range, then recent sessions. Speed is still in each session's numbers, just not charted.</p></div></div></div><div class="row"><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="nh"><span class="l"><span class="tb ">‹ Cardio</span></span><div class="t">Distance records</div><span class="r"></span></div><div class="body" style=""><div class="hero" style="margin-top:6px"><div class="hk">FASTEST TIMES</div></div><div class="sess" style="grid-template-columns:1fr auto;padding:11px 0"><div class="v"><b style="font-size:15px">1 mile</b><small>Oct 12 · Run outside</small></div><span style="font-size:20px;font-weight:700;color:#2e8bff">7:42</span></div><div class="sess" style="grid-template-columns:1fr auto;padding:11px 0"><div class="v"><b style="font-size:15px">5K</b><small>Sep 28 · Run outside</small></div><span style="font-size:20px;font-weight:700;color:#2e8bff">25:10</span></div><div class="sess" style="grid-template-columns:1fr auto;padding:11px 0"><div class="v"><b style="font-size:15px">10K</b><small>Aug 30 · Run outside</small></div><span style="font-size:20px;font-weight:700;color:#fff">54:30</span></div><div class="sess" style="grid-template-columns:1fr auto;padding:11px 0"><div class="v"><b style="font-size:15px">Half marathon</b><small>longest: 7.2 mi</small></div><span style="font-size:16px;font-weight:700;color:#555">—</span></div><div class="sess" style="grid-template-columns:1fr auto;padding:11px 0"><div class="v"><b style="font-size:15px">Marathon</b><small></small></div><span style="font-size:16px;font-weight:700;color:#555">—</span></div><div class="note">Counts runs (outside or treadmill) where one segment covered at least that distance; the time is scaled to the exact distance. Blue = set in the last 60 days. Distances you haven't reached show "—", plus your longest so far.</div></div><div class="tabbar"><span class=""><i></i>Home</span><span class=""><i></i>Plans</span><span class=""><i></i>History</span><span class="on"><i></i>Progress</span><span class=""><i></i>Settings</span></div><div class="homebar"></div></div><div class="cap"><b><em>D4</em>Distance records</b><p>The one place cardio gets "bests": classic race distances. 1 mile, 5K, 10K, half and full marathon, each with date and where. Opened from "Records ›" on D2.</p></div></div><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="nh"><span class="l"><span class="tb ">‹ History</span></span><div class="t"></div><span class="r"><span class="tb ">Edit</span></span></div><div class="body" style=""><div class="rdt" style="margin-top:4px">Push A</div><div class="rdm">Thu, Nov 5 · 6:10 – 7:32 pm</div><div class="dstat"><div><small>TIME</small><b>82 min</b></div><div><small>SETS</small><b>14</b></div><div><small>CARDIO</small><b>30 min</b></div></div><div class="dex"><div class="nm">Bench Press <span>est. 1RM 234</span></div><div class="dset"><span class="n">1</span><span>185 × 8</span><span></span></div><div class="dset"><span class="n">2</span><span>185 × 7</span><span></span></div><div class="dset"><span class="n">3</span><span>185 × 6</span><span></span></div></div><div class="dex"><div class="nm">Treadmill <span>cardio</span></div><div class="ptable"><div class="r h"><span></span><span>TIME</span><span>MI</span><span>MPH</span></div><div class="r"><span class="n">1</span><span>5:00</span><span>0.3</span><span>3.5</span></div><div class="r"><span class="n">2</span><span>15:00</span><span>1.4</span><span>5.6</span></div><div class="r t"><span class="n">Σ</span><span>20:00</span><span>1.7</span><span>5.1</span></div></div></div><div class="dex"><div class="nm">Bike <span>cardio</span></div><div class="ptable"><div class="r h"><span></span><span>TIME</span><span>MI</span><span>LEVEL</span></div><div class="r"><span class="n">1</span><span>10:00</span><span>2.9</span><span>8</span></div></div></div></div><div class="homebar"></div></div><div class="cap"><b><em>D5</em>History</b><p>Cardio as a mini table with the columns you logged. The Σ row only appears with two or more segments (Treadmill has it, the single-segment Bike doesn't).</p></div></div></div></div><div class="pick" style="border:1px dashed #333;border-radius:12px;padding:14px 16px;font-size:13px;color:#cfcfcf;line-height:1.6;margin-top:30px"><b style="color:#fff">Still open</b><br>• Supersets: auto-jump to the partner exercise after ✓ (shown), or stay put?  · Max 2 or 3 exercises per superset?<br>• Cardio distance unit: follow lbs → mi / kg → km, or its own setting?<br>• Should the plate pad open by default for barbell exercises, or always start on 123?</div></div></body></html>

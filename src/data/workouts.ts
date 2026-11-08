@@ -11,6 +11,8 @@ import {
 } from '../lib/prefill';
 import { diffRoutine, type RoutineChange, type StructureItem } from '../lib/routineDiff';
 import { isEmptySet, orderSets, positionKeys } from '../lib/sets';
+import { linkSuperset, moveBlock, normalizeSupersets, unlinkSuperset } from '../lib/supersets';
+import type { CardioValues } from '../lib/cardio';
 import { getSettings, stepLb } from './settings';
 
 const stamp = () => {
@@ -50,6 +52,12 @@ export function blankWorkoutName(ts = Date.now()): string {
 interface NewExercise {
   exerciseId: string;
   sets: SetDraft[];
+  supersetGroup?: string;
+}
+
+/** A cardio exercise starts with last session's number of segments (or one); values show as grey placeholders. */
+async function isCardioExercise(exerciseId: string): Promise<boolean> {
+  return (await db.exercises.get(exerciseId))?.type === 'cardio';
 }
 
 function setRecords(weId: string, drafts: SetDraft[]): WorkoutSet[] {
@@ -71,7 +79,14 @@ async function createWorkout(name: string, exercises: NewExercise[], routineId?:
     const active = await getActiveWorkout();
     if (active) throw new ActiveWorkoutExistsError(active);
     const workout: Workout = { ...stamp(), name, routineId, startedAt: Date.now(), status: 'active' };
-    const wes: WorkoutExercise[] = exercises.map((e, i) => ({ ...stamp(), workoutId: workout.id, exerciseId: e.exerciseId, order: i }));
+    const grouped = normalizeSupersets(exercises.map((e, i) => ({ key: String(i), supersetGroup: e.supersetGroup })));
+    const wes: WorkoutExercise[] = exercises.map((e, i) => ({
+      ...stamp(),
+      workoutId: workout.id,
+      exerciseId: e.exerciseId,
+      order: i,
+      ...(grouped[i].supersetGroup ? { supersetGroup: grouped[i].supersetGroup } : {}),
+    }));
     workout.currentExerciseId = wes[0]?.id;
     await db.workouts.add(workout);
     await db.workoutExercises.bulkAdd(wes);
@@ -89,7 +104,11 @@ export async function startFromRoutine(routineId: string): Promise<string> {
   for (const re of res) {
     const rsets = (await db.routineSets.where('routineExerciseId').equals(re.id).toArray()).sort((a, b) => a.order - b.order);
     const last = await lastSessionSets(re.exerciseId);
-    exercises.push({ exerciseId: re.exerciseId, sets: prefillFromRoutine(rsets, last) });
+    // Cardio segments start empty: last time's numbers show in grey and ✓ accepts them.
+    const sets = (await isCardioExercise(re.exerciseId))
+      ? Array.from({ length: Math.max(1, rsets.length) }, () => ({ kind: 'working' as const }))
+      : prefillFromRoutine(rsets, last);
+    exercises.push({ exerciseId: re.exerciseId, sets, supersetGroup: re.supersetGroup });
   }
   return createWorkout(routine.name, exercises, routine.id);
 }
@@ -109,9 +128,13 @@ export async function repeatWorkout(workoutId: string): Promise<string> {
     const last = await lastSessionSets(we.exerciseId);
     const prev = last ? indexSession(last).byKey : undefined;
     const keys = positionKeys(sets);
+    const cardio = await isCardioExercise(we.exerciseId);
     exercises.push({
       exerciseId: we.exerciseId,
+      supersetGroup: we.supersetGroup,
+      // Cardio boxes start empty: last time's numbers show in grey and ✓ accepts them.
       sets: sets.map((s) => {
+        if (cardio) return { kind: 'working' as const };
         const p = prev?.get(keys.get(s.id)!);
         return { kind: s.kind, weight: p?.weight ?? s.weight, reps: p?.reps ?? s.reps, repsMin: s.repsMin, repsMax: s.repsMax };
       }),
@@ -127,15 +150,14 @@ async function workoutExercises(workoutId: string) {
   return (await db.workoutExercises.where('workoutId').equals(workoutId).toArray()).sort((a, b) => a.order - b.order);
 }
 
-async function renumberExercises(list: WorkoutExercise[]) {
-  const t = Date.now();
-  await Promise.all(list.map((we, i) => (we.order === i ? undefined : db.workoutExercises.update(we.id, { order: i, updatedAt: t }))));
-}
-
 /** Add exercises to the end, each prefilled from its last session. Returns the new workout-exercise ids. */
 export async function addExercisesToWorkout(workoutId: string, exerciseIds: string[]): Promise<string[]> {
   const drafts: NewExercise[] = [];
-  for (const id of exerciseIds) drafts.push({ exerciseId: id, sets: prefillFromLastSession(await lastSessionSets(id, workoutId)) });
+  for (const id of exerciseIds) {
+    const last = await lastSessionSets(id, workoutId);
+    const cardio = await isCardioExercise(id);
+    drafts.push({ exerciseId: id, sets: cardio ? Array.from({ length: last?.length || 1 }, () => ({ kind: 'working' as const })) : prefillFromLastSession(last) });
+  }
   return db.transaction('rw', db.workoutExercises, db.workoutSets, async () => {
     const existing = await workoutExercises(workoutId);
     const start = existing.length ? existing[existing.length - 1].order + 1 : 0;
@@ -152,8 +174,7 @@ export async function removeWorkoutExercise(weId: string): Promise<void> {
     if (!we) return;
     await db.workoutSets.where('workoutExerciseId').equals(weId).delete();
     await db.workoutExercises.delete(weId);
-    const rest = await workoutExercises(we.workoutId);
-    await renumberExercises(rest);
+    const rest = await writeGrouping(await workoutExercises(we.workoutId));
     const w = await db.workouts.get(we.workoutId);
     if (w?.currentExerciseId === weId) {
       const idx = Math.min(we.order, rest.length - 1);
@@ -162,17 +183,56 @@ export async function removeWorkoutExercise(weId: string): Promise<void> {
   });
 }
 
+/**
+ * Write list order and superset letters (normalized) for rows that changed.
+ * "Changed" is judged against what's stored, not the list passed in: callers
+ * hand over rows whose groups were already edited (link / unlink), and a partner
+ * that was already next to the anchor keeps its order but still needs its letter.
+ */
+async function writeGrouping(list: WorkoutExercise[]): Promise<WorkoutExercise[]> {
+  const keyed = normalizeSupersets(list.map((we) => ({ ...we, key: we.id })));
+  const stored = new Map((await db.workoutExercises.bulkGet(list.map((we) => we.id))).filter((x): x is WorkoutExercise => !!x).map((x) => [x.id, x]));
+  const t = Date.now();
+  await Promise.all(
+    keyed.map((we, i) => {
+      const old = stored.get(we.id);
+      if (!old) return undefined;
+      if (old.order === i && (old.supersetGroup ?? undefined) === (we.supersetGroup ?? undefined)) return undefined;
+      return db.workoutExercises.update(we.id, { order: i, supersetGroup: we.supersetGroup, updatedAt: t });
+    }),
+  );
+  return keyed.map(({ key: _key, ...we }, i) => ({ ...we, order: i }));
+}
+
+/** Move an exercise up or down. A superset moves as one block (B5). */
 export async function moveWorkoutExercise(weId: string, delta: -1 | 1): Promise<void> {
   await db.transaction('rw', db.workoutExercises, async () => {
     const we = await db.workoutExercises.get(weId);
     if (!we) return;
     const list = await workoutExercises(we.workoutId);
-    const i = list.findIndex((x) => x.id === weId);
-    const j = i + delta;
-    if (j < 0 || j >= list.length) return;
-    [list[i], list[j]] = [list[j], list[i]];
-    // Force a write for the two swapped rows even if orders weren't contiguous.
-    await renumberExercises(list.map((x) => (x.id === list[i].id || x.id === list[j].id ? { ...x, order: -1 } : x)));
+    const moved = moveBlock(list.map((x) => ({ ...x, key: x.id })), weId, delta);
+    await writeGrouping(moved.map((x) => list.find((y) => y.id === x.key)!));
+  });
+}
+
+/** B2 "Superset with…" mid-workout: partners line up after this exercise and share its group. */
+export async function linkWorkoutSuperset(weId: string, partnerIds: string[]): Promise<void> {
+  await db.transaction('rw', db.workoutExercises, async () => {
+    const we = await db.workoutExercises.get(weId);
+    if (!we) return;
+    const list = await workoutExercises(we.workoutId);
+    const linked = linkSuperset(list.map((x) => ({ ...x, key: x.id })), weId, partnerIds);
+    await writeGrouping(linked.map(({ key: _key, ...x }) => x));
+  });
+}
+
+export async function unlinkWorkoutSuperset(weId: string): Promise<void> {
+  await db.transaction('rw', db.workoutExercises, async () => {
+    const we = await db.workoutExercises.get(weId);
+    if (!we) return;
+    const list = await workoutExercises(we.workoutId);
+    const out = unlinkSuperset(list.map((x) => ({ ...x, key: x.id })), weId);
+    await writeGrouping(out.map(({ key: _key, ...x }) => x));
   });
 }
 
@@ -236,7 +296,7 @@ async function writeOrder(ordered: WorkoutSet[]) {
   await Promise.all(ordered.map((s, i) => (s.order === i ? undefined : db.workoutSets.update(s.id, { order: i, updatedAt: t }))));
 }
 
-export async function updateSet(setId: string, patch: Partial<Pick<WorkoutSet, 'weight' | 'reps' | 'completed'>>): Promise<void> {
+export async function updateSet(setId: string, patch: Partial<Pick<WorkoutSet, 'weight' | 'reps' | 'completed'>> & CardioValues): Promise<void> {
   await db.workoutSets.update(setId, { ...patch, updatedAt: Date.now() });
 }
 
@@ -354,7 +414,7 @@ export interface FinishCheck {
 }
 
 /** 5.1: which sets have numbers but weren't ticked. Empty sets are dropped silently later. */
-export async function checkUnticked(workoutId: string, nameOf: (exerciseId: string) => string): Promise<FinishCheck> {
+export async function checkUnticked(workoutId: string, nameOf: (exerciseId: string) => string, isCardio: (exerciseId: string) => boolean = () => false): Promise<FinishCheck> {
   const wes = await workoutExercises(workoutId);
   const unticked: FinishCheck['unticked'] = [];
   for (const we of wes) {
@@ -363,7 +423,7 @@ export async function checkUnticked(workoutId: string, nameOf: (exerciseId: stri
     for (const s of sets) {
       if (s.kind === 'working') n++;
       if (!s.completed && !isEmptySet(s)) {
-        const label = s.kind === 'warmup' ? 'warm-up' : s.kind === 'drop' ? 'drop set' : `set ${n}`;
+        const label = s.kind === 'warmup' ? 'warm-up' : s.kind === 'drop' ? 'drop set' : `${isCardio(we.exerciseId) ? 'segment' : 'set'} ${n}`;
         unticked.push({ setId: s.id, label: `${nameOf(we.exerciseId)} ${label}` });
       }
     }
@@ -377,31 +437,35 @@ function keptSets(sets: WorkoutSet[], countUnticked: boolean): WorkoutSet[] {
 }
 
 async function finalStructure(workoutId: string, countUnticked: boolean): Promise<StructureItem[]> {
-  const out: StructureItem[] = [];
+  const out: (StructureItem & { key: string })[] = [];
   for (const we of await workoutExercises(workoutId)) {
     const kept = keptSets(await setsOf(we.id), countUnticked);
     if (!kept.length) continue;
     out.push({
+      key: we.id,
       exerciseId: we.exerciseId,
       warmups: kept.filter((s) => s.kind === 'warmup').length,
       working: kept.filter((s) => s.kind === 'working').length,
+      supersetGroup: we.supersetGroup,
     });
   }
-  return out;
+  return normalizeSupersets(out);
 }
 
 async function routineStructure(routineId: string): Promise<StructureItem[]> {
   const res = (await db.routineExercises.where('routineId').equals(routineId).toArray()).sort((a, b) => a.order - b.order);
-  const out: StructureItem[] = [];
+  const out: (StructureItem & { key: string })[] = [];
   for (const re of res) {
     const sets = await db.routineSets.where('routineExerciseId').equals(re.id).toArray();
     out.push({
+      key: re.id,
       exerciseId: re.exerciseId,
       warmups: sets.filter((s) => s.kind === 'warmup').length,
       working: sets.filter((s) => s.kind === 'working').length,
+      supersetGroup: re.supersetGroup,
     });
   }
-  return out;
+  return normalizeSupersets(out);
 }
 
 /** 5.2: how the finished workout would differ from its routine (exercises, order, set counts). */
@@ -434,7 +498,7 @@ export async function finishWorkout(workoutId: string, opts: { countUnticked: bo
       if (!kept.length) await db.workoutExercises.delete(we.id);
       else await writeOrder(orderSets(kept));
     }
-    await renumberExercises(await workoutExercises(workoutId));
+    await writeGrouping(await workoutExercises(workoutId));
     await db.workouts.update(workoutId, { status: 'done', endedAt: Math.max(t, w.startedAt), currentExerciseId: undefined, updatedAt: t });
     if (opts.updateRoutine && w.routineId) await applyWorkoutToRoutine(workoutId, w.routineId);
   });
@@ -469,7 +533,7 @@ export async function applyWorkoutToRoutine(workoutId: string, routineId: string
     }
     const tWarm = (template ?? []).filter((s) => s.kind === 'warmup');
     const tWork = (template ?? []).filter((s) => s.kind === 'working');
-    const re = { id: uuid(), createdAt: t, updatedAt: t, routineId, exerciseId: we.exerciseId, order: order++ };
+    const re: RoutineExercise = { id: uuid(), createdAt: t, updatedAt: t, routineId, exerciseId: we.exerciseId, order: order++, supersetGroup: we.supersetGroup };
     newRes.push(re);
     let wi = 0;
     let ki = 0;
@@ -490,14 +554,15 @@ export async function applyWorkoutToRoutine(workoutId: string, routineId: string
   }
   await db.routineSets.where('routineExerciseId').anyOf(oldRes.map((r) => r.id)).delete();
   await db.routineExercises.where('routineId').equals(routineId).delete();
-  await db.routineExercises.bulkAdd(newRes);
+  const grouped = normalizeSupersets(newRes.map((r) => ({ ...r, key: r.id })));
+  await db.routineExercises.bulkAdd(grouped.map(({ key: _key, ...r }) => ({ ...r, supersetGroup: r.supersetGroup })));
   await db.routineSets.bulkAdd(newSets);
   await db.routines.update(routineId, { updatedAt: t });
 }
 
 // ───────────────────────────── editing a finished workout (6.7)
 
-export interface EditedSet {
+export interface EditedSet extends CardioValues {
   key: string;
   kind: 'warmup' | 'working' | 'drop';
   parentKey?: string;
@@ -509,6 +574,7 @@ export interface EditedExercise {
   key: string;
   exerciseId: string;
   sets: EditedSet[];
+  supersetGroup?: string;
 }
 
 export async function saveWorkoutEdits(
@@ -521,10 +587,10 @@ export async function saveWorkoutEdits(
     await db.workoutSets.where('workoutExerciseId').anyOf(old.map((w) => w.id)).delete();
     await db.workoutExercises.where('workoutId').equals(workoutId).delete();
     let order = 0;
-    for (const ex of edit.exercises) {
+    const kept = normalizeSupersets(edit.exercises.filter((ex) => ex.sets.some((s) => !isEmptySet(s))));
+    for (const ex of kept) {
       const sets = ex.sets.filter((s) => !isEmptySet(s));
-      if (!sets.length) continue;
-      const we: WorkoutExercise = { id: uuid(), createdAt: t, updatedAt: t, workoutId, exerciseId: ex.exerciseId, order: order++ };
+      const we: WorkoutExercise = { id: uuid(), createdAt: t, updatedAt: t, workoutId, exerciseId: ex.exerciseId, order: order++, supersetGroup: ex.supersetGroup };
       await db.workoutExercises.add(we);
       const idOf = new Map<string, string>();
       for (const s of sets) idOf.set(s.key, uuid());
@@ -539,6 +605,12 @@ export async function saveWorkoutEdits(
           parentSetId: s.kind === 'drop' && s.parentKey ? idOf.get(s.parentKey) : undefined,
           weight: s.weight,
           reps: s.reps,
+          durationSec: s.durationSec,
+          distance: s.distance,
+          speed: s.speed,
+          incline: s.incline,
+          level: s.level,
+          calories: s.calories,
           completed: true,
         })),
       );

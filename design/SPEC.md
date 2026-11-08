@@ -6,7 +6,9 @@ The source of truth for what to build. Screens are in `storyboards/complete.html
 
 A free, offline-first lifting log, built as a PWA and installed to the iPhone Home Screen. You plan routines, log sets fast, and see if you're getting stronger. There's no account, no server, no ads and no subscription. All data lives on the phone, with backup and export.
 
-**Out of scope for v1:** goals, +weight hints, rest timer, volume/tonnage charts, cardio and timed exercises, social features, a weekly schedule, training videos, diet plans.
+Cardio, supersets and the plate pad were added after the core phases (§10), then plan schedules (§11).
+
+**Out of scope for v1:** goals, +weight hints, rest timer, volume/tonnage charts, timed (non-cardio) exercises, social features, training videos, diet plans.
 
 ## 2. Tech stack
 
@@ -63,7 +65,7 @@ Variations: exercises sharing a `variationGroupId` are variations of each other 
 
 **Records.** Best weight for each rep count from 1 to 12 (working sets only), plus the best est. 1RM and the heaviest single set. "New" means set in the last 30 days.
 
-**Next up (Home).** Within the active folder, the routine whose last completed workout is oldest (never done counts as oldest). Ties go to folder order.
+**Next up (Home).** Within the active folder, the routine whose last completed workout is oldest (never done counts as oldest). Ties go to folder order. When the active folder has a schedule, Home follows the schedule instead (§11).
 
 **Finishing (5.1–5.3).**
 1. If any non-empty set is unticked, ask: Count them / Drop them / Keep going. Empty sets are dropped silently.
@@ -128,3 +130,65 @@ See the "Design principles" section at the bottom of `storyboards/complete.html`
 - Resume bar on non-Home tabs during a workout (3.3)?
 - Streak definition: weeks in a row with at least N workouts. What is N?
 - Allow two workouts in one day? (The data model already allows it.)
+
+Resolved for §10:
+- Supersets auto-jump to the partner after ✓ (a warm-up or drop stays put). Up to **3** exercises per group.
+- Cardio distance follows units (lbs → mi, kg → km). Each cardio exercise can switch to meters instead (the Rower preset does).
+- The plate pad starts on 123. Switching to Plates on an exercise is remembered for that exercise.
+
+## 10. Extra features (build after the core phases)
+
+Screens: `optional/final-features.html`. It supersedes `optional/optional-features.html`, `optional/plate-pad-and-supersets.html` and `optional/cardio.html`. Gym profiles, intervals, in-app cardio timers, the warm-up ramp and routine sharing are **not** planned.
+
+**Keypad header (A1–A2).** Applies to the core keypad too:
+- Left: `123 | Plates` mode tabs. On a reps box this becomes a label instead, because plates only apply to weight.
+- Right: field tabs (`lbs | reps`, or the cardio columns), then **one** blue button. On any box except the last in the row it reads **→ Next** and moves to the next box. On the last box it reads **✓ Done**, which completes the set and jumps to the next set's first box. Same position, so the thumb never moves.
+
+**Plate pad (A3–A5).**
+- The bar drawing is on the left, showing the right half of a barbell like the logo. The total and "x per side" sit top right, with a 2 × 3 grid of plate buttons (45 / 35 / 25 / 10 / 5 / 2.5) below. Each button shows how many are loaded per side. Bottom row: Undo / Clear / Done.
+- Tapping a plate button adds that plate to **each** side. Tapping a plate on the drawing removes it. Total = bar + 2 × plates.
+- When the stack doesn't fit, it slides left and a ‹ hint appears, so the outermost plates always stay visible.
+- "Bar 45 lb ▾" picks Barbell 45 / Light 35 / EZ 25 / Trap 60 / Custom / No bar (machine). The choice is remembered per exercise.
+- The panel is the same height as the number keypad.
+
+**Supersets (B1–B6).**
+- Data: add `RoutineExercise.supersetGroup` and `WorkoutExercise.supersetGroup` (a letter). Exercises sharing a group are a superset.
+- Create one with "•••" → "Superset with…", or by dragging an exercise into the bracket. Unlink the same way.
+- Logging: the group shares one screen with tags A1 / A2. After ✓ the app jumps to the same set number of the partner exercise; finished partners fold into one line. If set counts differ, the extra sets just continue on their own.
+- Everywhere else (exercise list, routine screen, history) the group shows as one blue bracket and moves as one block.
+
+**Cardio (C1–C6, D1–D4).**
+- New exercise type `cardio`. Data: `Exercise.cardioColumns`, which is `time` plus up to 2 of `distance | speed | incline | level | calories | split500 | pace | avgSpeed`. Split, pace and average speed are calculated from time and distance, never entered. `Exercise.distanceUnit` is `auto` (mi / km by units) or `m`; `Exercise.isRun` marks runs for distance records. Stored values are SI: seconds, meters, km/h. `WorkoutSet` gets the fields `durationSec`, `distance`, `speed`, `incline`, `level` and `calories`.
+- Logging uses the set table with no Previous column. Columns: `# | TIME | col2 | col3 | ✓`. Last session appears as one line under the exercise name. Empty boxes show last time's values in grey, and ✓ accepts them. Rows are "segments" (the button is "+ Segment"). A Σ row (total time and distance, average speed) appears **only with 2 or more segments**, both while logging and in History.
+- Keypad: the field tabs follow the exercise's columns. In time mode, ":" is the bottom-left key and ± steps by 1 minute.
+- Presets: Treadmill (time · mi · mph, the mph worked out from distance ÷ time), Bike (time · mi · level), Rower (time · m · /500m), Stair climber (time · mph · level), Elliptical, Run/walk outside, Jump rope (time only), Generic (time only). They're found under a "Cardio" filter in the normal picker.
+- Finish summary: cardio gets its own small section listing what you did, plus a "Cardio this week: X min · Y mi" line. There's no faster/slower comparison, and it does **not** count toward "Stronger on X of Y". Cardio minutes are added to the stats row.
+- Progress tracks **amount, not speed**. A Lifts / Cardio switch at the top. The cardio graph shows Minutes / Miles / Sessions per week with ranges **4W · 3M · 6M · 1Y · All**, hiding any range there isn't enough history for. A dashed line shows the average. Per-machine rows show totals (time, distance, sessions) for the range. Machine detail shows the same weekly chart for one machine plus recent sessions. There are no speed charts and no "best" per machine.
+- Distance records (opened from "Records ›"): fastest **1 mile, 5K, 10K, half marathon and marathon**. They come from run-type exercises (outside or treadmill) where one segment covered at least that distance, with the time scaled to the exact distance. Distances not reached yet show "—", plus your longest so far.
+- History: cardio is shown as a mini table with the same columns plus a Σ row.
+- Cardio is excluded from est. 1RM, records and lift stats.
+- Backups carry schema version 2 (cardio fields, superset groups); version 1 backups still restore. CSV export adds Seconds, Distance (m), Speed (km/h), Incline, Level, Calories and Superset columns.
+
+## 11. Plan schedules
+
+Screens: `optional/plan-schedules.html` (A1–A3, B1–B4, C1–C3). A folder can have a schedule, which makes it a plan. Folders without one work exactly as before.
+
+**Data.** `Folder.schedule?: { versions, overrides, skipped? }` and `Routine.code?` (1–3 letters).
+- `versions`: each is `{ from: dayKey, kind: 'none'|'cycle'|'weekly', days, anchor?, onMiss }`. Weekly `days` has 7 slots indexed by weekday (0 = Sunday); cycle `days` are in order and `anchor` is a day that was day 1. A slot is a routine id or `null` (rest). Saving adds a version from today (replacing one that already starts today), so past days keep the plan they had, and one-off changes from today on are dropped.
+- `overrides`: day key → `{ routineId, moved?, pair? }`, for single-day changes. `pair` links the two days of a move or swap so "Back to plan" undoes both.
+- `skipped`: missed days the user chose to skip, which hides the note.
+
+**Rules** (`src/lib/schedule.ts`):
+- Any finished workout on a planned day counts as doing it. A workout on a rest day is an extra.
+- Missed days: cycles default to **Wait for me** (the cycle pauses; there are no misses and no note) or **Stick to dates**. Weekly splits default to **Skip it** or **Move to rest day** (a missed workout slides into the next plain rest day of the same week). Today and later assume you train as planned.
+- A deleted routine's slots count as rest.
+- Strip labels come from the routine name (Push A → PA, then Pull A → PL on a clash); `Routine.code` overrides them.
+- One workout per day. The "Two workouts this day" toggle (B4) is not built.
+
+**Screens.**
+- Plans (A1): a scheduled folder shows this week's strip under its header, and each routine says when it's due. Tapping a folder's name opens the plan screen (A2); the chevron still folds it.
+- Home (A3): with a scheduled active folder, Home lists today, then upcoming days up to 3 workouts, with rest runs collapsed into one line. The day strip stays plain. C3 adds a note on the day after a miss ("Do it today" / "Skip it"). The note only appears when the same skip-type schedule was in force yesterday and today.
+- C2 (long-press a day on Home, the plan screen or the calendar; tapping a day in the calendar does the same): do a different routine, rest (the workout goes to the next rest day, or waits in a Wait cycle), move to one of the next 7 days, swap with the next workout day, or go back to plan. Wait cycles don't offer move or swap.
+- "+ New routine for this day" (B4) opens the builder and hands the new routine back to the schedule editor.
+- Backups carry the schedule inside the folder record (no schema version change). "Import routines" remaps schedule routine ids to the imported copies.
+

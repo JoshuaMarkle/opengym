@@ -3,16 +3,17 @@ import { useNavigate } from 'react-router';
 import { ChevronRight } from '../../components/icons';
 import { BackButton, BarButton, Chips, Screen, SearchField, Tag, TopBar } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
-import { equipmentLabel, MUSCLES, muscleLabel, type Muscle } from '../../db/types';
+import { equipmentLabel, muscleLabel } from '../../db/types';
+import { columnsLabel } from '../../lib/cardio';
 import { TYPE_TAG } from '../../lib/sets';
-import { searchExercises } from './ExercisePicker';
+import { FILTER_CHIPS, searchExercises, type MuscleFilter } from './ExercisePicker';
 
-type Filter = Muscle | 'all' | 'custom';
+type Filter = MuscleFilter | 'custom';
 
 /** 8.1: every exercise, built-in and custom, with how often you've done it. */
 export function Library() {
   const navigate = useNavigate();
-  const { exercises, history } = useData();
+  const { exercises, history, settings } = useData();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const searching = query.trim().length > 0;
@@ -49,7 +50,7 @@ export function Library() {
             <SearchField value={query} onChange={setQuery} placeholder={`Search ${exercises.length} exercises`} />
             <Chips
               className="mt-2.5"
-              options={[{ value: 'all' as Filter, label: 'All' }, ...MUSCLES.map((m) => ({ value: m.id as Filter, label: m.label })), { value: 'custom' as Filter, label: 'Custom' }]}
+              options={[...FILTER_CHIPS.map((c) => ({ value: c.value as Filter, label: c.label })), { value: 'custom' as Filter, label: 'Custom' }]}
               value={filter}
               onChange={setFilter}
             />
@@ -71,7 +72,7 @@ export function Library() {
                     {e.isCustom && <Tag>CUSTOM</Tag>}
                   </b>
                   <span className="block truncate text-[13px] text-fg2">
-                    {muscleLabel(e.muscle)} · {equipmentLabel(e.equipment).toLowerCase()}
+                    {e.type === 'cardio' ? `Cardio · ${columnsLabel(e, settings.units)}` : `${muscleLabel(e.muscle)} · ${equipmentLabel(e.equipment).toLowerCase()}`}
                     {n ? ` · ${n} ${n === 1 ? 'session' : 'sessions'}` : ''}
                   </span>
                 </span>

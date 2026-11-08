@@ -6,20 +6,26 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { SwipeRow } from '../../components/gestures';
 import { CheckGlyph, ChevronRight, Handle } from '../../components/icons';
-import { Keypad } from '../../components/Keypad';
+import { Keypad, type KeypadTab } from '../../components/Keypad';
 import { Alert, HoldMenu, Sheet, SheetOption, type MenuItem } from '../../components/overlays';
-import { BarButton, cx, Tag, TopBar } from '../../components/ui';
+import { BarButton, cx, Tag, TextField, TopBar } from '../../components/ui';
 import { exerciseOrMissing, useData } from '../../data/DataProvider';
 import { lastSession } from '../../data/history';
+import { routineCodes } from '../../lib/schedule';
+import { ASSIGN_KEY, type PendingAssign } from './ScheduleEditor';
 import { defaultFolderForNewRoutine, loadRoutineDraft, saveRoutine, type DraftExercise, type DraftSet, type RoutineDraft } from '../../data/routines';
 import { usePlans } from '../../data/usePlans';
 import type { Exercise } from '../../db/types';
 import { uuid } from '../../lib/id';
 import { applyKey, parseWeightText, type KeypadKey } from '../../lib/keypad';
+import { columnsLabel } from '../../lib/cardio';
 import { formatRepRange, hasWeightColumn, orderSets, parseRepRange, setLabels, TYPE_TAG, weightColumnLabel } from '../../lib/sets';
+import { groupOf, linkSuperset, MAX_SUPERSET, moveBlock, settleDrag, supersetBlocks, supersetTags, unlinkSuperset } from '../../lib/supersets';
 import { fromDisplay, unitColumn, unitLabel } from '../../lib/units';
 import { ExercisePicker } from '../exercises/ExercisePicker';
 import { weightCellText, weightEditDisplay, weightEditText, weightFromEdit } from '../workout/SetTable';
+import { SupersetSheet } from '../workout/SupersetSheet';
+import { TagPill } from '../workout/WorkoutScreen';
 import { NewFolderSheet } from './RoutineActions';
 import { estimateMinutes } from './RoutineScreen';
 
@@ -41,10 +47,10 @@ export function RoutineBuilder() {
   const [params] = useSearchParams();
   const loaded = useLiveQuery(async () => (id ? ((await loadRoutineDraft(id)) ?? null) : null), [id]);
   if (id && loaded === undefined) return null;
-  return <Builder key={id ?? 'new'} initial={loaded ?? undefined} folderParam={params.get('folder') ?? undefined} />;
+  return <Builder key={id ?? 'new'} initial={loaded ?? undefined} folderParam={params.get('folder') ?? undefined} slotParam={params.get('slot') ?? undefined} />;
 }
 
-function Builder({ initial: initialProp, folderParam }: { initial?: RoutineDraft; folderParam?: string }) {
+function Builder({ initial: initialProp, folderParam, slotParam }: { initial?: RoutineDraft; folderParam?: string; slotParam?: string }) {
   // Freeze what we started from; later DB changes don't reset the form.
   const [initial] = useState(initialProp);
   const navigate = useNavigate();
@@ -54,10 +60,13 @@ function Builder({ initial: initialProp, folderParam }: { initial?: RoutineDraft
 
   const [name, setName] = useState(initial?.name ?? '');
   const [notes, setNotes] = useState(initial?.notes ?? '');
+  const [code, setCode] = useState(initial?.code ?? '');
   const [folder, setFolder] = useState<FolderChoice>(initial ? (initial.folderId ?? null) : folderParam);
   const [exercises, setExercises] = useState<DraftExercise[]>(initial?.exercises ?? []);
   const [editing, setEditing] = useState<Editing | null>(null);
-  const [overlay, setOverlay] = useState<'folder' | 'newFolder' | 'add' | 'discard' | null>(null);
+  const [overlay, setOverlay] = useState<'folder' | 'newFolder' | 'add' | 'discard' | 'superset' | 'supersetAdd' | null>(null);
+  const [ssAnchor, setSsAnchor] = useState<string | null>(null);
+  const [ssPre, setSsPre] = useState<string[]>([]);
   const [exMenu, setExMenu] = useState<string | null>(null);
   const [replacing, setReplacing] = useState<string | null>(null);
   const [setMenu, setSetMenu] = useState<{ exKey: string; setKey: string; rect: DOMRect } | null>(null);
@@ -65,11 +74,19 @@ function Builder({ initial: initialProp, folderParam }: { initial?: RoutineDraft
   const [saving, setSaving] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
 
-  const snapshot = useMemo(() => JSON.stringify({ n: initial?.name ?? '', no: initial?.notes ?? '', f: initial ? (initial.folderId ?? null) : folderParam, e: initial?.exercises ?? [] }), [initial, folderParam]);
-  const dirty = JSON.stringify({ n: name, no: notes, f: folder, e: exercises }) !== snapshot;
+  const snapshot = useMemo(() => JSON.stringify({ n: initial?.name ?? '', no: initial?.notes ?? '', c: initial?.code ?? '', f: initial ? (initial.folderId ?? null) : folderParam, e: initial?.exercises ?? [] }), [initial, folderParam]);
+  const dirty = JSON.stringify({ n: name, no: notes, c: code, f: folder, e: exercises }) !== snapshot;
 
   const folderObj = typeof folder === 'string' ? plans?.folders.find((f) => f.id === folder) : undefined;
   const defaultFolder = plans?.activeFolder ?? plans?.folders.find((f) => !f.archived);
+  // What the plan strips show when Short label is empty.
+  const autoCode = useMemo(() => {
+    if (!plans) return '';
+    const fid = typeof folder === 'string' ? folder : folder === undefined ? defaultFolder?.id : undefined;
+    const others = plans.routines.filter((r) => r.id !== initial?.id && (r.folderId ?? undefined) === fid);
+    const me = { id: '__me', name: name.trim() || 'Routine' };
+    return routineCodes([...others, me]).get('__me') ?? '';
+  }, [plans, folder, defaultFolder, name, initial?.id]);
   const folderLabel = folder === null ? 'No folder' : folderObj ? `${folderObj.name} folder` : defaultFolder ? `${defaultFolder.name} folder` : 'My Routines folder';
 
   const setCount = exercises.reduce((n, e) => n + e.sets.length, 0);
@@ -83,6 +100,7 @@ function Builder({ initial: initialProp, folderParam }: { initial?: RoutineDraft
 
   const newSetsFor = (exerciseId: string): DraftSet[] => {
     const last = lastSession(history, exerciseId);
+    if (exerciseMap.get(exerciseId)?.type === 'cardio') return Array.from({ length: Math.max(1, last?.sets.length ?? 1) }, () => ({ key: uuid(), kind: 'working' as const, weight: 'last' as const }));
     const sets = last ? orderSets(last.sets).filter((s) => s.kind !== 'drop') : [];
     if (!sets.length) return Array.from({ length: 3 }, () => ({ key: uuid(), kind: 'working' as const, weight: 'last' as const }));
     return sets.map((s) => ({ key: uuid(), kind: s.kind as 'warmup' | 'working', weight: 'last' as const }));
@@ -110,12 +128,11 @@ function Builder({ initial: initialProp, folderParam }: { initial?: RoutineDraft
       return { ...e, sets: sortWarmFirst([...e.sets.slice(0, i + 1), copy, ...e.sets.slice(i + 1)]) };
     });
 
-  const moveEx = (exKey: string, delta: number) =>
-    setExercises((list) => {
-      const i = list.findIndex((e) => e.key === exKey);
-      const j = i + delta;
-      return j < 0 || j >= list.length ? list : arrayMove(list, i, j);
-    });
+  // A superset moves as one block.
+  const moveEx = (exKey: string, delta: -1 | 1) => setExercises((list) => moveBlock(list, exKey, delta));
+  const tags = supersetTags(exercises);
+  const blocks = supersetBlocks(exercises);
+  const blockIndex = (key: string) => blocks.findIndex((b) => b.items.some((x) => x.key === key));
 
   // ───── keypad
 
@@ -144,6 +161,14 @@ function Builder({ initial: initialProp, folderParam }: { initial?: RoutineDraft
     }
   };
 
+  // Keep the box being typed into above the keypad.
+  const editKey = editing ? `${editing.setKey}|${editing.field}` : '';
+  useEffect(() => {
+    if (!editKey) return;
+    const id = requestAnimationFrame(() => document.querySelector('.bg-edit')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
+    return () => cancelAnimationFrame(id);
+  }, [editKey]);
+
   // ───── save / leave
 
   const save = async () => {
@@ -155,7 +180,15 @@ function Builder({ initial: initialProp, folderParam }: { initial?: RoutineDraft
     setSaving(true);
     try {
       const folderId = folder === null ? undefined : (folder ?? (await defaultFolderForNewRoutine()));
-      const rid = await saveRoutine({ id: initial?.id, name, notes, folderId, exercises });
+      const rid = await saveRoutine({ id: initial?.id, name, notes, code, folderId, exercises });
+      // B4 "+ New routine for this day": hand the routine back to the schedule editor.
+      const [kind, index] = slotParam?.split(':') ?? [];
+      if (!initial?.id && folderId && (kind === 'cycle' || kind === 'weekly')) {
+        const pending: PendingAssign = { folderId, kind, index: Number(index), routineId: rid };
+        sessionStorage.setItem(ASSIGN_KEY, JSON.stringify(pending));
+        navigate(-1);
+        return;
+      }
       navigate(`/routine/${rid}`, { replace: true });
     } finally {
       setSaving(false);
@@ -176,7 +209,8 @@ function Builder({ initial: initialProp, folderParam }: { initial?: RoutineDraft
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return;
-    setExercises((list) => arrayMove(list, list.findIndex((e) => e.key === active.id), list.findIndex((e) => e.key === over.id)));
+    // Dropping inside a bracket joins that superset; dragging a member out unlinks it.
+    setExercises((list) => settleDrag(list, arrayMove(list, list.findIndex((e) => e.key === active.id), list.findIndex((e) => e.key === over.id)), String(active.id)));
   };
 
   const exMenuItem = exercises.find((e) => e.key === exMenu);
@@ -232,14 +266,16 @@ function Builder({ initial: initialProp, folderParam }: { initial?: RoutineDraft
           <span>
             {exercises.length} {exercises.length === 1 ? 'exercise' : 'exercises'} · {workingCount} sets
           </span>
-          {setCount > 0 && <span>~{estimateMinutes(history, initial?.id, setCount)} min</span>}
+          {setCount > 0 && <span>~{estimateMinutes(history, initial?.id, setCount, exercises.filter((e) => tags.has(e.key)).reduce((n, e) => n + e.sets.length, 0))} min</span>}
         </div>
 
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd} onDragStart={() => setEditing(null)}>
           <SortableContext items={exercises.map((e) => e.key)} strategy={verticalListSortingStrategy}>
-            {exercises.map((e) => (
+            {blocks.map((b) => {
+              const section = (e: DraftExercise) => (
               <ExerciseSection
                 key={e.key}
+                tag={tags.get(e.key)}
                 draft={e}
                 exercise={exerciseOrMissing(exerciseMap, e.exerciseId)}
                 units={units}
@@ -254,7 +290,18 @@ function Builder({ initial: initialProp, folderParam }: { initial?: RoutineDraft
                 onDelete={(s) => removeSet(e.key, s)}
                 onSetMenu={(s, rect) => setSetMenu({ exKey: e.key, setKey: s, rect })}
               />
-            ))}
+              );
+              if (!b.letter) return section(b.items[0]);
+              return (
+                <div key={`ss-${b.items[0].key}`} className="mt-3 border-l-2 border-accent pl-3">
+                  <div className="flex items-baseline justify-between gap-2 pt-1">
+                    <span className="text-[11px] font-bold tracking-[0.07em] text-accent uppercase">Superset {b.letter}</span>
+                    <span className="text-[12px] text-fg2">alternate sets · ••• to unlink</span>
+                  </div>
+                  {b.items.map(section)}
+                </div>
+              );
+            })}
           </SortableContext>
         </DndContext>
 
@@ -279,26 +326,53 @@ function Builder({ initial: initialProp, folderParam }: { initial?: RoutineDraft
           maxLength={500}
           className="mt-1.5 w-full resize-none rounded-[10px] border-[1.5px] border-transparent bg-surface-2 px-3 py-2.5 text-[16px] outline-none focus:border-accent"
         />
+
+        <div className="mt-5 text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase">Short label</div>
+        <div className="flex items-center gap-3">
+          <div className="w-[88px] flex-none">
+            <TextField
+              value={code}
+              onChange={(v) => setCode(v.replace(/[^\p{L}\p{N}]/gu, '').toUpperCase())}
+              placeholder={autoCode}
+              maxLength={3}
+              className="text-center font-bold tracking-[0.04em]"
+            />
+          </div>
+          <p className="mt-1.5 min-w-0 flex-1 text-[13px] leading-snug text-fg2">1–3 letters for plan schedules. Leave empty to use {autoCode || 'one from the name'}.</p>
+        </div>
       </div>
 
-      {editing && editingSet && editingExercise && (
-        <Keypad
-          title={(() => {
-            const labels = setLabels(editingEx!.sets.map((s, i) => ({ id: s.key, order: i, kind: s.kind })));
-            const l = labels.get(editingSet.key);
-            const who = l === 'W' ? 'Warm-up' : `Set ${l}`;
-            return editing.field === 'weight' ? `${who} · Weight (empty = last)` : `${who} · Reps (optional)`;
-          })()}
-          mode={editing.field}
-          onModeChange={editingExercise.type === 'bodyweight' ? undefined : (m) => m !== editing.field && startEdit(editing.exKey, editingSet, m, editingExercise)}
-          weightLabel={units === 'lb' ? 'lbs' : 'kg'}
-          stepLabel={`${settings.weightStep} ${unitLabel(units)}`}
-          allowRange
-          allowNegative={editing.field === 'weight' && (editingExercise.type === 'assisted' || editingExercise.type === 'bodyweight_plus')}
-          onKey={onKey}
-          onClose={() => setEditing(null)}
-        />
-      )}
+      {editing && editingSet && editingExercise && (() => {
+        const labels = setLabels(editingEx!.sets.map((s, i) => ({ id: s.key, order: i, kind: s.kind })));
+        const l = labels.get(editingSet.key);
+        const who = l === 'W' ? 'Warm-up' : `Set ${l}`;
+        const fields: Field[] = editingExercise.type === 'bodyweight' ? ['reps'] : ['weight', 'reps'];
+        const tabs: KeypadTab[] = fields.map((f) => ({ id: f, label: f === 'weight' ? (units === 'lb' ? 'lbs' : 'kg') : 'reps' }));
+        const fi = fields.indexOf(editing.field);
+        const negative = editing.field === 'weight' && (editingExercise.type === 'assisted' || editingExercise.type === 'bodyweight_plus');
+        const goNext = () => {
+          if (fi < fields.length - 1) return startEdit(editing.exKey, editingSet, fields[fi + 1], editingExercise);
+          // Done on reps moves to the next set's first box, or closes on the last set.
+          const sets = editingEx!.sets;
+          const nextSet = sets[sets.findIndex((x) => x.key === editingSet.key) + 1];
+          if (nextSet) startEdit(editing.exKey, nextSet, fields[0], editingExercise);
+          else setEditing(null);
+        };
+        return (
+          <Keypad
+            left={editing.field === 'weight' ? `${who} · Weight (empty = last)` : `${who} · Reps (optional)`}
+            tabs={tabs}
+            tab={editing.field}
+            onTab={(f) => f !== editing.field && startEdit(editing.exKey, editingSet, f as Field, editingExercise)}
+            next={{ done: fi === fields.length - 1, onPress: goNext }}
+            bottomLeft={editing.field === 'weight' ? { key: 'minus', enabled: negative } : { key: 'dash', enabled: true }}
+            decimal={editing.field === 'weight'}
+            stepLabel={editing.field === 'weight' ? `${settings.weightStep} ${unitLabel(units)}` : '1 rep'}
+            onKey={onKey}
+            onClose={() => setEditing(null)}
+          />
+        );
+      })()}
 
       {/* folder picker */}
       <Sheet open={overlay === 'folder'} onClose={() => setOverlay(null)} title="Folder">
@@ -353,8 +427,47 @@ function Builder({ initial: initialProp, folderParam }: { initial?: RoutineDraft
             >
               Replace exercise…
             </SheetOption>
+            {exerciseOrMissing(exerciseMap, exMenuItem.exerciseId).type !== 'cardio' &&
+              (tags.get(exMenuItem.key) ? (
+                <>
+                  {(groupOf(exercises, exMenuItem.key)?.items.length ?? 0) < MAX_SUPERSET && (
+                    <SheetOption
+                      onClick={() => {
+                        setSsAnchor(exMenuItem.key);
+                        setSsPre([]);
+                        setExMenu(null);
+                        setOverlay('superset');
+                      }}
+                      detail={<ChevronRight size={12} />}
+                    >
+                      Add to superset…
+                    </SheetOption>
+                  )}
+                  <SheetOption
+                    onClick={() => {
+                      setExercises((l) => unlinkSuperset(l, exMenuItem.key));
+                      setExMenu(null);
+                    }}
+                    detail={tags.get(exMenuItem.key)}
+                  >
+                    Unlink superset
+                  </SheetOption>
+                </>
+              ) : (
+                <SheetOption
+                  onClick={() => {
+                    setSsAnchor(exMenuItem.key);
+                    setSsPre([]);
+                    setExMenu(null);
+                    setOverlay('superset');
+                  }}
+                  detail={<ChevronRight size={12} />}
+                >
+                  Superset with…
+                </SheetOption>
+              ))}
             <SheetOption
-              disabled={exercises[0]?.key === exMenuItem.key}
+              disabled={blockIndex(exMenuItem.key) <= 0}
               onClick={() => {
                 moveEx(exMenuItem.key, -1);
                 setExMenu(null);
@@ -363,7 +476,7 @@ function Builder({ initial: initialProp, folderParam }: { initial?: RoutineDraft
               Move up
             </SheetOption>
             <SheetOption
-              disabled={exercises[exercises.length - 1]?.key === exMenuItem.key}
+              disabled={blockIndex(exMenuItem.key) === blocks.length - 1}
               onClick={() => {
                 moveEx(exMenuItem.key, 1);
                 setExMenu(null);
@@ -374,7 +487,7 @@ function Builder({ initial: initialProp, folderParam }: { initial?: RoutineDraft
             <SheetOption
               tone="danger"
               onClick={() => {
-                setExercises((l) => l.filter((x) => x.key !== exMenuItem.key));
+                setExercises((l) => unlinkSuperset(l, exMenuItem.key).filter((x) => x.key !== exMenuItem.key));
                 setExMenu(null);
               }}
             >
@@ -383,6 +496,48 @@ function Builder({ initial: initialProp, folderParam }: { initial?: RoutineDraft
           </>
         )}
       </Sheet>
+
+      {(() => {
+        const anchor = exercises.find((e) => e.key === ssAnchor);
+        if (!anchor) return null;
+        const group = groupOf(exercises, anchor.key);
+        const inGroup = new Set((group?.items ?? [anchor]).map((x) => x.key));
+        return (
+          <SupersetSheet
+            open={overlay === 'superset'}
+            anchorName={exerciseOrMissing(exerciseMap, anchor.exerciseId).name}
+            groupSize={inGroup.size}
+            candidates={exercises
+              .filter((e) => !inGroup.has(e.key) && exerciseOrMissing(exerciseMap, e.exerciseId).type !== 'cardio')
+              .map((e) => ({
+                key: e.key,
+                name: exerciseOrMissing(exerciseMap, e.exerciseId).name,
+                sub: ssPre.includes(e.key) ? 'just added' : tags.get(e.key) ? `in superset ${tags.get(e.key)![0]}` : 'in this routine',
+              }))}
+            preselect={ssPre}
+            addLabel="adds it to the routine"
+            onAddAnother={() => setOverlay('supersetAdd')}
+            onClose={() => setOverlay(null)}
+            onMake={(keys) => {
+              setOverlay(null);
+              setExercises((l) => linkSuperset(l, anchor.key, keys));
+            }}
+          />
+        );
+      })()}
+      <ExercisePicker
+        open={overlay === 'supersetAdd'}
+        mode="single"
+        title="Superset with…"
+        excludeIds={exercises.map((e) => e.exerciseId)}
+        onCancel={() => setOverlay('superset')}
+        onPick={(exId) => {
+          const key = uuid();
+          setExercises((l) => [...l, { key, exerciseId: exId, sets: newSetsFor(exId) }]);
+          setSsPre([key]);
+          setOverlay('superset');
+        }}
+      />
 
       <HoldMenu open={!!setMenu} anchor={setMenu?.rect} items={setMenuItems} onClose={() => setSetMenu(null)} />
 
@@ -424,6 +579,7 @@ function Builder({ initial: initialProp, folderParam }: { initial?: RoutineDraft
 }
 
 function ExerciseSection({
+  tag,
   draft,
   exercise,
   units,
@@ -435,6 +591,7 @@ function ExerciseSection({
   onDelete,
   onSetMenu,
 }: {
+  tag?: string;
   draft: DraftExercise;
   exercise: Exercise;
   units: 'lb' | 'kg';
@@ -461,6 +618,7 @@ function ExerciseSection({
         <button type="button" ref={setActivatorNodeRef} {...attributes} {...listeners} aria-label={`Reorder ${exercise.name}`} className="-ml-2.5 flex h-11 w-10 flex-none touch-none items-center justify-center text-fg3">
           <Handle />
         </button>
+        {tag && <TagPill tag={tag} on />}
         <b className="min-w-0 flex-1 truncate text-[16px] font-semibold">
           {exercise.name}
           {TYPE_TAG[exercise.type] && <Tag>{TYPE_TAG[exercise.type]}</Tag>}
@@ -469,7 +627,9 @@ function ExerciseSection({
           •••
         </button>
       </div>
-      {draft.sets.length > 0 && (
+      {exercise.type === 'cardio' ? (
+        <CardioRows draft={draft} exercise={exercise} units={units} onDelete={onDelete} onSetMenu={onSetMenu} />
+      ) : draft.sets.length > 0 && (
         <div className="mt-0.5">
           <div className={cx('grid h-5 items-center gap-2 text-center text-[10.5px] font-bold tracking-[0.05em] text-fg2', cols)}>
             <span>SET</span>
@@ -509,7 +669,7 @@ function ExerciseSection({
         </div>
       )}
       <button type="button" onClick={onAddSet} className="mt-1 ml-7 flex h-9 items-center px-1 text-[14px] font-semibold text-accent active:opacity-60">
-        + Set
+        {exercise.type === 'cardio' ? '+ Segment' : '+ Set'}
       </button>
     </section>
   );
@@ -528,5 +688,46 @@ function BuilderCell({ text, placeholder, editing, onClick, label }: { text: str
         {editing && <span className="ml-[1px] h-[17px] w-[1.5px] animate-pulse bg-accent" />}
       </span>
     </button>
+  );
+}
+
+/** Cardio in a routine is just how many segments; the numbers always come from last time. */
+function CardioRows({
+  draft,
+  exercise,
+  units,
+  onDelete,
+  onSetMenu,
+}: {
+  draft: DraftExercise;
+  exercise: Exercise;
+  units: 'lb' | 'kg';
+  onDelete: (setKey: string) => void;
+  onSetMenu: (setKey: string, rect: DOMRect) => void;
+}) {
+  return (
+    <div className="mt-0.5">
+      <div className="grid h-5 grid-cols-[34px_1fr] items-center gap-2 text-center text-[10.5px] font-bold tracking-[0.05em] text-fg2">
+        <span>#</span>
+        <span className="uppercase">{columnsLabel(exercise, units)}</span>
+      </div>
+      <div className="flex flex-col gap-[2px]">
+        {draft.sets.map((s, i) => (
+          <SwipeRow key={s.key} left={{ label: 'Delete', onTrigger: () => onDelete(s.key) }} onLongPress={(rect) => onSetMenu(s.key, rect)}>
+            <div className="grid h-10 grid-cols-[34px_1fr] items-center gap-2">
+              <button
+                type="button"
+                onClick={(e) => onSetMenu(s.key, (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect())}
+                aria-label={`Segment ${i + 1} options`}
+                className="flex h-10 items-center justify-center text-[14px] font-bold"
+              >
+                {i + 1}
+              </button>
+              <span className="flex h-[32px] items-center justify-center rounded-[8px] bg-surface-2 text-[14px] font-medium text-fg3">from last time</span>
+            </div>
+          </SwipeRow>
+        ))}
+      </div>
+    </div>
   );
 }

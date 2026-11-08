@@ -22,7 +22,7 @@ export function PinnedLifts() {
   const others = useMemo(() => {
     const q = query.trim().toLowerCase();
     return exercises
-      .filter((e) => !pinnedIds.includes(e.id) && (q ? e.name.toLowerCase().includes(q) : sessions(e.id) > 0))
+      .filter((e) => e.type !== 'cardio' && !pinnedIds.includes(e.id) && (q ? e.name.toLowerCase().includes(q) : sessions(e.id) > 0))
       .sort((a, b) => sessions(b.id) - sessions(a.id) || a.name.localeCompare(b.name));
   }, [exercises, pinnedIds.join(','), query, history]); // eslint-disable-line react-hooks/exhaustive-deps
 

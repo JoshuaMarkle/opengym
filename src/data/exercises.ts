@@ -1,5 +1,5 @@
 import { db } from '../db/db';
-import type { Equipment, Exercise, ExerciseType, Muscle } from '../db/types';
+import type { CardioColumn, DistanceUnit, Equipment, Exercise, ExerciseType, Muscle } from '../db/types';
 import { uuid } from '../lib/id';
 import { getSettings, updateSettings } from './settings';
 
@@ -8,6 +8,14 @@ export interface ExerciseInput {
   type: ExerciseType;
   muscle: Muscle;
   equipment: Equipment;
+  cardioColumns?: CardioColumn[];
+  distanceUnit?: DistanceUnit;
+  isRun?: boolean;
+}
+
+/** Plate pad choices remembered per exercise (A5). Not an edit, so it doesn't need the form. */
+export async function setExercisePrefs(id: string, prefs: Partial<Pick<Exercise, 'barLb' | 'platePad'>>): Promise<void> {
+  await db.exercises.update(id, prefs);
 }
 
 export async function createExercise(input: ExerciseInput): Promise<string> {

@@ -5,15 +5,22 @@ export type KeypadKey =
   | { type: 'dot' }
   | { type: 'minus' }
   | { type: 'dash' }
+  | { type: 'colon' }
   | { type: 'backspace' }
   | { type: 'inc' }
   | { type: 'dec' };
 
+/**
+ * weight: decimals, optional sign · reps: whole numbers, optional "–" range ·
+ * time: m:ss with ":" and ± a minute (cardio) · decimal / int: other cardio boxes.
+ */
+export type KeypadMode = 'weight' | 'reps' | 'time' | 'decimal' | 'int';
+
 export interface KeypadOptions {
-  mode: 'weight' | 'reps';
+  mode: KeypadMode;
   allowRange?: boolean;
   allowNegative?: boolean;
-  /** ± step in the display unit (weight) — reps always step by 1. */
+  /** ± step in the display unit (weight, decimal, int); reps step by 1, time by `step` seconds (default 60). */
   step: number;
 }
 
@@ -24,6 +31,12 @@ const MAX_LEN = 7;
  * focused, so the first digit replaces what's there (like a selected field).
  */
 export function applyKey(text: string, fresh: boolean, key: KeypadKey, o: KeypadOptions): string {
+  if (o.mode === 'time') return applyTimeKey(text, fresh, key, o.step || 60);
+  if (o.mode === 'int' && key.type === 'dot') return text;
+  if (o.mode === 'decimal' || o.mode === 'int') {
+    if (key.type === 'minus' || key.type === 'dash' || key.type === 'colon') return text;
+    return applyKey(text, fresh, key, { mode: 'weight', step: o.step, allowNegative: false });
+  }
   switch (key.type) {
     case 'digit': {
       if (fresh) return key.d;
@@ -50,6 +63,8 @@ export function applyKey(text: string, fresh: boolean, key: KeypadKey, o: Keypad
       if (/^\d+$/.test(text)) return `${text}–`;
       return text;
     }
+    case 'colon':
+      return text;
     case 'backspace':
       return fresh ? '' : text.slice(0, -1);
     case 'inc':
@@ -76,6 +91,51 @@ export function applyKey(text: string, fresh: boolean, key: KeypadKey, o: Keypad
       if (!o.allowNegative && next < 0) next = 0;
       return formatNumber(next, 3);
     }
+  }
+}
+
+/** Format seconds the way the time box shows them while typing: "5:00", "1:05:00". */
+function fmtTime(sec: number): string {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = Math.round(sec % 60);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return h ? `${h}:${p(m)}:${p(s)}` : `${m}:${p(s)}`;
+}
+
+function timeSeconds(text: string): number {
+  if (!text) return 0;
+  const parts = text.split(':').map((x) => (x === '' ? 0 : Number(x)));
+  if (parts.length === 1) return parts[0] * 60;
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  return parts[0] * 3600 + parts[1] * 60 + parts[2];
+}
+
+/** Time boxes: digits and ":" (at most h:mm:ss, two digits after a colon); ± steps a minute. */
+function applyTimeKey(text: string, fresh: boolean, key: KeypadKey, step: number): string {
+  switch (key.type) {
+    case 'digit': {
+      if (fresh) return key.d;
+      if (text.replace(/:/g, '').length >= 6) return text;
+      if (/:\d{2}$/.test(text)) return text;
+      if (text === '0') return key.d;
+      return text + key.d;
+    }
+    case 'colon': {
+      if (fresh || text === '') return '0:';
+      if (text.endsWith(':') || (text.match(/:/g) ?? []).length >= 2) return text;
+      return `${text}:`;
+    }
+    case 'backspace':
+      return fresh ? '' : text.slice(0, -1);
+    case 'inc':
+    case 'dec': {
+      const cur = timeSeconds(text);
+      const next = key.type === 'inc' ? (Math.floor(cur / step) + 1) * step : cur % step ? Math.floor(cur / step) * step : cur - step;
+      return next > 0 ? fmtTime(next) : '';
+    }
+    default:
+      return text;
   }
 }
 

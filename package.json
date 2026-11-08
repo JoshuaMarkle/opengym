@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:real": "VITE_TEST_MODE=false vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",

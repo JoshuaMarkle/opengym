@@ -1,0 +1,460 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>OpenGym — Plan schedules</title><style>
+:root{--accent:#2e8bff;--tip:#2ee66b;--warn:#ff8c1a;--danger:#ff3b3b;--bg:#000;--fg:#fff;--fg2:#8e8e8e;--line:#1f1f1f;--surf:#0e0e0e;--surf2:#161616;--doneTint:color-mix(in srgb,var(--accent) 14%,#000);--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050505;font-family:var(--font);color:var(--fg);padding:40px 24px 80px;font-variant-numeric:tabular-nums}
+.board{max-width:1100px;margin:0 auto;background:#0a0a0a;border:1px solid #1c1c1c;border-radius:16px;padding:40px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg2);font-weight:600}
+h1{font-size:36px;font-weight:700;letter-spacing:-.02em;margin:6px 0 6px}
+.lead{color:var(--fg2);font-size:15px;max-width:800px;line-height:1.55}
+.toc{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:24px}
+.toc a{display:block;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surf);text-decoration:none;color:#fff;font-size:13px;font-weight:600;line-height:1.35}
+.toc a small{display:block;color:var(--fg2);font-weight:500;font-size:11px;margin-top:2px}
+.toc a i{font-style:normal;color:var(--accent);font-weight:700;margin-right:4px}
+.flow{display:flex;align-items:center;gap:8px;margin-top:18px;flex-wrap:wrap;font-size:12.5px;color:#cfcfcf}
+.flow span{border:1px solid #2a2a2a;border-radius:999px;padding:5px 11px}
+.flow b{color:#555}
+.section{margin-top:52px;padding-top:30px;border-top:1px solid var(--line)}
+.stag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;color:#000;background:#fff;border-radius:6px;padding:3px 8px;margin-bottom:10px}
+.section h2{font-size:24px;font-weight:700;margin-bottom:4px}
+.section > p{color:var(--fg2);font-size:14px;max-width:800px;line-height:1.55}
+.row{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:26px;align-items:start}
+.cap{width:300px;margin:12px auto 0}
+.cap b{font-size:14px;display:block}
+.cap b em{font-style:normal;color:var(--accent);margin-right:6px}
+.cap p{font-size:12px;color:var(--fg2);line-height:1.5;margin-top:4px}
+.cap .flag{color:var(--warn)}
+.phone{width:300px;height:620px;margin:0 auto;border-radius:44px;border:10px solid #2a2a2a;background:var(--bg);overflow:hidden;position:relative;display:flex;flex-direction:column;font-size:15px}
+.status{height:34px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:12px;font-weight:600}
+.island{width:84px;height:22px;background:#1a1a1a;border-radius:12px}
+.body{flex:1;overflow:hidden;padding:0 16px;position:relative}
+.homebar{flex:none;height:5px;width:110px;background:#fff;opacity:.85;border-radius:3px;margin:6px auto 8px;position:relative;z-index:20}
+.tabbar{flex:none;display:flex;justify-content:space-around;border-top:1px solid var(--line);padding:8px 6px 0}
+.tabbar span{font-size:9.5px;font-weight:600;color:var(--fg2);display:flex;flex-direction:column;align-items:center;gap:3px}
+.tabbar span i{width:18px;height:18px;border-radius:5px;border:1.5px solid currentColor;display:block}
+.tabbar span.on{color:var(--accent)}
+.fade{position:absolute;left:0;right:0;bottom:0;height:46px;background:linear-gradient(transparent,#000);pointer-events:none}
+.nh{flex:none;display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;padding:6px 16px 10px;border-bottom:1px solid var(--line)}
+.nh .t{font-size:16px;font-weight:700;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.nh .l{justify-self:start;white-space:nowrap}.nh .r{justify-self:end;white-space:nowrap}
+.tb{color:var(--accent);font-weight:600;font-size:15px}
+.tb.g{color:var(--fg2);font-weight:500}.tb.b{font-weight:700}.tb.big{font-size:22px;line-height:.8}
+.bh{flex:none;padding:4px 16px 6px;display:flex;justify-content:space-between;align-items:flex-end}
+.bh .t{font-size:28px;font-weight:700;letter-spacing:-.02em}
+.bh .s{font-size:12px;color:var(--fg2);margin-top:1px}
+.date{font-size:12px;font-weight:600;color:var(--fg2);margin-top:4px;letter-spacing:.02em}
+.ttl{font-size:28px;font-weight:700;letter-spacing:-.02em;margin-top:1px}
+.lbl{font-size:10px;font-weight:700;letter-spacing:.07em;color:var(--fg2);margin-top:16px;padding-bottom:6px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
+.lbl span{letter-spacing:0;color:var(--accent);font-weight:600;font-size:11.5px}
+.btn{height:46px;border-radius:12px;background:var(--accent);color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn.g{background:#1c1c1c}.btn.red{background:var(--danger)}.btn.sm{height:40px;font-size:14px;border-radius:10px}
+.btn.ghost{background:transparent;color:var(--accent)}
+.stack{display:flex;flex-direction:column;gap:8px}
+.play{width:30px;height:30px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;flex:none}
+.play.g{background:#222}
+.play i{width:0;height:0;border-left:9px solid #fff;border-top:6px solid transparent;border-bottom:6px solid transparent;margin-left:2px}
+.play.g i{border-left-color:#cfcfcf}
+.note{font-size:11.5px;color:var(--fg2);line-height:1.5;margin-top:10px}
+/* workout header */
+.wh{flex:none;display:flex;justify-content:space-between;align-items:center;padding:6px 16px 10px;border-bottom:1px solid var(--line)}
+.wh .t{font-size:17px;font-weight:700}.wh .s{font-size:12px;color:var(--fg2)}
+.finish{background:var(--accent);color:#fff;font-weight:600;font-size:13px;border-radius:8px;padding:6px 12px}
+.exh{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+.exn{font-size:20px;font-weight:700}.exp{font-size:12px;color:var(--fg2);margin-top:2px}
+.hbtns{display:flex;gap:6px}
+.ib{font-size:12px;font-weight:600;color:var(--accent);border:1px solid var(--line);border-radius:8px;padding:5px 9px;display:flex;align-items:center;height:28px}
+.ib.hl{background:var(--accent);border-color:var(--accent);color:#fff}
+.vars{display:flex;gap:6px;margin-top:10px}
+.vars span{font-size:12px;font-weight:600;border-radius:8px;padding:6px 10px;border:1px solid var(--line);color:var(--fg2)}
+.vars span.on{border-color:var(--accent);color:#fff;background:var(--doneTint)}
+.tbl{margin-top:12px;font-size:14px}
+.tr{display:grid;grid-template-columns:28px 1fr 58px 44px 34px;align-items:center;height:40px;border-radius:8px;padding:0 4px;background:var(--bg);position:relative}
+.th{height:24px;font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--fg2)}
+.c{text-align:center}
+.prev{color:var(--fg2);font-size:13px;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.db{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:4px;background:var(--warn);color:#000;font-size:9.5px;font-weight:800;flex:none}
+.tr.done{background:var(--doneTint)}
+.in{background:var(--surf2);border-radius:6px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:600;margin:0 3px}
+.done .in{background:transparent}
+.cur .in{border:1.5px solid var(--accent)}
+.ghost .in{color:var(--fg2)}
+.in.edit{border:2px solid var(--accent) !important;background:#0b1a2e;color:#fff}
+.in.edit::after{content:"";width:1.5px;height:15px;background:var(--accent);margin-left:2px}
+.chk{width:26px;height:26px;border-radius:7px;border:1.5px solid #333;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
+.chk.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.sn{font-weight:700;font-size:13px;text-align:center}
+.sn.w{color:var(--fg2)}.sn.d{color:var(--warn)}
+.tr.drop{margin-left:14px;width:calc(100% - 14px);grid-template-columns:22px 1fr 58px 44px 34px;border-left:2px solid var(--warn);border-radius:0 8px 8px 0}
+.quick{display:flex;gap:6px;margin-top:6px}
+.quick span{flex:1;height:34px;border-radius:8px;background:var(--surf2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--accent)}
+.quick span.dr{color:var(--warn)}
+.nav{flex:none;display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px solid var(--line);padding:10px 12px 4px}
+.nav .nb{height:44px;border-radius:10px;background:var(--surf2);display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:600;gap:8px;white-space:nowrap}
+.nav .nb small{display:block;font-size:9px;color:var(--fg2);font-weight:600;letter-spacing:.04em}
+.nav .nb.r{justify-content:flex-end;text-align:right}
+.nav .nb.list{background:#fff;color:#000}.nav .nb.list small{color:#555}
+.arrow{font-size:16px;color:var(--fg2)}
+.lines{display:block;width:14px;height:2px;background:#000;border-radius:1px;box-shadow:0 -4px 0 #000,0 4px 0 #000;margin:0 2px}
+.swipe{position:relative;height:40px;border-radius:8px;overflow:hidden}
+.swipe.left{background:var(--danger)}.swipe.right{background:#3a3a3a}
+.swipe .act{position:absolute;top:0;bottom:0;width:96px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;gap:6px}
+.swipe.left .act{right:0}.swipe.right .act{left:0}
+.swipe.left .tr{transform:translateX(-86px);border-radius:0;background:#0b0b0b}
+.swipe.right .tr{transform:translateX(96px);border-radius:0;background:#0b0b0b}
+.wchip{display:inline-flex;width:18px;height:18px;border-radius:5px;background:#fff;color:#000;font-size:11px;font-weight:800;align-items:center;justify-content:center}
+.toast{position:absolute;left:12px;right:12px;bottom:66px;background:#1e1e1e;border:1px solid #2c2c2c;border-radius:12px;height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-size:13px;z-index:8;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+.toast b{color:var(--accent)}
+/* keypad */
+.kp{flex:none;background:#0d0d0d;border-top:1px solid #222;padding:8px 8px 4px}
+.kpt{display:flex;justify-content:space-between;align-items:center;padding:2px 6px 8px;font-size:11px;color:var(--fg2);font-weight:600}
+.kpt b{color:#fff}
+.kpt .tabs{display:flex;gap:4px}
+.kpt .tabs span{padding:3px 8px;border-radius:6px;border:1px solid #2a2a2a}
+.kpt .tabs span.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.kg{display:grid;grid-template-columns:1fr 1fr 1fr 64px;gap:6px}
+.k{height:44px;border-radius:9px;background:#1e1e1e;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:500;flex-direction:column;line-height:1}
+.k small{font-size:8.5px;color:var(--fg2);font-weight:600;margin-top:3px}
+.k.fn{background:#2a2a2a;font-size:17px;font-weight:600}
+.k.hl{box-shadow:inset 0 0 0 1.5px var(--accent)}
+.chev{width:12px;height:12px;border-right:2.5px solid #fff;border-bottom:2.5px solid #fff;transform:rotate(45deg) translate(-2px,-2px)}
+/* overlays */
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.6);z-index:5}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#101010;border-top-left-radius:18px;border-top-right-radius:18px;border-top:1px solid #262626;z-index:6;display:flex;flex-direction:column;padding:0 16px 28px}
+.grab{width:36px;height:5px;border-radius:3px;background:#3a3a3a;margin:8px auto 10px;flex:none}
+.sheet h4{font-size:17px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+.sheet .sub{font-size:12px;color:var(--fg2);margin:3px 0 8px;line-height:1.45}
+.opt{display:flex;justify-content:space-between;align-items:center;min-height:46px;border-bottom:1px solid #1e1e1e;font-size:15px;gap:10px}
+.opt:last-child{border-bottom:0}
+.opt span{font-size:12px;color:var(--fg2)}
+.opt.red{color:var(--danger)}.opt.blue{color:var(--accent);font-weight:600}
+.menu{position:absolute;left:16px;right:16px;background:#1c1c1c;border:1px solid #2c2c2c;border-radius:12px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.6);z-index:7}
+.menu div{height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-size:14px;border-bottom:1px solid #2a2a2a}
+.menu div:last-child{border-bottom:0}
+.menu div span{font-size:13px;color:var(--fg2)}
+.menu .red{color:var(--danger)}.menu .blue{color:var(--accent);font-weight:600}
+.lifted{position:relative;z-index:6;outline:1.5px solid var(--accent);background:#141414 !important}
+.alert{position:absolute;left:28px;right:28px;top:180px;background:#1c1c1c;border-radius:16px;z-index:7;overflow:hidden;text-align:center;border:1px solid #2c2c2c}
+.alert .in2{padding:16px 16px 12px}
+.alert b{font-size:16px;display:block}
+.alert p{font-size:12.5px;color:#bdbdbd;margin-top:6px;line-height:1.45}
+.alert .ab{border-top:1px solid #2c2c2c;height:44px;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--accent)}
+.alert .ab.red{color:var(--danger);font-weight:600}.alert .ab.b{font-weight:700}
+.tinput{height:40px;border-radius:10px;background:#1c1c1c;display:flex;align-items:center;padding:0 12px;font-size:15px;margin-top:6px}
+.tinput.f{border:1.5px solid var(--accent)}
+.tinput.f::after{content:"";width:1.5px;height:18px;background:var(--accent);margin-left:2px}
+/* big sheet popup */
+.bigsheet{position:absolute;left:0;right:0;bottom:0;top:58px;background:#101010;border-top-left-radius:18px;border-top-right-radius:18px;border-top:1px solid #262626;z-index:6;display:flex;flex-direction:column}
+.shh{display:flex;justify-content:space-between;align-items:center;padding:0 16px;flex:none}
+.shh b{font-size:18px}.shh small{display:block;font-size:11px;color:var(--fg2);font-weight:500}
+.xb{width:28px;height:28px;border-radius:50%;background:#262626;display:flex;align-items:center;justify-content:center;font-size:13px;color:#cfcfcf}
+.stabs{display:flex;margin:12px 16px 4px;background:#1a1a1a;border-radius:10px;padding:3px;flex:none}
+.stabs span{flex:1;text-align:center;font-size:12.5px;font-weight:600;padding:7px 0;border-radius:8px;color:var(--fg2)}
+.stabs span.on{background:#333;color:#fff}
+.shb{flex:1;overflow:hidden;padding:0 16px;position:relative}
+.dt{text-align:center;line-height:1.1}.dt small{display:block;font-size:9.5px;color:var(--fg2);font-weight:700}.dt b{font-size:17px}
+.mh{display:grid;grid-template-columns:40px 1fr;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #1c1c1c}
+.mh .sets{font-size:13px;line-height:1.55;color:#e6e6e6}
+.mh .x{color:#555;margin:0 3px}
+.mh .dr{color:var(--warn);display:block}
+.mh .dr .db{width:14px;height:14px;font-size:9px;vertical-align:-2px;margin-right:3px;display:inline-flex}
+.vtag{font-size:9.5px;font-weight:700;color:var(--fg2);border:1px solid #333;border-radius:4px;padding:0 4px;margin-left:4px;vertical-align:1px}
+/* progress */
+.metric{display:flex;gap:6px;margin-top:12px}
+.metric span{font-size:11.5px;font-weight:600;border-radius:999px;padding:5px 10px;border:1px solid var(--line);color:var(--fg2);white-space:nowrap}
+.metric span.on{background:#fff;color:#000;border-color:#fff}
+.hero{margin-top:12px}
+.hero .hk{font-size:11px;font-weight:700;letter-spacing:.05em;color:var(--fg2)}
+.hero .v{font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.hero .v small{font-size:15px;color:var(--fg2);font-weight:600;margin-left:3px}
+.up{color:var(--tip);font-size:13px;font-weight:700}.flat{color:var(--fg2);font-size:13px;font-weight:700}.dn{color:var(--danger);font-size:13px;font-weight:700}
+.seg{display:flex;background:var(--surf2);border-radius:9px;padding:2px;margin-top:8px}
+.seg span{flex:1;text-align:center;font-size:11.5px;font-weight:600;padding:5px 0;border-radius:7px;color:var(--fg2)}
+.seg span.on{background:#2c2c2c;color:#fff}
+.flatstats{display:grid;grid-template-columns:repeat(3,1fr);margin-top:12px;border-top:1px solid var(--line)}
+.flatstats div{padding:9px 0 0}
+.flatstats div+div{padding-left:10px;border-left:1px solid var(--line)}
+.flatstats small{display:block;font-size:9.5px;color:var(--fg2);font-weight:700;letter-spacing:.04em}
+.flatstats b{font-size:15px}
+.rmt{margin-top:8px;font-size:13px}
+.rmt .rr{display:grid;grid-template-columns:42px 1fr 40px 48px;align-items:center;height:26px;gap:8px;border-bottom:1px solid #1a1a1a;white-space:nowrap}
+.rmt .rr.h{height:22px;font-size:9.5px;font-weight:700;letter-spacing:.05em;color:var(--fg2)}
+.rmt .bar{height:7px;border-radius:4px;background:#262626;position:relative}
+.rmt .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:#5a5a5a}
+.rmt .rr.new .bar i{background:var(--accent)}
+.rmt .date2{font-size:11px;color:var(--fg2);text-align:right}
+.rmt .rr.new .date2{color:var(--accent);font-weight:700}
+.rmt .rr.cur{background:color-mix(in srgb,var(--accent) 10%,transparent);border-radius:6px}
+.recpair{display:grid;grid-template-columns:1fr 1fr;margin-top:12px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.recpair div{padding:9px 0}
+.recpair div+div{padding-left:12px;border-left:1px solid var(--line)}
+.recpair small{display:block;font-size:9.5px;font-weight:700;color:var(--fg2);letter-spacing:.04em}
+.recpair b{font-size:18px}.recpair span{display:block;font-size:10.5px;color:var(--fg2)}
+.lift{display:grid;grid-template-columns:1fr 70px 64px;gap:10px;align-items:center;height:56px;border-bottom:1px solid var(--line)}
+.lift b{font-size:14.5px;display:block}.lift .vv{font-size:12px;color:var(--fg2)}
+.lift .ch{text-align:right;font-size:12.5px;font-weight:700;white-space:nowrap}
+/* home */
+.wstrip{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:14px;text-align:center}
+.wstrip small{display:block;font-size:10px;font-weight:700;color:var(--fg2)}
+.wstrip i{display:flex;width:31px;height:31px;border-radius:50%;margin:5px auto 0;align-items:center;justify-content:center;font-style:normal;font-size:12.5px;font-weight:700;color:#777;background:#141414}
+.wstrip i.d{background:var(--accent);color:#fff}
+.wstrip i.t{background:transparent;box-shadow:inset 0 0 0 2px #fff;color:#fff}
+.wstrip i.tp{background:transparent;box-shadow:inset 0 0 0 2px var(--tip);color:#fff}
+.wstrip i.f{background:transparent;color:#555}
+.qrow{display:flex;align-items:center;gap:12px;height:54px;border-bottom:1px solid var(--line)}
+.qrow .m{flex:1;min-width:0}
+.qrow b{font-size:15px;display:block}
+.qrow span{font-size:11.5px;color:var(--fg2)}
+.qrow .tag{font-size:9.5px;font-weight:700;color:#fff;background:var(--accent);border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:2px}
+.live{margin-top:10px;padding:10px 0 12px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.live .top{display:flex;justify-content:space-between;align-items:center}
+.dotl{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;letter-spacing:.07em;color:var(--tip)}
+.dotl i{width:7px;height:7px;border-radius:50%;background:var(--tip)}
+.live .time{font-size:13px;font-weight:700}
+.live b.n{font-size:22px;display:block;margin-top:2px}
+.live .now{font-size:12.5px;color:#cfcfcf;margin-top:2px}
+.live .now span{color:var(--fg2)}
+.exdots{display:flex;gap:4px;margin-top:8px}
+.exdots i{flex:1;height:5px;border-radius:3px;background:#222}
+.exdots i.d{background:var(--accent)}.exdots i.c{background:#fff}
+.resbar{flex:none;margin:0 10px 6px;height:44px;border-radius:12px;background:#0b1a2e;border:1px solid color-mix(in srgb,var(--accent) 50%,#000);display:flex;align-items:center;justify-content:space-between;padding:0 12px}
+.resbar b{font-size:13.5px}.resbar span{font-size:11.5px;color:var(--fg2);margin-left:6px}
+.resbar em{font-style:normal;font-size:13px;font-weight:700;color:var(--accent)}
+/* plans */
+.fold{display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.fold .fl{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.05em;color:#cfcfcf}
+.fold .fl small{font-weight:600;color:var(--fg2);letter-spacing:0}
+.fold .fa{color:var(--accent);font-size:13px;font-weight:700;letter-spacing:1px}
+.chevd{display:inline-block;width:7px;height:7px;border-right:2px solid #8e8e8e;border-bottom:2px solid #8e8e8e;transform:rotate(45deg);margin:0 2px 3px 0}
+.chevr{display:inline-block;width:7px;height:7px;border-right:2px solid #8e8e8e;border-bottom:2px solid #8e8e8e;transform:rotate(-45deg);margin:0 3px 1px 0}
+.rrow{display:flex;align-items:center;gap:10px;height:52px;border-bottom:1px solid var(--line)}
+.rrow .m{flex:1;min-width:0}
+.rrow b{font-size:15px;display:block}
+.rrow .m span{font-size:11.5px;color:var(--fg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.rrow .go{color:#555;font-size:17px}
+.minus{width:22px;height:22px;border-radius:50%;background:var(--danger);flex:none;display:flex;align-items:center;justify-content:center}
+.minus i{width:10px;height:2px;background:#fff;border-radius:1px;display:block}
+.handle{display:flex;flex-direction:column;gap:3px;flex:none}
+.handle i{display:block;width:14px;height:2px;background:#4a4a4a;border-radius:1px}
+.pill{font-size:10px;font-weight:700;background:#222;border-radius:5px;padding:2px 6px;color:#cfcfcf}
+.pill.on{background:var(--accent);color:#fff}
+.newrow{height:44px;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--accent);border-bottom:1px solid var(--line)}
+.newrow i{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:15px}
+/* builder */
+.namef{margin-top:12px;padding-bottom:6px;border-bottom:1px solid #2a2a2a;font-size:24px;font-weight:700;display:flex;justify-content:space-between;align-items:baseline}
+.namef span{font-size:11px;color:var(--fg2);font-weight:500}
+.metaline{font-size:11.5px;color:var(--fg2);margin-top:6px;display:flex;justify-content:space-between}
+.exsec{padding:12px 0 10px;border-bottom:1px solid var(--line)}
+.exr{display:flex;align-items:center;gap:10px}
+.exr b{font-size:15px;flex:1}
+.exr .dots{color:var(--accent);font-size:13px;font-weight:700;letter-spacing:1px}
+.mt{margin-top:6px;padding-left:24px}
+.mt .r{display:grid;grid-template-columns:30px 1fr 1fr;gap:8px;align-items:center;height:32px;font-size:14px}
+.mt .r.h{height:18px;font-size:9.5px;font-weight:700;color:var(--fg2);letter-spacing:.05em}
+.mt .r.h span{text-align:center}
+.mt .n{text-align:center;font-weight:700;font-size:13px}.mt .n.w{color:var(--fg2)}.mt .n.d{color:var(--warn)}
+.cell{background:var(--surf2);border-radius:7px;height:27px;display:flex;align-items:center;justify-content:center;font-weight:600}
+.cell.ph{color:#5a5a5a;font-weight:500;font-size:12.5px}
+.cell.edit{border:2px solid var(--accent);background:#0b1a2e}
+.cell.edit::after{content:"";width:1.5px;height:15px;background:var(--accent);margin-left:2px}
+.addset{font-size:12.5px;font-weight:600;color:var(--accent);margin:6px 0 0 24px}
+.search{height:36px;border-radius:10px;background:#1a1a1a;display:flex;align-items:center;padding:0 12px;font-size:13px;color:var(--fg2);gap:8px;margin-top:10px}
+.search.typed{color:#fff}
+.chips{display:flex;gap:6px;margin-top:10px;white-space:nowrap;overflow:hidden}
+.chips span{font-size:12px;font-weight:600;border-radius:999px;padding:5px 11px;background:var(--surf2);color:var(--fg2);flex:none}
+.chips span.on{background:#fff;color:#000}
+.pgrp{font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--fg2);margin-top:14px;display:flex;justify-content:space-between}
+.pgrp span{letter-spacing:0;font-weight:600}
+.prow{display:grid;grid-template-columns:1fr 24px;gap:10px;align-items:center;height:44px;border-bottom:1px solid #1a1a1a}
+.prow b{font-size:14px;display:block}.prow span{font-size:11px;color:var(--fg2)}
+.prow.off b{color:#6a6a6a;text-decoration:line-through}
+.cb{width:22px;height:22px;border-radius:50%;border:1.5px solid #444;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+.cb.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.radio{width:20px;height:20px;border-radius:50%;border:1.5px solid #444;flex:none}
+.radio.on{border:6px solid var(--accent)}
+/* routine detail */
+.rdt{font-size:30px;font-weight:700;letter-spacing:-.02em;margin-top:10px}
+.rdm{font-size:12px;color:var(--fg2);margin-top:2px}
+.rdx{padding:10px 0;border-bottom:1px solid var(--line)}
+.rdx .t{display:flex;justify-content:space-between;align-items:baseline}
+.rdx .t b{font-size:15px}.rdx .t span{font-size:12px;color:var(--fg2)}
+.num{display:inline-flex;width:20px;height:20px;border-radius:6px;background:#1c1c1c;font-size:11px;font-weight:700;align-items:center;justify-content:center;color:var(--fg2);margin-right:8px;vertical-align:1px}
+.ro{margin-top:6px}
+.ro .r{display:grid;grid-template-columns:26px 1fr 1fr 1fr;gap:6px;font-size:13px;height:23px;align-items:center}
+.ro .r span{text-align:center}
+.ro .r .n{color:var(--fg2);font-weight:700;font-size:12px}
+.ro .r .p{color:var(--fg2);font-size:12px}
+.ro .r.h{height:16px;font-size:9px;font-weight:700;color:var(--fg2);letter-spacing:.05em}
+.startbar{flex:none;padding:10px 16px 0;border-top:1px solid var(--line)}
+/* history */
+.vt{display:flex;background:#1a1a1a;border-radius:9px;padding:2px;margin-bottom:4px}
+.vt span{width:34px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center}
+.vt span.on{background:#333}
+.rng{display:flex;background:var(--surf2);border-radius:9px;padding:2px;margin-top:4px}
+.rng span{flex:1;text-align:center;font-size:12px;font-weight:600;padding:6px 0;border-radius:7px;color:var(--fg2)}
+.rng span.on{background:#2c2c2c;color:#fff}
+.calh{display:flex;justify-content:space-between;align-items:center;margin:12px 0 8px}
+.calh b{font-size:16px}.calh span{color:var(--accent);font-size:16px;padding:0 6px}
+.g7{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.g7 .dn{font-size:10px;font-weight:700;color:var(--fg2);padding-bottom:4px}
+.g7 .d{height:31px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#9a9a9a;position:relative}
+.g7 .d.w{background:#1c1c1c;color:#fff}
+.g7 .d.w::after{content:"";position:absolute;bottom:4px;width:4px;height:4px;border-radius:50%;background:var(--accent)}
+.g7 .d.sel{background:var(--accent);color:#fff}.g7 .d.sel::after{background:#fff}
+.dayrow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--line);margin-top:10px}
+.dayrow b{font-size:15px;display:block}.dayrow span{font-size:11.5px;color:var(--fg2)}
+.minis{display:grid;gap:12px 10px;margin-top:12px}
+.mini .ml{font-size:10.5px;font-weight:700;color:#cfcfcf;margin-bottom:4px;display:flex;justify-content:space-between}
+.mini .ml span{color:var(--fg2);font-weight:600}
+.mini .mg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.mini .mg i{display:block;aspect-ratio:1;border-radius:2px;background:#1a1a1a}
+.mini .mg i.w{background:var(--accent)}.mini .mg i.e{background:transparent}.mini .mg i.f{background:transparent;box-shadow:inset 0 0 0 1px #1a1a1a}
+.yrow{display:grid;grid-template-columns:38px 1fr 34px;gap:8px;align-items:end;margin-top:14px}
+.yrow .yl{font-size:13px;font-weight:700;padding-bottom:12px}.yrow .yt{font-size:13px;font-weight:700;text-align:right;padding-bottom:12px}
+.bars{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;align-items:end;height:74px}
+.bars i{display:block;background:var(--accent);border-radius:2px 2px 0 0;min-height:2px}
+.bars i.z{background:#262626}.bars i.f{background:transparent;border-bottom:1px dashed #333}
+.blbl{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;font-size:8px;color:var(--fg2);text-align:center;margin-top:3px}
+.wk{font-size:10.5px;font-weight:700;color:var(--fg2);letter-spacing:.05em;margin-top:12px;display:flex;justify-content:space-between}
+.crow{display:grid;grid-template-columns:40px 1fr auto 12px;gap:10px;align-items:center;height:50px;border-bottom:1px solid var(--line)}
+.crow .mid b{font-size:14px;display:block}.crow .mid span{font-size:11px;color:var(--fg2)}
+.crow .rt{font-size:11.5px;color:var(--fg2);text-align:right}.crow .go{color:#555}
+.dstat{display:grid;grid-template-columns:repeat(3,1fr);margin-top:10px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.dstat div{padding:8px 0}.dstat div+div{padding-left:10px;border-left:1px solid var(--line)}
+.dstat small{display:block;font-size:9.5px;color:var(--fg2);font-weight:700}.dstat b{font-size:15px}
+.dex{margin-top:12px}
+.dex .nm{display:flex;justify-content:space-between;font-size:14px;font-weight:700;margin-bottom:4px}
+.dex .nm span{font-size:11px;color:var(--fg2);font-weight:500}
+.dset{display:grid;grid-template-columns:24px 1fr auto;font-size:13px;height:23px;align-items:center}
+.dset .n{color:var(--fg2);font-weight:700;font-size:12px}
+.dset.drop{padding-left:10px;border-left:2px solid var(--warn);margin-left:4px}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;height:100%;padding:0 18px 40px}
+.empty .ic{width:56px;height:56px;border-radius:16px;border:1.5px dashed #333;display:flex;align-items:center;justify-content:center;font-size:24px;color:#555}
+.empty b{font-size:18px;margin-top:14px}
+.empty p{font-size:13px;color:var(--fg2);margin-top:6px;line-height:1.5}
+/* settings */
+.sgrp{font-size:10.5px;font-weight:700;letter-spacing:.06em;color:var(--fg2);margin:10px 4px 4px}
+.slist{border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.srow{display:flex;justify-content:space-between;align-items:center;min-height:34px;border-bottom:1px solid var(--line);font-size:14px;gap:10px}
+.srow:last-child{border-bottom:0}
+.srow .v{color:var(--fg2);font-size:13px;display:flex;align-items:center;gap:6px}
+.srow .v::after{content:"›";color:#555;font-size:16px}
+.srow.nc .v::after{content:""}
+.srow.blue{color:var(--accent)}.srow.red{color:var(--danger)}
+.tog{width:34px;height:20px;border-radius:10px;background:#333;position:relative;flex:none}
+.tog::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff}
+.tog.on{background:var(--accent)}.tog.on::after{left:16px}
+.check{color:var(--accent);font-weight:800}
+.mseg{display:flex;background:#1c1c1c;border-radius:8px;padding:2px;margin-top:6px}
+.mseg span{flex:1;text-align:center;font-size:13px;font-weight:600;padding:7px 0;border-radius:6px;color:var(--fg2)}
+.mseg span.on{background:#3a3a3a;color:#fff}
+.flab{font-size:10.5px;font-weight:700;letter-spacing:.06em;color:var(--fg2);margin-top:16px}
+.typeopt{display:grid;grid-template-columns:20px 1fr auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.typeopt b{font-size:14px;display:block}.typeopt span{font-size:11px;color:var(--fg2)}
+.typeopt em{font-style:normal;font-size:11px;color:#bdbdbd;background:#1a1a1a;border-radius:5px;padding:2px 6px}
+.welcome{display:flex;flex-direction:column;height:100%;padding:30px 4px 10px}
+.welcome .big{font-size:38px;font-weight:700;letter-spacing:-.03em;line-height:1.05}
+.welcome ul{list-style:none;margin-top:22px}
+.welcome li{font-size:14px;color:#cfcfcf;padding:10px 0;border-bottom:1px solid var(--line);display:flex;gap:10px}
+.welcome li i{font-style:normal;color:var(--accent);font-weight:700}
+.step{display:grid;grid-template-columns:28px 1fr;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);align-items:start}
+.step .sn2{width:26px;height:26px;border-radius:50%;background:#1c1c1c;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.step b{font-size:14.5px;display:block}.step span{font-size:12px;color:var(--fg2);line-height:1.45}
+.shareic{display:inline-flex;width:22px;height:22px;border-radius:5px;background:#1c1c1c;align-items:center;justify-content:center;vertical-align:-6px;margin:0 2px}
+.safari{flex:none;height:40px;border-top:1px solid #222;background:#111;display:flex;justify-content:space-around;align-items:center;color:var(--accent);font-size:16px}
+.safari .sh{width:30px;height:30px;border-radius:8px;box-shadow:0 0 0 2px var(--accent);display:flex;align-items:center;justify-content:center}
+.fileic{width:40px;height:48px;border-radius:6px;background:#1c1c1c;border:1px solid #333;display:flex;align-items:flex-end;justify-content:center;font-size:9px;font-weight:700;color:var(--fg2);padding-bottom:6px;flex:none}
+.shareapps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0 6px;text-align:center;font-size:10.5px;color:#cfcfcf}
+.shareapps i{display:block;width:50px;height:50px;border-radius:12px;background:#1c1c1c;margin:0 auto 5px}
+.match{display:grid;grid-template-columns:1fr 16px 1fr;gap:6px;align-items:center;font-size:12.5px;padding:9px 0;border-bottom:1px solid var(--line)}
+.match .a{color:#cfcfcf}.match .b{color:#fff;font-weight:600}.match .b.q{color:var(--warn)}.match .b.n{color:var(--accent)}
+.match i{font-style:normal;color:#555;text-align:center}
+.cmp .cr{display:grid;grid-template-columns:1fr auto 54px;gap:10px;align-items:center;height:46px;border-bottom:1px solid var(--line)}
+.cmp .cr b{font-size:14px;display:block}.cmp .cr small{font-size:11px;color:var(--fg2)}
+.pl{display:inline-block;font-size:11px;font-weight:700;border-radius:6px;padding:3px 7px;white-space:nowrap}
+.pl.up{background:color-mix(in srgb,var(--tip) 18%,#000)}.pl.fl{background:#1c1c1c;color:var(--fg2)}.pl.dn{background:color-mix(in srgb,var(--danger) 18%,#000)}
+.sumhead{text-align:center;margin-top:16px}
+.sumhead .big{font-size:26px;font-weight:700;letter-spacing:-.01em}
+.sumhead .sub{font-size:12px;color:var(--fg2);margin-top:5px}
+.chg{font-size:13px;padding:8px 0;border-bottom:1px solid #1e1e1e;display:flex;gap:10px}
+.chg i{font-style:normal;font-weight:800;width:14px}
+.chg .p{color:var(--tip)}.chg .m{color:var(--danger)}.chg .e{color:var(--accent)}
+/* principles */
+.pr{display:grid;grid-template-columns:repeat(2,1fr);gap:0 40px;margin-top:22px}
+.pr div{padding:14px 0;border-bottom:1px solid var(--line)}
+.pr b{font-size:15px;display:block}
+.pr b i{font-style:normal;color:var(--accent);margin-right:8px}
+.pr p{font-size:13px;color:#bdbdbd;line-height:1.55;margin-top:4px}
+.tok{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:26px}
+.tok h4{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--fg2);margin-bottom:10px}
+.sw{display:flex;align-items:center;gap:10px;font-size:12.5px;padding:5px 0;color:#cfcfcf}
+.sw i{width:26px;height:26px;border-radius:6px;border:1px solid #333;flex:none}
+.sw small{color:var(--fg2);display:block;font-size:11px}
+.tl{font-size:12.5px;color:#cfcfcf;line-height:1.5;padding:5px 0;border-bottom:1px solid #161616}
+.tl b{color:#fff}
+.notv1{margin-top:26px;border:1px dashed #333;border-radius:12px;padding:14px 16px;font-size:13px;color:#cfcfcf;line-height:1.6}
+.notv1 b{color:#fff}
+
+.sch{margin-top:12px;padding:12px 0;border-top:1px solid #1f1f1f;border-bottom:1px solid #1f1f1f}
+.sch .skh{font-size:10px;font-weight:700;letter-spacing:.07em;color:#8e8e8e;display:flex;justify-content:space-between}
+.sch .skh span{color:#2e8bff;letter-spacing:0;font-size:11.5px;font-weight:600}
+.sch b.v{display:block;font-size:20px;margin-top:3px}
+.sch .sub{font-size:12px;color:#8e8e8e;margin-top:2px}
+.strip{display:flex;gap:4px;margin-top:10px}
+.strip div{flex:1;text-align:center}
+.strip small{display:block;font-size:9.5px;font-weight:700;color:#8e8e8e;margin-bottom:4px}
+.strip i{display:flex;height:30px;border-radius:8px;align-items:center;justify-content:center;font-style:normal;font-size:11px;font-weight:800;background:#161616;color:#cfcfcf}
+.strip i.r{background:transparent;box-shadow:inset 0 0 0 1px #2a2a2a;color:#555}
+.strip i.d{background:#2e8bff;color:#fff}
+.strip i.t{box-shadow:inset 0 0 0 2px #fff;background:#161616;color:#fff}
+.strip i.m{background:transparent;box-shadow:inset 0 0 0 1.5px #ff8c1a;color:#ff8c1a}
+.mopt{display:grid;grid-template-columns:22px 1fr;gap:12px;padding:12px 0;border-bottom:1px solid #1f1f1f;align-items:start}
+.mopt b{font-size:15px;display:block}.mopt span{font-size:12px;color:#8e8e8e;line-height:1.45;display:block;margin-top:2px}
+.mopt .ex{display:flex;gap:3px;margin-top:7px}
+.mopt .ex i{white-space:nowrap;font-style:normal;font-size:10px;font-weight:800;border-radius:5px;padding:3px 6px;background:#161616;color:#cfcfcf}
+.mopt .ex i.r{background:transparent;box-shadow:inset 0 0 0 1px #2a2a2a;color:#555}
+.dayrow2{display:grid;grid-template-columns:18px 54px 1fr auto;gap:10px;align-items:center;height:44px;border-bottom:1px solid #1f1f1f}
+.dayrow2 .dn{font-size:11px;font-weight:700;color:#8e8e8e;letter-spacing:.04em}
+.dayrow2 b{font-size:15px}.dayrow2 b.rest{color:#555;font-weight:600}
+.dayrow2 .go{color:#555;font-size:16px}
+.dayrow2 small{font-size:11px;color:#8e8e8e;margin-left:6px;font-weight:500}
+.wkrow{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;height:46px;border-bottom:1px solid #1f1f1f}
+.wkrow .wd{font-size:13px;font-weight:700}
+.wkrow .wd small{display:block;font-size:10px;color:#8e8e8e;font-weight:600}
+.wkrow b{font-size:15px}.wkrow b.rest{color:#555;font-weight:600}
+.wkrow .go{color:#555;font-size:16px}
+.wkrow.today .wd{color:#2e8bff}
+.seg3{display:flex;background:#161616;border-radius:9px;padding:2px;margin-top:8px}
+.seg3 span{flex:1;text-align:center;font-size:12.5px;font-weight:600;padding:7px 0;border-radius:7px;color:#8e8e8e}
+.seg3 span.on{background:#2c2c2c;color:#fff}
+.flab2{font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#8e8e8e;margin-top:16px;display:flex;justify-content:space-between}
+.flab2 span{letter-spacing:0;color:#8e8e8e;font-weight:500;font-size:11px}
+.setrow{display:flex;justify-content:space-between;align-items:center;min-height:44px;border-bottom:1px solid #1f1f1f;font-size:14px}
+.setrow span{font-size:13px;color:#8e8e8e}
+.setrow span::after{content:" ›";color:#555}
+.up2{display:grid;grid-template-columns:62px 1fr auto;gap:10px;align-items:center;height:54px;border-bottom:1px solid #1f1f1f}
+.up2 .when{font-size:12px;font-weight:700;color:#8e8e8e}
+.up2 .when.t{color:#fff}
+.up2 b{font-size:15px;display:block}.up2 b.rest{color:#555;font-weight:600}
+.up2 span.s{font-size:11.5px;color:#8e8e8e}
+.miss{margin-top:10px;padding:10px 12px;border-left:2px solid #ff8c1a;background:#0e0e0e;font-size:12.5px;color:#cfcfcf;line-height:1.45}
+.miss b{color:#fff}
+.miss .acts{display:flex;gap:14px;margin-top:6px;font-weight:700;font-size:12.5px}
+.miss .acts span{color:#2e8bff}
+.cal7{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;margin-top:8px}
+.cal7 .dn{font-size:10px;font-weight:700;color:#8e8e8e;padding-bottom:3px}
+.cal7 .c{height:44px;border-radius:8px;background:#0e0e0e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.cal7 .c small{font-size:10px;color:#8e8e8e;font-weight:600}
+.cal7 .c b{font-size:10px;font-weight:800;color:#cfcfcf}
+.cal7 .c.done{background:color-mix(in srgb,#2e8bff 18%,#000)}.cal7 .c.done b{color:#2e8bff}
+.cal7 .c.miss2{box-shadow:inset 0 0 0 1.5px #ff8c1a}.cal7 .c.miss2 b{color:#ff8c1a}
+.cal7 .c.rest b{color:#444}
+.cal7 .c.today{box-shadow:inset 0 0 0 2px #fff}
+.cal7 .c.e{background:transparent}
+.cal7 .c.moved{box-shadow:inset 0 0 0 1.5px #8e8e8e}
+.legend3{display:flex;gap:12px;flex-wrap:wrap;font-size:10.5px;color:#8e8e8e;margin-top:8px}
+.legend3 i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.preview{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:8px}
+.preview div{text-align:center}
+.preview small{display:block;font-size:9px;color:#8e8e8e;font-weight:700}
+.preview i{display:flex;height:24px;margin-top:3px;border-radius:6px;align-items:center;justify-content:center;font-style:normal;font-size:9.5px;font-weight:800;background:#161616;color:#cfcfcf}
+.preview i.r{background:transparent;box-shadow:inset 0 0 0 1px #2a2a2a;color:#555}
+</style></head><body><div class="board"><div class="eyebrow">OpenGym · Plans · v15 · Schedules · Dark</div><h1>Plans with a schedule</h1><p class="lead">The Plans tab works as it does today, with one addition: a folder can have a schedule. Either a repeating cycle (PPLR, Upper / Lower / Rest…) or a weekly split where you assign days. Example plan: PPL on a weekly split, Sun Rest · Mon Pull A · Tue Legs · Wed Rest · Thu Push A · Fri Push B · Sat Rest. Today is Thursday, Nov 5.</p><div class="section"><span class="stag">A · WHERE IT LIVES</span><h2>Plans, with a schedule on top</h2><p>Folders still hold routines exactly as now. A folder can now also have a schedule, which turns it into a plan: Plans shows the week, a new plan screen gives the details, and Home follows it.</p><div class="row"><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="bh"><div><div class="t">Plans</div></div><div style="margin-bottom:6px;display:flex;gap:16px;align-items:center"><span class="tb ">Edit</span><span class="tb big">+</span></div></div><div class="body" style=""><div class="fold"><span class="fl"><span class="chevd"></span>PPL <small>4</small></span><span class="pill on">active</span></div><div class="sch" style="border-top:0;padding-top:8px"><div class="skh">SCHEDULE · WEEKLY<span>Edit plan ›</span></div><div class="strip"><div><small>S 1</small><i class="r">R</i></div><div><small>M 2</small><i class="d">PL</i></div><div><small>T 3</small><i class="d">L</i></div><div><small>W 4</small><i class="r">R</i></div><div><small>T 5</small><i class="t">PA</i></div><div><small>F 6</small><i class="">PB</i></div><div><small>S 7</small><i class="r">R</i></div></div></div><div class="rrow"><div class="m"><b>Push A</b><span>Thursdays · Lateral Raise, Bench, Incline DB…</span></div><span class="go">›</span></div><div class="rrow"><div class="m"><b>Pull A</b><span>Mondays · Deadlift, Pull-up, Row…</span></div><span class="go">›</span></div><div class="rrow"><div class="m"><b>Legs</b><span>Tuesdays · Squat, RDL, Leg Press…</span></div><span class="go">›</span></div><div class="rrow"><div class="m"><b>Push B</b><span>Fridays · OHP, Incline Bench, DB Fly…</span></div><span class="go">›</span></div><div class="fold"><span class="fl"><span class="chevd"></span>ONE-OFFS <small>1</small></span><span style="font-size:11px;color:#8e8e8e">no schedule</span></div><div class="rrow"><div class="m"><b>Arm day</b><span>Curl, Pushdown, Hammer Curl, Dips</span></div><span class="go">›</span></div></div><div class="tabbar"><span class=""><i></i>Home</span><span class="on"><i></i>Plans</span><span class=""><i></i>History</span><span class=""><i></i>Progress</span><span class=""><i></i>Settings</span></div><div class="homebar"></div></div><div class="cap"><b><em>A1</em>Plans, with a schedule</b><p>Same Plans tab as before. A folder with a schedule shows it as a one-week strip under its header (blue = done, ring = today, outline = rest). Each routine says when it's due. Folders without a schedule look exactly as they do now.</p></div></div><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="nh"><span class="l"><span class="tb ">‹ Plans</span></span><div class="t"></div><span class="r"><span class="tb ">Edit</span></span></div><div class="body" style=""><div class="rdt" style="margin-top:4px">PPL</div><div class="rdm">4 routines · active plan · since Sep 1</div><div class="sch"><div class="skh">SCHEDULE<span>Change ›</span></div><b class="v">Weekly split</b><div class="sub">4 workouts · 3 rest days</div><div class="strip"><div><small>S 1</small><i class="r">R</i></div><div><small>M 2</small><i class="d">PL</i></div><div><small>T 3</small><i class="d">L</i></div><div><small>W 4</small><i class="r">R</i></div><div><small>T 5</small><i class="t">PA</i></div><div><small>F 6</small><i class="">PB</i></div><div><small>S 7</small><i class="r">R</i></div></div></div><div class="flab2">THIS WEEK<span>2 of 4 done</span></div><div class="up2"><span class="when ">Mon 2</span><div><b class="">Pull A</b><span class="s">done · 54 min</span></div><span class="chk on" style="width:22px;height:22px">✓</span></div><div class="up2"><span class="when ">Tue 3</span><div><b class="">Legs</b><span class="s">done · 61 min</span></div><span class="chk on" style="width:22px;height:22px">✓</span></div><div class="up2"><span class="when t">Today</span><div><b class="">Push A</b><span class="s">5 exercises</span></div><span class="play"><i></i></span></div><div class="up2"><span class="when ">Fri 6</span><div><b class="">Push B</b><span class="s">4 exercises</span></div><span class="play g"><i></i></span></div><div class="flab2">ROUTINES</div><div class="rrow" style="height:46px"><div class="m"><b>Push A</b></div><span class="go">›</span></div><div class="rrow" style="height:46px"><div class="m"><b>Pull A</b></div><span class="go">›</span></div><div class="rrow" style="height:46px"><div class="m"><b>Legs</b></div><span class="go">›</span></div><div class="rrow" style="height:46px"><div class="m"><b>Push B</b></div><span class="go">›</span></div></div><div class="homebar"></div></div><div class="cap"><b><em>A2</em>Plan screen (new)</b><p>Tapping a folder header now opens it as a plan: its schedule up top, this week's workouts with status and ▶, then the routines. "Change ›" edits the schedule (B1); Edit renames, reorders routines, archives.</p></div></div><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="body" style=""><div class="date">THURSDAY, NOV 5</div><div class="ttl">Home</div><div class="wstrip"><div><small>S</small><i class="">1</i></div><div><small>M</small><i class="d">2</i></div><div><small>T</small><i class="d">3</i></div><div><small>W</small><i class="">4</i></div><div><small>T</small><i class="t">5</i></div><div><small>F</small><i class="f">6</i></div><div><small>S</small><i class="f">7</i></div></div><div class="lbl">PPL · THIS WEEK<span>Plan ›</span></div><div class="up2"><span class="when t">Today</span><div><b class="">Push A</b><span class="s">5 exercises</span></div><span class="play"><i></i></span></div><div class="up2"><span class="when ">Fri</span><div><b class="">Push B</b><span class="s">4 exercises</span></div><span class="play g"><i></i></span></div><div class="up2"><span class="when ">Sat · Sun</span><div><b class="rest">Rest</b><span class="s"> </span></div></div><div class="up2"><span class="when ">Mon</span><div><b class="">Pull A</b><span class="s">5 exercises</span></div><span class="play g"><i></i></span></div><div class="qrow" style="border-bottom:0"><div class="m"><b style="color:var(--accent)">+ Blank workout</b></div></div></div><div class="tabbar"><span class="on"><i></i>Home</span><span class=""><i></i>Plans</span><span class=""><i></i>History</span><span class=""><i></i>Progress</span><span class=""><i></i>Settings</span></div><div class="homebar"></div></div><div class="cap"><b><em>A3</em>Home, scheduled</b><p>With a schedule, Home's list follows it: Today first, then the next few days (rest days collapse into one line). ▶ still starts any of them early. Without a schedule, Home keeps the "longest ago = next" list.</p></div></div></div></div><div class="section"><span class="stag">B · SETTING IT UP</span><h2>Cycle or weekly split</h2><p>Pick how the plan decides what's next: no schedule (current behaviour), a repeating cycle like Push · Pull · Legs · Rest, or a weekly split assigned to days.</p><div class="row"><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="nh"><span class="l"><span class="tb g">Cancel</span></span><div class="t">Schedule</div><span class="r"><span class="tb b">Next</span></span></div><div class="body" style=""><div class="sub" style="font-size:13px;color:#8e8e8e;margin-top:10px">How should PPL decide what's next?</div><div class="mopt"><span class="radio"></span><div><b>No schedule</b><span>Whatever you did longest ago is next. Train when you can. (Today's behaviour.)</span></div></div><div class="mopt"><span class="radio"></span><div><b>Repeating cycle</b><span>A fixed order that repeats, rest days included. Ignores weekdays.</span><div class="ex"><i>Push</i><i>Pull</i><i>Legs</i><i class="r">Rest</i><i style="background:transparent;color:#555">↻</i></div></div></div><div class="mopt"><span class="radio on"></span><div><b>Weekly split</b><span>Each weekday gets a routine or rest. Same week every week.</span><div class="ex"><i>Mon Pull</i><i>Tue Legs</i><i>Thu Push</i><i style="background:transparent;color:#555">…</i></div></div></div><div class="note">You can switch any time. History stays; only what's planned from today on changes.</div></div><div class="homebar"></div></div><div class="cap"><b><em>B1</em>Pick a schedule type</b><p>Three options. "No schedule" is the current rotation; the other two are new. Plain descriptions plus a tiny example of each.</p></div></div><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="nh"><span class="l"><span class="tb g">Back</span></span><div class="t">Repeating cycle</div><span class="r"><span class="tb b">Save</span></span></div><div class="body" style=""><div class="flab2" style="margin-top:12px">CYCLE · 4 DAYS<span>drag to reorder</span></div><div class="dayrow2"><span class="handle"><i></i><i></i><i></i></span><span class="dn">DAY 1</span><b class="">Push A<small>today</small></b><span class="go">›</span></div><div class="dayrow2"><span class="handle"><i></i><i></i><i></i></span><span class="dn">DAY 2</span><b class="">Pull A</b><span class="go">›</span></div><div class="dayrow2"><span class="handle"><i></i><i></i><i></i></span><span class="dn">DAY 3</span><b class="">Legs</b><span class="go">›</span></div><div class="dayrow2"><span class="handle"><i></i><i></i><i></i></span><span class="dn">DAY 4</span><b class="rest">Rest</b><span class="go">›</span></div><div class="newrow"><i>+</i>Add a day</div><div class="flab2">STARTS</div><div class="setrow">Day 1 is<span>Today, Thu Nov 5</span></div><div class="flab2">IF YOU MISS A DAY</div><div class="seg3"><span class="on">Wait for me</span><span>Stick to dates</span></div><div class="note" style="margin-top:6px">Wait: the cycle pauses until you train. Stick: missed days are skipped.</div><div class="flab2">NEXT 7 DAYS</div><div class="preview"><div><small>T5</small><i class="">PA</i></div><div><small>F6</small><i class="">PL</i></div><div><small>S7</small><i class="">L</i></div><div><small>S8</small><i class="r">R</i></div><div><small>M9</small><i class="">PA</i></div><div><small>T10</small><i class="">PL</i></div><div><small>W11</small><i class="">L</i></div></div></div><div class="homebar"></div></div><div class="cap"><b><em>B2</em>Repeating cycle (PPLR)</b><p>Days in order; each is a routine or Rest. Add, drag, or tap to change one (B4). Choose which day today is, and what happens when you miss: pause the cycle or keep to the calendar. A preview shows the coming days.</p></div></div><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="nh"><span class="l"><span class="tb g">Back</span></span><div class="t">Weekly split</div><span class="r"><span class="tb b">Save</span></span></div><div class="body" style=""><div class="flab2" style="margin-top:12px">EACH WEEK<span>tap a day to change</span></div><div class="wkrow "><span class="wd">Sun<small></small></span><b class="rest">Rest</b><span class="go">›</span></div><div class="wkrow "><span class="wd">Mon<small></small></span><b class="">Pull A</b><span class="go">›</span></div><div class="wkrow "><span class="wd">Tue<small></small></span><b class="">Legs</b><span class="go">›</span></div><div class="wkrow "><span class="wd">Wed<small></small></span><b class="rest">Rest</b><span class="go">›</span></div><div class="wkrow today"><span class="wd">Thu<small>today</small></span><b class="">Push A</b><span class="go">›</span></div><div class="wkrow "><span class="wd">Fri<small></small></span><b class="">Push B</b><span class="go">›</span></div><div class="wkrow "><span class="wd">Sat<small></small></span><b class="rest">Rest</b><span class="go">›</span></div><div class="flab2">IF YOU MISS A DAY</div><div class="seg3"><span class="on">Skip it</span><span>Move to rest day</span></div><div class="note" style="margin-top:6px">4 workouts a week · weeks start Sunday (Settings).</div></div><div class="homebar"></div></div><div class="cap"><b><em>B3</em>Weekly split</b><p>Seven rows, Sunday to Saturday (or Monday first, per Settings). Each is a routine or Rest. Missed workouts are either skipped or slotted into the next rest day that week.</p></div></div></div><div class="row"><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="nh"><span class="l"><span class="tb g">Back</span></span><div class="t">Weekly split</div><span class="r"><span class="tb b">Save</span></span></div><div class="body" style=""><div class="flab2" style="margin-top:12px">EACH WEEK<span>tap a day to change</span></div><div class="wkrow "><span class="wd">Sun<small></small></span><b class="rest">Rest</b><span class="go">›</span></div><div class="wkrow "><span class="wd">Mon<small></small></span><b class="">Pull A</b><span class="go">›</span></div><div class="wkrow "><span class="wd">Tue<small></small></span><b class="">Legs</b><span class="go">›</span></div><div class="wkrow "><span class="wd">Wed<small></small></span><b class="rest">Rest</b><span class="go">›</span></div><div class="wkrow today"><span class="wd">Thu<small>today</small></span><b class="">Push A</b><span class="go">›</span></div><div class="wkrow "><span class="wd">Fri<small></small></span><b class="">Push B</b><span class="go">›</span></div><div class="wkrow "><span class="wd">Sat<small></small></span><b class="rest">Rest</b><span class="go">›</span></div><div class="flab2">IF YOU MISS A DAY</div><div class="seg3"><span class="on">Skip it</span><span>Move to rest day</span></div><div class="note" style="margin-top:6px">4 workouts a week · weeks start Sunday (Settings).</div></div><div class="scrim"></div><div class="sheet" style=""><div class="grab"></div><h4>Thursday</h4><div class="sub">Pick what to do on Thursdays.</div><div class="opt" style="min-height:44px"><span style="color:#fff;font-size:15px;font-weight:500">Push A</span><span style="display:flex;gap:10px;align-items:center">5 exercises<span class="radio on"></span></span></div><div class="opt" style="min-height:44px"><span style="color:#fff;font-size:15px;font-weight:500">Push B</span><span style="display:flex;gap:10px;align-items:center">4 exercises<span class="radio "></span></span></div><div class="opt" style="min-height:44px"><span style="color:#fff;font-size:15px;font-weight:500">Pull A</span><span style="display:flex;gap:10px;align-items:center">5 exercises<span class="radio "></span></span></div><div class="opt" style="min-height:44px"><span style="color:#fff;font-size:15px;font-weight:500">Legs</span><span style="display:flex;gap:10px;align-items:center">5 exercises<span class="radio "></span></span></div><div class="opt" style="min-height:44px"><span style="color:#555;font-size:15px;font-weight:600">Rest</span><span style="display:flex;gap:10px;align-items:center"><span class="radio "></span></span></div><div class="opt blue" style="min-height:44px">+ New routine for this day<span></span></div><div class="opt" style="min-height:44px">Two workouts this day<span class="tog"></span></div></div><div class="homebar"></div></div><div class="cap"><b><em>B4</em>Assign a day</b><p>The same sheet for cycle days and weekdays. Routines from this plan, Rest, or make a new routine on the spot. "Two workouts this day" allows an AM / PM split (off by default).</p></div></div></div></div><div class="section"><span class="stag">C · DAY TO DAY</span><h2>Calendar, one-off changes, missed days</h2><p>Life gets in the way. Change a single day without editing the plan, see planned vs done on a calendar, and handle missed days without guilt.</p><div class="row"><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="nh"><span class="l"><span class="tb ">‹ PPL</span></span><div class="t">Schedule</div><span class="r"><span class="tb ">Edit</span></span></div><div class="body" style=""><div class="seg3" style="margin-top:10px"><span>List</span><span class="on">Calendar</span></div><div class="calh" style="margin:12px 0 2px"><span>‹</span><b>Oct 25 – Nov 21</b><span>›</span></div><div class="cal7"><div class="dn">S</div><div class="dn">M</div><div class="dn">T</div><div class="dn">W</div><div class="dn">T</div><div class="dn">F</div><div class="dn">S</div><div class="c rest"><small>25</small><b>·</b></div><div class="c done"><small>26</small><b>PL</b></div><div class="c done"><small>27</small><b>L</b></div><div class="c rest"><small>28</small><b>·</b></div><div class="c done"><small>29</small><b>PA</b></div><div class="c miss2"><small>30</small><b>PB</b></div><div class="c rest"><small>31</small><b>·</b></div><div class="c rest"><small>1</small><b>·</b></div><div class="c done"><small>2</small><b>PL</b></div><div class="c done"><small>3</small><b>L</b></div><div class="c rest"><small>4</small><b>·</b></div><div class="c today"><small>5</small><b>PA</b></div><div class="c "><small>6</small><b>PB</b></div><div class="c rest"><small>7</small><b>·</b></div><div class="c rest"><small>8</small><b>·</b></div><div class="c "><small>9</small><b>PL</b></div><div class="c "><small>10</small><b>L</b></div><div class="c rest"><small>11</small><b>·</b></div><div class="c "><small>12</small><b>PA</b></div><div class="c moved"><small>13</small><b>→</b></div><div class="c moved"><small>14</small><b>PB</b></div><div class="c rest"><small>15</small><b>·</b></div><div class="c "><small>16</small><b>PL</b></div><div class="c "><small>17</small><b>L</b></div><div class="c rest"><small>18</small><b>·</b></div><div class="c "><small>19</small><b>PA</b></div><div class="c "><small>20</small><b>PB</b></div><div class="c rest"><small>21</small><b>·</b></div></div><div class="legend3"><span><i style="background:color-mix(in srgb,#2e8bff 30%,#000)"></i>done</span><span><i style="box-shadow:inset 0 0 0 1.5px #ff8c1a"></i>missed</span><span><i style="box-shadow:inset 0 0 0 2px #fff"></i>today</span><span><i style="box-shadow:inset 0 0 0 1.5px #8e8e8e"></i>moved</span></div><div class="flatstats" style="margin-top:12px"><div><small>ON PLAN</small><b>5 of 6</b></div><div><small>THIS WEEK</small><b>2 of 4</b></div><div><small>MISSED</small><b>1</b></div></div></div><div class="homebar"></div></div><div class="cap"><b><em>C1</em>Plan calendar</b><p>Four weeks of planned vs actual: blue = done, orange outline = missed, grey outline = moved by hand (here Push B moved from Fri 13 to Sat 14). Tap any future day to change just that day (C2). "On plan" counts how much of the schedule you hit.</p></div></div><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="body" style=""><div class="date">THURSDAY, NOV 5</div><div class="ttl">Home</div><div class="wstrip"><div><small>S</small><i class="">1</i></div><div><small>M</small><i class="d">2</i></div><div><small>T</small><i class="d">3</i></div><div><small>W</small><i class="">4</i></div><div><small>T</small><i class="t">5</i></div><div><small>F</small><i class="f">6</i></div><div><small>S</small><i class="f">7</i></div></div><div class="lbl">PPL · THIS WEEK<span>Plan ›</span></div><div class="up2"><span class="when t">Today</span><div><b class="">Push A</b><span class="s">5 exercises</span></div><span class="play"><i></i></span></div><div class="up2"><span class="when ">Fri</span><div><b class="">Push B</b><span class="s">4 exercises</span></div><span class="play g"><i></i></span></div><div class="up2"><span class="when ">Sat · Sun</span><div><b class="rest">Rest</b><span class="s"> </span></div></div><div class="up2"><span class="when ">Mon</span><div><b class="">Pull A</b><span class="s">5 exercises</span></div><span class="play g"><i></i></span></div><div class="qrow" style="border-bottom:0"><div class="m"><b style="color:var(--accent)">+ Blank workout</b></div></div></div><div class="tabbar"><span class="on"><i></i>Home</span><span class=""><i></i>Plans</span><span class=""><i></i>History</span><span class=""><i></i>Progress</span><span class=""><i></i>Settings</span></div><div class="scrim"></div><div class="sheet" style=""><div class="grab"></div><h4>Today · Push A</h4><div class="sub">Just for today. Your schedule stays the same.</div><div class="opt ">Do a different routine<span></span></div><div class="opt ">Rest today<span>Push A → Sat</span></div><div class="opt ">Move Push A to…<span></span></div><div class="opt ">Swap with Fri · Push B<span></span></div><div class="note">Long-press a day on Home, the plan screen or the calendar. To change every week, edit the schedule instead.</div></div><div class="homebar"></div></div><div class="cap"><b><em>C2</em>Change one day</b><p>One-off changes without touching the schedule: do another routine, take a rest (and say where the workout goes), move it, or swap two days. Moved days show grey-outlined on the calendar.</p></div></div><div><div class="phone"><div class="status"><span>6:42</span><span class="island"></span><span>●●●</span></div><div class="body" style=""><div class="date">SATURDAY, NOV 7</div><div class="ttl">Home</div><div class="strip" style="margin-top:12px"><div><small>S 1</small><i class="r">R</i></div><div><small>M 2</small><i class="d">PL</i></div><div><small>T 3</small><i class="d">L</i></div><div><small>W 4</small><i class="r">R</i></div><div><small>T 5</small><i class="d">PA</i></div><div><small>F 6</small><i class="m">PB</i></div><div><small>S 7</small><i class="t">R</i></div></div><div class="miss"><b>You missed Push B yesterday.</b> Today is a rest day.<div class="acts"><span>Do it today</span><span style="color:#8e8e8e">Skip it</span></div></div><div class="lbl">PPL · NEXT<span>Plan ›</span></div><div class="up2"><span class="when">Mon</span><div><b>Pull A</b><span class="s">5 exercises</span></div><span class="play g"><i></i></span></div><div class="up2"><span class="when">Tue</span><div><b>Legs</b><span class="s">5 exercises</span></div><span class="play g"><i></i></span></div><div class="up2"><span class="when">Thu</span><div><b>Push A</b><span class="s">5 exercises</span></div><span class="play g"><i></i></span></div></div><div class="tabbar"><span class="on"><i></i>Home</span><span class=""><i></i>Plans</span><span class=""><i></i>History</span><span class=""><i></i>Progress</span><span class=""><i></i>Settings</span></div><div class="homebar"></div></div><div class="cap"><b><em>C3</em>Missed a day</b><p>A quiet orange note on Home the day after, never a guilt screen. "Do it today" moves it into today; "Skip it" marks it missed. With "Wait for me" (cycles) there's no note: the missed workout simply stays next.</p></div></div></div></div><div class="pick" style="border:1px dashed #333;border-radius:12px;padding:14px 16px;font-size:13px;color:#cfcfcf;line-height:1.6;margin-top:30px"><b style="color:#fff">To decide</b><br>• Short labels in the strips (PA / PL / L / PB): auto from the routine name, or let you set a 1–3 letter code per routine?<br>• Missed days, defaults: cycles "Wait for me", weekly "Skip it". Agree?<br>• Allow two workouts in one day (B4), or keep one per day?<br>• Should Home show the plan strip too, or keep its plain day strip and only show the "This week" list?</div></div></body></html>

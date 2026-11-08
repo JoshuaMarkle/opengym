@@ -168,3 +168,63 @@ export function Sparkline({ values, width = 70, height = 26 }: { values: number[
     </svg>
   );
 }
+
+/**
+ * D2 / D3: one bar per week. The current week is blue (it isn't over yet); the
+ * dashed line is the average. Month labels sit under the first week of each month.
+ */
+export function WeeklyBars({ weeks, values, avg, height = 170, format = (v: number) => formatNumber(v, 1) }: { weeks: number[]; values: number[]; avg?: number; height?: number; format?: (v: number) => string }) {
+  const [ref, width] = useWidth<HTMLDivElement>();
+  const padL = 30;
+  const padR = 4;
+  const padT = 8;
+  const padB = 20;
+  const max = Math.max(0, ...values, avg ?? 0);
+  const ticks = niceTicks(0, max > 0 ? max : 1, 3);
+  const hi = ticks[ticks.length - 1] || 1;
+  const iw = Math.max(1, width - padL - padR);
+  const ih = height - padT - padB;
+  const n = Math.max(1, values.length);
+  const slot = iw / n;
+  const bw = Math.max(2, Math.min(22, slot * 0.68));
+  const y = (v: number) => padT + ih - (v / hi) * ih;
+  // A label for the first week of each month, thinned so they don't collide.
+  const labels: { i: number; text: string }[] = [];
+  weeks.forEach((w, i) => {
+    const m = new Date(w).getMonth();
+    const prev = i > 0 ? new Date(weeks[i - 1]).getMonth() : -1;
+    if (i === weeks.length - 1) labels.push({ i, text: 'Now' });
+    else if (m !== prev && i > 0) labels.push({ i, text: monthShort(m) });
+  });
+  const spaced = labels.filter((l, k) => {
+    const next = labels[k + 1];
+    return !next || (next.i - l.i) * slot >= 30;
+  });
+
+  return (
+    <div ref={ref} className="mt-2 w-full">
+      {width > 0 && (
+        <svg width={width} height={height} role="img" aria-label="Weekly totals" className="block overflow-visible">
+          {ticks.map((t) => (
+            <g key={t}>
+              <line x1={padL} x2={width - padR} y1={y(t)} y2={y(t)} stroke="var(--og-chart-grid)" />
+              <text x={0} y={y(t) + 3.5} fill="var(--og-fg2)" fontSize="11">
+                {format(t)}
+              </text>
+            </g>
+          ))}
+          {values.map((v, i) => {
+            const h = Math.max(v > 0 ? 2 : 0, (v / hi) * ih);
+            return <rect key={i} x={padL + slot * i + (slot - bw) / 2} y={padT + ih - h} width={bw} height={h} rx={Math.min(3, bw / 3)} fill={i === values.length - 1 ? '#2e8bff' : 'var(--og-bar)'} />;
+          })}
+          {avg !== undefined && avg > 0 && <line x1={padL} x2={width - padR} y1={y(avg)} y2={y(avg)} stroke="var(--og-fg2)" strokeDasharray="3 3" strokeWidth="1" />}
+          {spaced.map((l) => (
+            <text key={l.i} x={padL + slot * l.i + slot / 2} y={height - 4} fill="var(--og-fg2)" fontSize="11" textAnchor={l.text === 'Now' ? 'end' : 'middle'} dx={l.text === 'Now' ? slot / 2 : 0}>
+              {l.text}
+            </text>
+          ))}
+        </svg>
+      )}
+    </div>
+  );
+}

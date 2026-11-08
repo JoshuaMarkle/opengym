@@ -14,10 +14,14 @@ import { Home } from './screens/home/Home';
 import { InstallGuide } from './screens/onboarding/InstallGuide';
 import { Setup } from './screens/onboarding/Setup';
 import { Welcome } from './screens/onboarding/Welcome';
+import { PlanCalendar } from './screens/plans/PlanCalendar';
 import { Plans } from './screens/plans/Plans';
+import { PlanScreen } from './screens/plans/PlanScreen';
 import { RoutineBuilder } from './screens/plans/RoutineBuilder';
 import { RoutineScreen } from './screens/plans/RoutineScreen';
+import { ScheduleEditor } from './screens/plans/ScheduleEditor';
 import { LiftDetail } from './screens/progress/LiftDetail';
+import { CardioMachine, DistanceRecords } from './screens/progress/Cardio';
 import { PinnedLifts } from './screens/progress/PinnedLifts';
 import { Progress } from './screens/progress/Progress';
 import { ImportScreen } from './screens/settings/ImportScreen';
@@ -50,6 +54,8 @@ function AppRoutes() {
         <Route path="history" element={<History />} />
         <Route path="progress" element={<Progress />} />
         <Route path="progress/lift/:id" element={<LiftDetail />} />
+        <Route path="progress/cardio/:id" element={<CardioMachine />} />
+        <Route path="progress/cardio-records" element={<DistanceRecords />} />
         <Route path="settings" element={<Settings />} />
         <Route path="settings/:key" element={<SettingPicker />} />
       </Route>
@@ -57,6 +63,9 @@ function AppRoutes() {
       <Route path="progress/pinned" element={<PinnedLifts />} />
       <Route path="history/:id" element={<WorkoutDetail />} />
       <Route path="history/:id/edit" element={<EditWorkout />} />
+      <Route path="plan/:id" element={<PlanScreen />} />
+      <Route path="plan/:id/schedule" element={<ScheduleEditor />} />
+      <Route path="plan/:id/calendar" element={<PlanCalendar />} />
       <Route path="routine/new" element={<RoutineBuilder />} />
       <Route path="routine/:id" element={<RoutineScreen />} />
       <Route path="routine/:id/edit" element={<RoutineBuilder />} />

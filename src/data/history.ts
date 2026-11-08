@@ -1,5 +1,7 @@
 import { db } from '../db/db';
-import type { Workout, WorkoutExercise, WorkoutSet } from '../db/types';
+import type { ExerciseType, Workout, WorkoutExercise, WorkoutSet } from '../db/types';
+import { cardioTotals } from '../lib/cardio';
+import type { CardioSession } from '../lib/cardioStats';
 import { orderSets } from '../lib/sets';
 
 export interface HistoryExercise {
@@ -97,4 +99,41 @@ export function lastSession(history: HistoryIndex, exerciseId: string, before?: 
   const list = history.sessionsByExercise.get(exerciseId);
   if (!list) return undefined;
   return before === undefined ? list[0] : list.find((s) => s.date < before);
+}
+
+/** Lift sets and cardio totals of one workout (Summary, Workout detail, History rows). */
+export function workoutTotals(hw: HistoryWorkout, typeOf: (exerciseId: string) => ExerciseType | undefined) {
+  let liftSets = 0;
+  let cardioSec = 0;
+  let cardioMeters: number | undefined;
+  let cardioCount = 0;
+  for (const e of hw.exercises) {
+    if (typeOf(e.we.exerciseId) === 'cardio') {
+      const t = cardioTotals(e.sets);
+      cardioSec += t.durationSec;
+      if (t.distance != null) cardioMeters = (cardioMeters ?? 0) + t.distance;
+      cardioCount++;
+    } else liftSets += e.sets.length;
+  }
+  return { liftSets, cardioSec, cardioMeters, cardioCount, liftCount: hw.exercises.length - cardioCount };
+}
+
+/** "4 exercises · 14 sets · 20 min cardio" for list rows. */
+export function workoutLine(hw: HistoryWorkout, typeOf: (exerciseId: string) => ExerciseType | undefined, withExercises = true): string {
+  const t = workoutTotals(hw, typeOf);
+  const parts: string[] = [];
+  if (withExercises) parts.push(`${hw.exercises.length} ${hw.exercises.length === 1 ? 'exercise' : 'exercises'}`);
+  if (t.liftCount || !t.cardioCount) parts.push(`${t.liftSets} ${t.liftSets === 1 ? 'set' : 'sets'}`);
+  if (t.cardioCount) parts.push(`${Math.round(t.cardioSec / 60)} min cardio`);
+  return parts.join(' · ');
+}
+
+/** Every finished cardio session, newest first (Progress → Cardio). */
+export function cardioSessions(history: HistoryIndex, isCardio: (exerciseId: string) => boolean, only?: (exerciseId: string) => boolean): CardioSession[] {
+  const out: CardioSession[] = [];
+  for (const [exerciseId, list] of history.sessionsByExercise) {
+    if (!isCardio(exerciseId) || (only && !only(exerciseId))) continue;
+    for (const s of list) out.push({ workoutId: s.workoutId, exerciseId, date: s.date, sets: s.sets });
+  }
+  return out.sort((a, b) => b.date - a.date);
 }

@@ -10,6 +10,7 @@ import type {
   WorkoutExercise,
   WorkoutSet,
 } from './types';
+import { TEST_MODE } from './testMode';
 
 export class OpenGymDB extends Dexie {
   exercises!: EntityTable<Exercise, 'id'>;
@@ -52,7 +53,7 @@ export class OpenGymDB extends Dexie {
   }
 }
 
-export const db = new OpenGymDB();
+export const db = new OpenGymDB(TEST_MODE ? 'opengym-test' : 'opengym');
 
 export const TABLE_NAMES = [
   'exercises',

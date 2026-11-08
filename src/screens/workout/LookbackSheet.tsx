@@ -49,6 +49,10 @@ export function LookbackSheet({
         </button>
       }
     >
+      {exercise.type === 'cardio' ? (
+        <HistoryView exercise={exercise} />
+      ) : (
+        <>
       <div className="sticky top-0 z-[2] -mx-4 bg-raised px-4 pt-2 pb-1">
         <Segmented
           options={[
@@ -63,6 +67,8 @@ export function LookbackSheet({
       {tab === 'history' && <HistoryView exercise={exercise} />}
       {tab === 'charts' && <ChartsView exercise={exercise} metric={metric} onMetric={setMetric} />}
       {tab === 'records' && <RecordsView exercise={exercise} currentReps={currentReps} />}
+        </>
+      )}
     </Sheet>
   );
 }

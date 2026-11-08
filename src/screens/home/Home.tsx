@@ -1,13 +1,18 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Button, cx, EmptyState, LabelAction, LargeHeader, PlayButton, Screen, SectionLabel } from '../../components/ui';
+import { useLongPress } from '../../components/gestures';
+import { Button, Check, cx, EmptyState, LabelAction, LargeHeader, PlayButton, Screen, SectionLabel } from '../../components/ui';
 import { useActiveWorkout, useData, type ActiveWorkoutData } from '../../data/DataProvider';
+import { changeDays, skipMissed, usePlanView, type PlanView } from '../../data/schedule';
 import { usePlans } from '../../data/usePlans';
+import type { Folder } from '../../db/types';
 import { useStartWorkout } from '../../hooks/StartWorkout';
 import { useNow } from '../../hooks/useNow';
 import { addDays, dayKey, fmtClock, fmtHomeDate, fmtRelativeDay, startOfDay, startOfWeek, weekdayLetter } from '../../lib/dates';
 import { pickNextUp } from '../../lib/nextUp';
+import { doItTodayPatch, missedYesterday, type PlanDay } from '../../lib/schedule';
 import { setLabels } from '../../lib/sets';
+import { DaySheet, dayLabel } from '../plans/PlanParts';
 
 /** 3.1 / 3.2 / 1.4: this week, the running workout, and the active folder one tap from starting. */
 export function Home() {
@@ -29,6 +34,9 @@ export function Home() {
     .map((x) => x.r);
   const nextId = pickNextUp(shown, history.lastDoneByRoutine);
   const hasRoutines = !!plans && plans.routines.length > 0;
+
+  const planView = usePlanView(folder, -1, 13);
+  const scheduled = !!planView?.scheduled;
 
   const trained = useMemo(() => new Set(history.workouts.map((w) => dayKey(w.workout.startedAt))), [history]);
 
@@ -52,31 +60,37 @@ export function Home() {
         </div>
       ) : (
         <>
-          <SectionLabel action={<LabelAction onClick={() => navigate('/plans')}>Plans ›</LabelAction>}>{folder?.name ?? 'Routines'}</SectionLabel>
-          {shown.map((r) => {
-            const last = history.lastDoneByRoutine.get(r.id);
-            const isNext = r.id === nextId;
-            const names = (plans.exercisesByRoutine.get(r.id) ?? []).map((id) => exerciseMap.get(id)?.name).filter(Boolean);
-            return (
-              <div key={r.id} className="flex min-h-[58px] items-center gap-3 border-b border-line">
-                <button type="button" onClick={() => navigate(`/routine/${r.id}`)} className="min-w-0 flex-1 py-2 text-left active:opacity-70">
-                  <b className="flex items-center text-[16px] font-semibold">
-                    <span className="truncate">{r.name}</span>
-                    {isNext && <span className="ml-2 flex-none rounded-[4px] bg-accent px-[5px] py-[1px] text-[10px] font-bold text-white">NEXT</span>}
-                  </b>
-                  <span className="block truncate text-[13px] text-fg2">
-                    {last ? `Last done ${fmtRelativeDay(last, now)}` : names.length ? `Never done · ${names.length} exercises` : 'Never done'}
-                  </span>
+          {scheduled && folder ? (
+            <ScheduledList folder={folder} view={planView} runningId={runningId} />
+          ) : (
+            <>
+              <SectionLabel action={<LabelAction onClick={() => navigate('/plans')}>Plans ›</LabelAction>}>{folder?.name ?? 'Routines'}</SectionLabel>
+              {shown.map((r) => {
+                const last = history.lastDoneByRoutine.get(r.id);
+                const isNext = r.id === nextId;
+                const names = (plans.exercisesByRoutine.get(r.id) ?? []).map((id) => exerciseMap.get(id)?.name).filter(Boolean);
+                return (
+                  <div key={r.id} className="flex min-h-[58px] items-center gap-3 border-b border-line">
+                    <button type="button" onClick={() => navigate(`/routine/${r.id}`)} className="min-w-0 flex-1 py-2 text-left active:opacity-70">
+                      <b className="flex items-center text-[16px] font-semibold">
+                        <span className="truncate">{r.name}</span>
+                        {isNext && <span className="ml-2 flex-none rounded-[4px] bg-accent px-[5px] py-[1px] text-[10px] font-bold text-white">NEXT</span>}
+                      </b>
+                      <span className="block truncate text-[13px] text-fg2">
+                        {last ? `Last done ${fmtRelativeDay(last, now)}` : names.length ? `Never done · ${names.length} exercises` : 'Never done'}
+                      </span>
+                    </button>
+                    <PlayButton primary={isNext} label={`Start ${r.name}`} onClick={() => start.startRoutine(r.id, r.name)} />
+                  </div>
+                );
+              })}
+              {!shown.length && folderRoutines.length > 0 && <p className="border-b border-line py-3 text-[13px] text-fg2">Every routine in this folder is running.</p>}
+              {!folderRoutines.length && (
+                <button type="button" onClick={() => navigate('/plans')} className="block w-full border-b border-line py-3 text-left text-[13px] text-fg2">
+                  {folder ? `${folder.name} is empty. Add routines in Plans.` : 'No active folder. Pick one in Plans.'}
                 </button>
-                <PlayButton primary={isNext} label={`Start ${r.name}`} onClick={() => start.startRoutine(r.id, r.name)} />
-              </div>
-            );
-          })}
-          {!shown.length && folderRoutines.length > 0 && <p className="border-b border-line py-3 text-[13px] text-fg2">Every routine in this folder is running.</p>}
-          {!folderRoutines.length && (
-            <button type="button" onClick={() => navigate('/plans')} className="block w-full border-b border-line py-3 text-left text-[13px] text-fg2">
-              {folder ? `${folder.name} is empty. Add routines in Plans.` : 'No active folder. Pick one in Plans.'}
-            </button>
+              )}
+            </>
           )}
           <button type="button" onClick={start.startBlank} className="flex h-[54px] w-full items-center text-[16px] font-semibold text-accent active:opacity-70">
             + Blank workout
@@ -159,6 +173,142 @@ function LiveBlock({ data }: { data: ActiveWorkoutData }) {
       <Button size="md" className="mt-3" onClick={() => navigate('/workout')}>
         Resume
       </Button>
+    </div>
+  );
+}
+
+type HomeItem = { kind: 'workout'; day: PlanDay } | { kind: 'rest'; days: PlanDay[] };
+
+/** A3: with a schedule, Home follows it. Today first, then the next few days; rest days collapse into one line. */
+function ScheduledList({ folder, view, runningId }: { folder: Folder; view: PlanView; runningId?: string }) {
+  const navigate = useNavigate();
+  const start = useStartWorkout();
+  const [sheetDay, setSheetDay] = useState<PlanDay | null>(null);
+  const { today, days, plans } = view;
+  const missed = folder.schedule ? missedYesterday(days, today, folder.schedule) : undefined;
+  const ahead = days.filter((d) => d.key >= today);
+  const todayDay = ahead[0];
+
+  const items: HomeItem[] = [];
+  let workouts = 0;
+  for (const d of ahead) {
+    if (workouts >= 3) break;
+    if (d.planned) {
+      items.push({ kind: 'workout', day: d });
+      workouts++;
+    } else {
+      const last = items[items.length - 1];
+      if (last?.kind === 'rest') last.days.push(d);
+      else items.push({ kind: 'rest', days: [d] });
+    }
+  }
+  // C3: the note already says today is a rest day.
+  if (missed && items[0]?.kind === 'rest' && items[0].days[0].key === today) items.shift();
+  const firstUp = items.find((it): it is { kind: 'workout'; day: PlanDay } => it.kind === 'workout' && it.day.state !== 'done' && it.day.planned !== runningId);
+  const exCount = (rid: string) => plans.exercisesByRoutine.get(rid)?.length ?? 0;
+  const restLabel = (ds: PlanDay[]) => {
+    const names = ds.map((d) => dayLabel(d, today, false));
+    return names.length <= 2 ? names.join(' · ') : `${names[0]} – ${names[names.length - 1]}`;
+  };
+
+  return (
+    <>
+      {missed && (
+        <div className="mt-4 border-l-2 border-warn py-0.5 pl-3">
+          <p className="text-[14px] leading-snug">
+            <b className="font-semibold text-warn">You missed {view.routineName(missed.planned)} yesterday.</b>{' '}
+            <span className="text-fg2">{todayDay?.planned ? `Today is ${view.routineName(todayDay.planned)}.` : 'Today is a rest day.'}</span>
+          </p>
+          <div className="mt-1 flex gap-4">
+            <button type="button" onClick={() => void changeDays(folder.id, doItTodayPatch(missed, today))} className="flex h-11 items-center text-[15px] font-semibold text-accent active:opacity-60">
+              Do it today
+            </button>
+            <button type="button" onClick={() => void skipMissed(folder.id, missed.key)} className="flex h-11 items-center text-[15px] text-fg2 active:opacity-60">
+              Skip it
+            </button>
+          </div>
+        </div>
+      )}
+      <SectionLabel action={<LabelAction onClick={() => navigate(`/plan/${folder.id}`)}>Plan ›</LabelAction>}>
+        {`${folder.name} · ${todayDay?.planned ? 'This week' : 'Next'}`}
+      </SectionLabel>
+      {items.map((it) =>
+        it.kind === 'rest' ? (
+          <HomeRestRow key={it.days[0].key} label={restLabel(it.days)} onHold={() => setSheetDay(it.days[0])} />
+        ) : (
+          <HomeDayRow
+            key={it.day.key}
+            day={it.day}
+            today={today}
+            name={view.routineName(it.day.planned)}
+            detail={
+              it.day.state === 'done'
+                ? 'done'
+                : it.day.planned === runningId
+                  ? 'in progress'
+                  : it.day.movedFrom
+                    ? `moved from ${dayLabel({ key: it.day.movedFrom }, today, false)}`
+                    : `${exCount(it.day.planned!)} exercises`
+            }
+            primary={it === firstUp}
+            onOpen={() => navigate(`/routine/${it.day.planned}`)}
+            onHold={() => setSheetDay(it.day)}
+            onStart={() => start.startRoutine(it.day.planned!, view.routineName(it.day.planned))}
+          />
+        ),
+      )}
+      {!items.length && <p className="border-b border-line py-3 text-[13px] text-fg2">Nothing planned in the next two weeks.</p>}
+      {sheetDay && <DaySheet folder={folder} day={sheetDay} view={view} onClose={() => setSheetDay(null)} />}
+    </>
+  );
+}
+
+function HomeDayRow({
+  day,
+  today,
+  name,
+  detail,
+  primary,
+  onOpen,
+  onHold,
+  onStart,
+}: {
+  day: PlanDay;
+  today: string;
+  name: string;
+  detail: string;
+  primary: boolean;
+  onOpen: () => void;
+  onHold: () => void;
+  onStart: () => void;
+}) {
+  const hold = useLongPress(onHold);
+  return (
+    <div className="flex min-h-[58px] items-center gap-3 border-b border-line">
+      <button type="button" {...hold} onClick={onOpen} className="no-select flex min-w-0 flex-1 items-center gap-3 py-2 text-left active:opacity-70">
+        <span className={cx('w-[52px] flex-none text-[13px]', day.key === today ? 'font-bold text-fg' : 'text-fg2')}>{dayLabel(day, today, false)}</span>
+        <span className="min-w-0 flex-1">
+          <b className="block truncate text-[16px] font-semibold">{name}</b>
+          <span className="block truncate text-[13px] text-fg2">{detail}</span>
+        </span>
+      </button>
+      {day.state === 'done' ? (
+        <span className="flex h-11 w-11 flex-none items-center justify-center" aria-label="done">
+          <Check on />
+        </span>
+      ) : (
+        <PlayButton primary={primary} label={`Start ${name}`} onClick={onStart} />
+      )}
+    </div>
+  );
+}
+
+function HomeRestRow({ label, onHold }: { label: string; onHold: () => void }) {
+  const hold = useLongPress(onHold);
+  return (
+    <div {...hold} className="no-select flex min-h-11 items-center gap-3 border-b border-line text-[13px] text-fg2">
+      <span className="min-w-[52px] flex-none whitespace-nowrap">{label}</span>
+      <span className="flex-1">Rest</span>
     </div>
   );
 }

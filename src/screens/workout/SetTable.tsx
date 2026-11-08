@@ -3,6 +3,7 @@ import { SwipeRow } from '../../components/gestures';
 import { CheckGlyph } from '../../components/icons';
 import { cx, DropBadge } from '../../components/ui';
 import type { Exercise, Units, WorkoutSet } from '../../db/types';
+import { carryOver } from '../../lib/carryOver';
 import { matchPrevious } from '../../lib/previous';
 import { formatRepRange, formatSet, hasWeightColumn, setLabels, weightColumnLabel } from '../../lib/sets';
 import { formatWeight, unitColumn } from '../../lib/units';
@@ -11,7 +12,8 @@ export type Field = 'weight' | 'reps';
 
 export interface EditingCell {
   setId: string;
-  field: Field;
+  /** 'weight' | 'reps' for lifts, a CardioField for cardio. */
+  field: string;
   text: string;
 }
 
@@ -77,6 +79,8 @@ export function SetTable({
   const showWeight = hasWeightColumn(exercise.type);
   const labels = useMemo(() => setLabels(sets), [sets]);
   const prev = useMemo(() => matchPrevious(sets, previous), [sets, previous]);
+  // Empty cells show the set above's numbers in grey; ticking logs them.
+  const carry = useMemo(() => carryOver(sets), [sets]);
   const currentId = sets.find((s) => !s.completed)?.id;
   const cols = showWeight ? 'grid-cols-[34px_minmax(0,1fr)_74px_58px_46px]' : 'grid-cols-[34px_minmax(0,1fr)_74px_46px]';
 
@@ -98,9 +102,16 @@ export function SetTable({
           const ghost = !s.completed && !isCur;
           const editW = editing?.setId === s.id && editing.field === 'weight';
           const editR = editing?.setId === s.id && editing.field === 'reps';
+          const c = s.completed ? undefined : carry.get(s.id);
           const wText = weightCellText(s.weight, exercise, units);
-          const wPlaceholder = !wText && barPlaceholderLb != null && exercise.type === 'weight' ? formatWeight(barPlaceholderLb, units) : '';
-          const range = formatRepRange(s.repsMin, s.repsMax);
+          const wPlaceholder = wText
+            ? ''
+            : c?.weight != null
+              ? weightCellText(c.weight, exercise, units)
+              : barPlaceholderLb != null && exercise.type === 'weight'
+                ? formatWeight(barPlaceholderLb, units)
+                : '';
+          const rPlaceholder = c?.reps != null ? String(c.reps) : formatRepRange(s.repsMin, s.repsMax);
           return (
             <SwipeRow
               key={s.id}
@@ -157,7 +168,7 @@ export function SetTable({
                 <Cell
                   editing={editR}
                   text={editR ? editing!.text : s.reps != null ? String(s.reps) : ''}
-                  placeholder={range}
+                  placeholder={rPlaceholder}
                   tone={s.completed ? 'done' : isCur ? 'current' : 'ghost'}
                   onClick={() => onEdit(s, 'reps')}
                   label={`Set ${label} reps`}
@@ -188,7 +199,7 @@ export function SetTable({
   );
 }
 
-function Cell({
+export function Cell({
   text,
   placeholder,
   editing,
@@ -215,7 +226,8 @@ function Cell({
       >
         {text ? (
           <span className="truncate">{text}</span>
-        ) : editing ? null : (
+        ) : (
+          // Still shown while editing an empty cell: Next / ✓ logs this value unless you type over it.
           <span className="truncate text-[13px] font-medium text-fg2">{placeholder}</span>
         )}
         {editing && <span className="ml-[1px] h-[17px] w-[1.5px] animate-pulse bg-accent" />}

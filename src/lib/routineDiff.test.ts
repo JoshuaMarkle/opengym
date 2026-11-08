@@ -34,3 +34,15 @@ describe('diffRoutine', () => {
     expect(diffRoutine(routine, workout)).toEqual([{ type: 'warmups', exerciseId: 'bench', from: 1, to: 2 }]);
   });
 });
+
+describe('supersets', () => {
+  const it3 = (exerciseId: string, supersetGroup?: string) => ({ exerciseId, warmups: 0, working: 3, supersetGroup });
+  it('a superset made during the workout is a change', () => {
+    const c = diffRoutine([it3('bench'), it3('row'), it3('dips')], [it3('bench', 'A'), it3('row', 'A'), it3('dips')]);
+    expect(c).toEqual([{ type: 'superset', exerciseIds: ['bench', 'row'] }]);
+  });
+  it('breaking one up is a change; the same group is not', () => {
+    expect(diffRoutine([it3('bench', 'A'), it3('row', 'A')], [it3('bench'), it3('row')])).toEqual([{ type: 'unlinked', exerciseIds: ['bench', 'row'] }]);
+    expect(diffRoutine([it3('bench', 'A'), it3('row', 'A')], [it3('bench', 'A'), it3('row', 'A')])).toEqual([]);
+  });
+});

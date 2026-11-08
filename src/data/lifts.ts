@@ -67,7 +67,7 @@ export function defaultPinned(
   n = 6,
 ): string[] {
   return [...history.sessionsByExercise.entries()]
-    .filter(([id]) => isLive(id))
+    .filter(([id]) => isLive(id) && typeOf(id) !== 'cardio')
     .map(([id, sessions]) => {
       const type = typeOf(id) ?? 'weight';
       const counted = sessions.filter((s) => sessionMetric(s.sets, type, formula));
@@ -80,7 +80,7 @@ export function defaultPinned(
 }
 
 /** Progress shows data once any exercise has two sessions (7.6). */
-export function hasEnoughForProgress(history: HistoryIndex): boolean {
-  for (const s of history.sessionsByExercise.values()) if (s.length >= 2) return true;
+export function hasEnoughForProgress(history: HistoryIndex, isCardio: (id: string) => boolean = () => false): boolean {
+  for (const [id, s] of history.sessionsByExercise) if (s.length >= 2 && !isCardio(id)) return true;
   return false;
 }

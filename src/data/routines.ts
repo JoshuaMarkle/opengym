@@ -2,6 +2,7 @@ import { db } from '../db/db';
 import type { Folder, Routine, RoutineExercise, RoutineSet } from '../db/types';
 import { uuid } from '../lib/id';
 import { orderSets } from '../lib/sets';
+import { normalizeSupersets } from '../lib/supersets';
 
 const now = () => Date.now();
 
@@ -120,6 +121,8 @@ export interface DraftExercise {
   key: string;
   exerciseId: string;
   sets: DraftSet[];
+  /** Superset letter; members sit next to each other (B1). */
+  supersetGroup?: string;
 }
 
 export interface RoutineDraft {
@@ -127,6 +130,8 @@ export interface RoutineDraft {
   name: string;
   folderId?: string;
   notes?: string;
+  /** Strip label override (1–3 letters); empty = derived from the name. */
+  code?: string;
   exercises: DraftExercise[];
 }
 
@@ -143,10 +148,13 @@ export async function loadRoutineDraft(routineId: string): Promise<RoutineDraft 
       key: re.id,
       exerciseId: re.exerciseId,
       sets: [...warm, ...work].map((s) => ({ key: s.id, kind: s.kind, weight: s.weight, repsMin: s.repsMin, repsMax: s.repsMax })),
+      ...(re.supersetGroup ? { supersetGroup: re.supersetGroup } : {}),
     });
   }
-  return { id: r.id, name: r.name, folderId: r.folderId, notes: r.notes, exercises };
+  return { id: r.id, name: r.name, folderId: r.folderId, notes: r.notes, code: r.code, exercises: normalizeSupersets(exercises) };
 }
+
+const cleanCode = (c?: string) => c?.replace(/[^\p{L}\p{N}]/gu, '').slice(0, 3).toUpperCase() || undefined;
 
 /** Builder Save: write the routine and replace its exercises and sets. */
 export async function saveRoutine(draft: RoutineDraft): Promise<string> {
@@ -161,7 +169,7 @@ export async function saveRoutine(draft: RoutineDraft): Promise<string> {
     const existing = id ? await db.routines.get(id) : undefined;
     if (existing) {
       const order = existing.folderId === folderId ? existing.order : await nextOrderIn(folderId);
-      await db.routines.update(existing.id, { name: draft.name.trim() || 'Routine', folderId, notes: draft.notes?.trim() || undefined, order, updatedAt: t });
+      await db.routines.update(existing.id, { name: draft.name.trim() || 'Routine', folderId, notes: draft.notes?.trim() || undefined, code: cleanCode(draft.code), order, updatedAt: t });
       const old = await db.routineExercises.where('routineId').equals(existing.id).toArray();
       await db.routineSets.where('routineExerciseId').anyOf(old.map((o) => o.id)).delete();
       await db.routineExercises.where('routineId').equals(existing.id).delete();
@@ -174,14 +182,15 @@ export async function saveRoutine(draft: RoutineDraft): Promise<string> {
         name: draft.name.trim() || 'Routine',
         folderId,
         notes: draft.notes?.trim() || undefined,
+        code: cleanCode(draft.code),
         order: await nextOrderIn(folderId),
       };
       await db.routines.add(r);
     }
     const res: RoutineExercise[] = [];
     const sets: RoutineSet[] = [];
-    draft.exercises.forEach((ex, i) => {
-      const re: RoutineExercise = { id: uuid(), createdAt: t, updatedAt: t, routineId: id!, exerciseId: ex.exerciseId, order: i };
+    normalizeSupersets(draft.exercises).forEach((ex, i) => {
+      const re: RoutineExercise = { id: uuid(), createdAt: t, updatedAt: t, routineId: id!, exerciseId: ex.exerciseId, order: i, supersetGroup: ex.supersetGroup };
       res.push(re);
       const ordered = [...ex.sets.filter((s) => s.kind === 'warmup'), ...ex.sets.filter((s) => s.kind === 'working')];
       ordered.forEach((s, j) =>
@@ -208,7 +217,7 @@ export async function duplicateRoutine(routineId: string): Promise<string | unde
   const draft = await loadRoutineDraft(routineId);
   if (!draft) return undefined;
   const r = await db.routines.get(routineId);
-  const newId = await saveRoutine({ ...draft, id: undefined, name: `${draft.name} copy` });
+  const newId = await saveRoutine({ ...draft, id: undefined, name: `${draft.name} copy`, code: undefined });
   // Place the copy right after the original.
   if (r) {
     await db.transaction('rw', db.routines, async () => {
@@ -235,6 +244,7 @@ export async function routineFromWorkout(workoutId: string, folderId?: string): 
       key: we.id,
       exerciseId: we.exerciseId,
       sets: sets.map((s) => ({ key: s.id, kind: s.kind as 'warmup' | 'working', weight: 'last' as const })),
+      supersetGroup: we.supersetGroup,
     });
   }
   if (!folderId) folderId = (await liveFolders()).find((f) => f.active)?.id;

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router';
 import { SwipeRow } from '../../components/gestures';
 import { ChevronRight } from '../../components/icons';
-import { Keypad } from '../../components/Keypad';
+import { Keypad, type KeypadTab } from '../../components/Keypad';
 import { Alert, HoldMenu, Sheet, SheetOption, type MenuItem } from '../../components/overlays';
 import { BarButton, Button, cx, FieldLabel, Tag, TopBar } from '../../components/ui';
 import { exerciseOrMissing, useData } from '../../data/DataProvider';
@@ -11,14 +11,33 @@ import { saveWorkoutEdits, type EditedExercise, type EditedSet } from '../../dat
 import type { Exercise } from '../../db/types';
 import { fmtDay, fmtTime, fromLocalInputValue, toLocalInputValue } from '../../lib/dates';
 import { uuid } from '../../lib/id';
-import { applyKey, parseRepsText, parseWeightText, type KeypadKey } from '../../lib/keypad';
+import {
+  cardioColumns,
+  cardioFields,
+  columnHeader,
+  columnText,
+  editTextOf,
+  FIELD_NAME,
+  fieldPatch,
+  fieldTab,
+  fieldValue,
+  formatField,
+  isComputed,
+  keypadFor,
+  parseFieldText,
+  type CardioField,
+} from '../../lib/cardio';
+import { applyKey, parseRepsText, parseWeightText, type KeypadKey, type KeypadOptions } from '../../lib/keypad';
 import { dropWeight } from '../../lib/prefill';
 import { hasWeightColumn, isEmptySet, setLabels, TYPE_TAG, weightColumnLabel } from '../../lib/sets';
+import { moveBlock, normalizeSupersets, supersetBlocks, supersetTags, unlinkSuperset } from '../../lib/supersets';
 import { fromDisplay, unitColumn, unitLabel } from '../../lib/units';
 import { ExercisePicker } from '../exercises/ExercisePicker';
 import { weightCellText, weightEditDisplay, weightEditText, weightFromEdit } from '../workout/SetTable';
+import { TagPill } from '../workout/WorkoutScreen';
 
-type Field = 'weight' | 'reps';
+/** 'weight' | 'reps', or a cardio field. */
+type Field = string;
 interface Editing {
   exKey: string;
   setKey: string;
@@ -41,7 +60,20 @@ export function EditWorkout() {
           exercises: hw.exercises.map<EditedExercise>((e) => ({
             key: e.we.id,
             exerciseId: e.we.exerciseId,
-            sets: e.sets.map((s) => ({ key: s.id, kind: s.kind, parentKey: s.parentSetId, weight: s.weight, reps: s.reps })),
+            supersetGroup: e.we.supersetGroup,
+            sets: e.sets.map((s) => ({
+              key: s.id,
+              kind: s.kind,
+              parentKey: s.parentSetId,
+              weight: s.weight,
+              reps: s.reps,
+              ...(s.durationSec != null && { durationSec: s.durationSec }),
+              ...(s.distance != null && { distance: s.distance }),
+              ...(s.speed != null && { speed: s.speed }),
+              ...(s.incline != null && { incline: s.incline }),
+              ...(s.level != null && { level: s.level }),
+              ...(s.calories != null && { calories: s.calories }),
+            })),
           })),
         }
       : null,
@@ -93,7 +125,8 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
   const addSet = (exKey: string) =>
     updateEx(exKey, (e) => {
       const last = [...e.sets].reverse().find((s) => s.kind === 'working');
-      return { ...e, sets: [...e.sets, { key: uuid(), kind: 'working', weight: last?.weight, reps: last?.reps }] };
+      // Copy the last set's numbers (weight/reps, or a cardio segment's values).
+      return { ...e, sets: [...e.sets, { ...last, key: uuid(), kind: 'working', parentKey: undefined }] };
     });
 
   const addDrop = (exKey: string, ex: Exercise) =>
@@ -122,42 +155,69 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
       return { ...e, sets: normalize([...e.sets.slice(0, i + 1), { ...e.sets[i], key: uuid() }, ...e.sets.slice(i + 1)]) };
     });
 
-  const moveEx = (exKey: string, d: number) =>
-    setExercises((l) => {
-      const i = l.findIndex((e) => e.key === exKey);
-      const j = i + d;
-      if (j < 0 || j >= l.length) return l;
-      const n = [...l];
-      [n[i], n[j]] = [n[j], n[i]];
-      return n;
-    });
+  // A superset moves as one block.
+  const moveEx = (exKey: string, d: -1 | 1) => setExercises((l) => moveBlock(l, exKey, d));
+  const tags = supersetTags(exercises);
+  const blocks = supersetBlocks(exercises);
+  const blockIndex = (key: string) => blocks.findIndex((b) => b.items.some((x) => x.key === key));
 
   // keypad
   const editingEx = editing ? exercises.find((e) => e.key === editing.exKey) : undefined;
   const editingSet = editingEx?.sets.find((s) => s.key === editing?.setKey);
   const editingExercise = editingEx ? exerciseOrMissing(exerciseMap, editingEx.exerciseId) : undefined;
 
-  const startEdit = (exKey: string, s: EditedSet, field: Field, ex: Exercise) =>
-    setEditing({ exKey, setKey: s.key, field, text: field === 'weight' ? weightEditText(s.weight, ex, units) : s.reps != null ? String(s.reps) : '', fresh: true });
+  const textOf = (s: EditedSet, field: Field, ex: Exercise) =>
+    field === 'weight' ? weightEditText(s.weight, ex, units) : field === 'reps' ? (s.reps != null ? String(s.reps) : '') : editTextOf(field as CardioField, fieldValue(s, field as CardioField), ex, units);
+  const startEdit = (exKey: string, s: EditedSet, field: Field, ex: Exercise) => setEditing({ exKey, setKey: s.key, field, text: textOf(s, field, ex), fresh: true });
+  const fieldsOf = (ex: Exercise): Field[] => (ex.type === 'cardio' ? cardioFields(ex) : ex.type === 'bodyweight' ? ['reps'] : ['weight', 'reps']);
+
+  const optionsFor = (ex: Exercise, field: Field): KeypadOptions => {
+    if (field === 'weight') return { mode: 'weight', allowNegative: ex.type === 'assisted' || ex.type === 'bodyweight_plus', step: settings.weightStep };
+    if (field === 'reps') return { mode: 'reps', step: 1 };
+    const k = keypadFor(field as CardioField, ex, units);
+    return { mode: k.mode, step: k.step };
+  };
 
   const onKey = (k: KeypadKey) => {
     if (!editing || !editingSet || !editingExercise) return;
     const ex = editingExercise;
-    const allowNegative = editing.field === 'weight' && (ex.type === 'assisted' || ex.type === 'bodyweight_plus');
-    const text = applyKey(editing.text, editing.fresh, k, { mode: editing.field, allowNegative, step: settings.weightStep });
+    const text = applyKey(editing.text, editing.fresh, k, optionsFor(ex, editing.field));
     setEditing({ ...editing, text, fresh: false });
     if (editing.field === 'weight') {
       const v = parseWeightText(text);
       updateSet(editing.exKey, editing.setKey, { weight: weightFromEdit(v === undefined ? undefined : fromDisplay(v, units), ex) });
-    } else updateSet(editing.exKey, editing.setKey, { reps: parseRepsText(text) });
+    } else if (editing.field === 'reps') updateSet(editing.exKey, editing.setKey, { reps: parseRepsText(text) });
+    else {
+      const f = editing.field as CardioField;
+      updateSet(editing.exKey, editing.setKey, fieldPatch(f, parseFieldText(f, text, ex, units)));
+    }
   };
+
+  /** → Next walks the row's boxes, then the next row; ✓ Done on the last box of the last row closes. */
+  const goNext = () => {
+    if (!editing || !editingSet || !editingExercise || !editingEx) return;
+    const fields = fieldsOf(editingExercise);
+    const fi = fields.indexOf(editing.field);
+    if (fi < fields.length - 1) return startEdit(editing.exKey, editingSet, fields[fi + 1], editingExercise);
+    const nextSet = editingEx.sets[editingEx.sets.findIndex((x) => x.key === editingSet.key) + 1];
+    if (nextSet) startEdit(editing.exKey, nextSet, fields[0], editingExercise);
+    else setEditing(null);
+  };
+
+  // Keep the box being typed into above the keypad.
+  const editKey = editing ? `${editing.setKey}|${editing.field}` : '';
+  useEffect(() => {
+    if (!editKey) return;
+    const id = requestAnimationFrame(() => document.querySelector('.bg-edit')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
+    return () => cancelAnimationFrame(id);
+  }, [editKey]);
 
   const emptyCount = exercises.reduce((n, e) => n + e.sets.filter((s) => isEmptySet(s)).length, 0);
 
   const save = async () => {
     setSaving(true);
     try {
-      await saveWorkoutEdits(id, { name, startedAt, endedAt, exercises });
+      await saveWorkoutEdits(id, { name, startedAt, endedAt, exercises: normalizeSupersets(exercises) });
       navigate(`/history/${id}`, { replace: true });
     } finally {
       setSaving(false);
@@ -170,13 +230,89 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
   const menuItems: MenuItem[] =
     setMenu && menuSet
       ? [
-          ...(menuSet.kind !== 'drop'
+          ...(menuSet.kind !== 'drop' && exerciseOrMissing(exerciseMap, exercises.find((e) => e.key === setMenu.exKey)!.exerciseId).type !== 'cardio'
             ? [{ label: menuSet.kind === 'warmup' ? 'Mark as working set' : 'Mark as warm-up', glyph: menuSet.kind === 'warmup' ? '1' : 'W', onClick: () => toggleWarm(setMenu.exKey, setMenu.setKey) }]
             : []),
           { label: 'Duplicate', glyph: '⧉', onClick: () => duplicateSet(setMenu.exKey, setMenu.setKey) },
           { label: 'Delete', glyph: '✕', tone: 'danger' as const, onClick: () => removeSet(setMenu.exKey, setMenu.setKey) },
         ]
       : [];
+
+  const exHeader = (e: EditedExercise, ex: Exercise) => (
+    <div className="flex items-center gap-2">
+      <b className="min-w-0 flex-1 truncate text-[16px] font-semibold">{ex.name}</b>
+      <button
+        type="button"
+        onClick={() => {
+          setEditing(null);
+          setExMenu(e.key);
+        }}
+        aria-label={`${ex.name} options`}
+        className="-mr-2 flex h-11 w-11 items-center justify-center text-[14px] font-bold tracking-[1px] text-accent"
+      >
+        •••
+      </button>
+    </div>
+  );
+
+  /** Cardio: # | TIME | the exercise's columns. Worked-out columns are grey. */
+  const cardioSection = (e: EditedExercise, ex: Exercise) => {
+    const cols = ['time' as const, ...cardioColumns(ex)];
+    const grid = { gridTemplateColumns: `34px repeat(${cols.length}, minmax(0,1fr))` };
+    return (
+      <section key={e.key} className="border-b border-line pt-3 pb-2">
+        {exHeader(e, ex)}
+        {e.sets.length > 0 && (
+          <div className="grid h-5 items-center gap-2 text-center text-[10.5px] font-bold tracking-[0.05em] text-fg2" style={grid}>
+            <span>#</span>
+            {cols.map((c) => (
+              <span key={c} className="truncate">
+                {columnHeader(c, ex, units)}
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="flex flex-col gap-[2px]">
+          {e.sets.map((s, i) => (
+            <SwipeRow key={s.key} left={{ label: 'Delete', onTrigger: () => removeSet(e.key, s.key) }} onLongPress={(rect) => setSetMenu({ exKey: e.key, setKey: s.key, rect })}>
+              <div className="grid h-10 items-center gap-2" style={grid}>
+                <button
+                  type="button"
+                  aria-label={`Segment ${i + 1} options`}
+                  onClick={(ev) => setSetMenu({ exKey: e.key, setKey: s.key, rect: (ev.currentTarget.parentElement as HTMLElement).getBoundingClientRect() })}
+                  className="flex h-10 items-center justify-center text-[14px] font-bold"
+                >
+                  {i + 1}
+                </button>
+                {cols.map((c) => {
+                  if (c !== 'time' && isComputed(c))
+                    return (
+                      <span key={c} className="truncate text-center text-[15px] font-medium text-fg3">
+                        {columnText(c, s, ex, units) || '—'}
+                      </span>
+                    );
+                  const f = c as CardioField;
+                  const on = editing?.setKey === s.key && editing.field === f;
+                  return (
+                    <EditCell
+                      key={c}
+                      text={on ? editing!.text : formatField(f, fieldValue(s, f), ex, units)}
+                      editing={on}
+                      onClick={() => startEdit(e.key, s, f, ex)}
+                      label={`Segment ${i + 1} ${FIELD_NAME[f]}`}
+                    />
+                  );
+                })}
+              </div>
+            </SwipeRow>
+          ))}
+        </div>
+        <button type="button" onClick={() => addSet(e.key)} className="mt-1 ml-7 h-9 px-1 text-[14px] font-semibold text-accent">
+          + Segment
+        </button>
+      </section>
+    );
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -212,14 +348,17 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
           <ChevronRight size={11} />
         </button>
 
-        {exercises.map((e) => {
+        {blocks.map((b) => {
+          const section = (e: EditedExercise) => {
           const ex = exerciseOrMissing(exerciseMap, e.exerciseId);
+          if (ex.type === 'cardio') return cardioSection(e, ex);
           const labels = setLabels(e.sets.map((s, j) => ({ id: s.key, order: j, kind: s.kind, parentSetId: s.parentKey })));
           const showW = hasWeightColumn(ex.type);
           const cols = showW ? 'grid-cols-[34px_1fr_1fr]' : 'grid-cols-[34px_1fr]';
           return (
             <section key={e.key} className="border-b border-line pt-3 pb-2">
               <div className="flex items-center gap-2">
+                <TagPill tag={tags.get(e.key)} on />
                 <b className="min-w-0 flex-1 truncate text-[16px] font-semibold">
                   {ex.name}
                   {TYPE_TAG[ex.type] && <Tag>{TYPE_TAG[ex.type]}</Tag>}
@@ -284,6 +423,14 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
               </div>
             </section>
           );
+          };
+          if (!b.letter) return section(b.items[0]);
+          return (
+            <div key={`ss-${b.items[0].key}`} className="mt-3 border-l-2 border-accent pl-3">
+              <div className="pt-1 text-[11px] font-bold tracking-[0.07em] text-accent uppercase">Superset {b.letter}</div>
+              {b.items.map(section)}
+            </div>
+          );
         })}
 
         <button
@@ -297,26 +444,45 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
           + Add exercises
         </button>
         <p className="mt-3 text-[12.5px] leading-normal text-fg2">
-          {emptyCount ? `${emptyCount} ${emptyCount === 1 ? 'set has' : 'sets have'} no reps and will be removed on Save. ` : ''}
+          {emptyCount ? `${emptyCount} empty ${emptyCount === 1 ? 'row' : 'rows'} will be removed on Save. ` : ''}
           Records and charts update on Save.
         </p>
       </div>
 
-      {editing && editingSet && editingExercise && (
-        <Keypad
-          title={`${(() => {
-            const l = setLabels(editingEx!.sets.map((s, j) => ({ id: s.key, order: j, kind: s.kind, parentSetId: s.parentKey }))).get(editingSet.key);
-            return l === 'W' ? 'Warm-up' : l === 'D' ? 'Drop set' : `Set ${l}`;
-          })()} · ${editing.field === 'weight' ? 'Weight' : 'Reps'}`}
-          mode={editing.field}
-          onModeChange={editingExercise.type === 'bodyweight' ? undefined : (m) => m !== editing.field && startEdit(editing.exKey, editingSet, m, editingExercise)}
-          weightLabel={units === 'lb' ? 'lbs' : 'kg'}
-          stepLabel={`${settings.weightStep} ${unitLabel(units)}`}
-          allowNegative={editing.field === 'weight' && (editingExercise.type === 'assisted' || editingExercise.type === 'bodyweight_plus')}
-          onKey={onKey}
-          onClose={() => setEditing(null)}
-        />
-      )}
+      {editing && editingSet && editingExercise && (() => {
+        const ex = editingExercise;
+        const cardio = ex.type === 'cardio';
+        const fields = fieldsOf(ex);
+        const fi = fields.indexOf(editing.field);
+        const opts = optionsFor(ex, editing.field);
+        const tabs: KeypadTab[] = fields.map((f) => ({ id: f, label: cardio ? fieldTab(f as CardioField, ex, units) : f === 'weight' ? (units === 'lb' ? 'lbs' : 'kg') : 'reps' }));
+        const who = (() => {
+          const l = setLabels(editingEx!.sets.map((s, j) => ({ id: s.key, order: j, kind: s.kind, parentSetId: s.parentKey }))).get(editingSet.key);
+          return l === 'W' ? 'Warm-up' : l === 'D' ? 'Drop set' : `Set ${l}`;
+        })();
+        return (
+          <Keypad
+            left={cardio ? FIELD_NAME[editing.field as CardioField] : `${who} · ${editing.field === 'weight' ? 'Weight' : 'Reps'}`}
+            tabs={tabs}
+            tab={editing.field}
+            onTab={(f) => f !== editing.field && startEdit(editing.exKey, editingSet, f, ex)}
+            next={{ done: fi === fields.length - 1, onPress: goNext }}
+            bottomLeft={
+              editing.field === 'weight'
+                ? { key: 'minus', enabled: !!opts.allowNegative }
+                : editing.field === 'reps'
+                  ? { key: 'dash', enabled: false }
+                  : opts.mode === 'time'
+                    ? { key: 'colon', enabled: true }
+                    : { key: 'minus', enabled: false }
+            }
+            decimal={editing.field === 'weight' || opts.mode === 'decimal'}
+            stepLabel={editing.field === 'weight' ? `${settings.weightStep} ${unitLabel(units)}` : editing.field === 'reps' ? '1 rep' : keypadFor(editing.field as CardioField, ex, units).stepLabel}
+            onKey={onKey}
+            onClose={() => setEditing(null)}
+          />
+        );
+      })()}
 
       <TimeSheet
         open={overlay === 'time'}
@@ -340,8 +506,19 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
             >
               Replace exercise…
             </SheetOption>
+            {tags.get(exMenuItem.key) && (
+              <SheetOption
+                onClick={() => {
+                  setExercises((l) => unlinkSuperset(l, exMenuItem.key));
+                  setExMenu(null);
+                }}
+                detail={tags.get(exMenuItem.key)}
+              >
+                Unlink superset
+              </SheetOption>
+            )}
             <SheetOption
-              disabled={exercises[0]?.key === exMenuItem.key}
+              disabled={blockIndex(exMenuItem.key) <= 0}
               onClick={() => {
                 moveEx(exMenuItem.key, -1);
                 setExMenu(null);
@@ -350,7 +527,7 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
               Move up
             </SheetOption>
             <SheetOption
-              disabled={exercises[exercises.length - 1]?.key === exMenuItem.key}
+              disabled={blockIndex(exMenuItem.key) === blocks.length - 1}
               onClick={() => {
                 moveEx(exMenuItem.key, 1);
                 setExMenu(null);
@@ -361,7 +538,7 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
             <SheetOption
               tone="danger"
               onClick={() => {
-                setExercises((l) => l.filter((x) => x.key !== exMenuItem.key));
+                setExercises((l) => unlinkSuperset(l, exMenuItem.key).filter((x) => x.key !== exMenuItem.key));
                 setExMenu(null);
               }}
             >

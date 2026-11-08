@@ -16,13 +16,17 @@ import { useNavigate } from 'react-router';
 import { useLongPress } from '../../components/gestures';
 import { ChevronRight, Handle } from '../../components/icons';
 import { Alert, Sheet, SheetOption, useToast } from '../../components/overlays';
-import { BarButton, cx, EmptyState, LargeHeader, Pill, Screen } from '../../components/ui';
+import { BarButton, cx, EmptyState, LabelAction, LargeHeader, Pill, Screen } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { importRoutinesFromBackup, readBackup } from '../../data/backup';
 import { deleteRoutine, saveLayout } from '../../data/routines';
+import { usePlanView } from '../../data/schedule';
 import { usePlans, type PlansData } from '../../data/usePlans';
 import type { Folder, Routine } from '../../db/types';
 import { useStartWorkout } from '../../hooks/StartWorkout';
+import { dayKey, startOfWeek } from '../../lib/dates';
+import { addDayKey, currentVersion, describeWhen } from '../../lib/schedule';
+import { PlanStrip } from './PlanParts';
 import { FolderSheet, NewFolderSheet, useRoutineActions } from './RoutineActions';
 
 const COLLAPSE_KEY = 'og-collapsed-folders';
@@ -221,7 +225,7 @@ function ViewLayout({
         );
       })}
       {!plans.routines.length && <p className="mt-6 text-center text-[14px] text-fg2">No routines yet. Tap + to make one.</p>}
-      <p className="mt-6 text-center text-[12.5px] text-fg3">Hold a routine for shortcuts. Edit to reorder or move.</p>
+      <p className="mt-6 text-center text-[12.5px] text-fg3">Tap a folder name to open it as a plan with a schedule. Hold a routine for shortcuts. Edit to reorder or move.</p>
     </div>
   );
 }
@@ -241,11 +245,30 @@ function FolderGroup({
   onHold: (r: Routine, rect: DOMRect) => void;
   onFolderMenu: () => void;
 }) {
+  const navigate = useNavigate();
+  const { settings } = useData();
+  const weekFrom = dayKey(startOfWeek(Date.now(), settings.weekStart));
+  const view = usePlanView(folder, weekFrom, addDayKey(weekFrom, 6));
   const list = plans.byFolder.get(folder.id) ?? [];
+  const scheduled = !!view?.scheduled;
+  const version = scheduled ? currentVersion(folder.schedule, view!.today) : undefined;
+  const openPlan = () => navigate(`/plan/${folder.id}`);
   return (
     <div>
-      <FolderHeader title={folder.name} count={list.length} active={folder.active} collapsed={collapsed} onToggle={onToggle} onHold={onFolderMenu} />
-      {!collapsed && list.map((r) => <RoutineRow key={r.id} plans={plans} routine={r} onHold={onHold} />)}
+      <FolderHeader title={folder.name} count={list.length} active={folder.active} collapsed={collapsed} onToggle={onToggle} onOpen={openPlan} onHold={onFolderMenu} />
+      {!collapsed && scheduled && view && (
+        <div className="border-b border-line pb-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold tracking-[0.07em] text-fg2 uppercase">Schedule · {version?.kind === 'cycle' ? 'Cycle' : 'Weekly'}</span>
+            <LabelAction onClick={openPlan}>Edit plan ›</LabelAction>
+          </div>
+          <PlanStrip days={view.days} codes={view.codes} today={view.today} dense onTap={openPlan} />
+        </div>
+      )}
+      {!collapsed &&
+        list.map((r) => (
+          <RoutineRow key={r.id} plans={plans} routine={r} onHold={onHold} when={scheduled ? (describeWhen(version, r.id, settings.weekStart) ?? 'Not scheduled') : undefined} />
+        ))}
       {!collapsed && !list.length && <p className="border-b border-line py-3 text-[13px] text-fg2">Empty folder.</p>}
     </div>
   );
@@ -257,6 +280,7 @@ function FolderHeader({
   active,
   collapsed,
   onToggle,
+  onOpen,
   onHold,
 }: {
   title: ReactNode;
@@ -264,22 +288,42 @@ function FolderHeader({
   active?: boolean;
   collapsed: boolean;
   onToggle: () => void;
+  /** Tapping the name opens the folder as a plan (A2); the chevron still folds it. */
+  onOpen?: () => void;
   onHold?: () => void;
 }) {
   const hold = useLongPress(() => onHold?.(), !!onHold);
+  const chevron = <span className={cx('inline-block h-[7px] w-[7px] flex-none border-r-2 border-b-2 border-fg2 transition-transform', collapsed ? '-rotate-45' : 'mb-[3px] rotate-45')} />;
+  const label = (
+    <span className="flex min-w-0 items-center gap-2 text-[12.5px] font-bold tracking-[0.05em] text-fg/80 uppercase">
+      <span className="truncate">{title}</span>
+      {count !== undefined && <small className="font-semibold tracking-normal text-fg2">{count}</small>}
+    </span>
+  );
+  if (!onOpen)
+    return (
+      <button type="button" onClick={onToggle} {...hold} aria-expanded={!collapsed} className="no-select mt-4 flex h-10 w-full items-end justify-between border-b border-line pb-2 text-left">
+        <span className="flex min-w-0 items-center gap-2">
+          {chevron}
+          {label}
+        </span>
+        {active && <Pill tone="accent">active</Pill>}
+      </button>
+    );
   return (
-    <button type="button" onClick={onToggle} {...hold} aria-expanded={!collapsed} className="no-select mt-4 flex h-10 w-full items-end justify-between border-b border-line pb-2 text-left">
-      <span className="flex min-w-0 items-center gap-2 text-[12.5px] font-bold tracking-[0.05em] text-fg/80 uppercase">
-        <span className={cx('inline-block h-[7px] w-[7px] border-r-2 border-b-2 border-fg2 transition-transform', collapsed ? '-rotate-45' : 'mb-[3px] rotate-45')} />
-        <span className="truncate">{title}</span>
-        {count !== undefined && <small className="font-semibold tracking-normal text-fg2">{count}</small>}
-      </span>
-      {active && <Pill tone="accent">active</Pill>}
-    </button>
+    <div className="mt-4 flex h-10 w-full items-end border-b border-line">
+      <button type="button" onClick={onToggle} aria-expanded={!collapsed} aria-label={collapsed ? 'Expand' : 'Collapse'} className="flex h-11 w-[22px] flex-none items-center justify-start pb-1">
+        {chevron}
+      </button>
+      <button type="button" onClick={onOpen} {...hold} className="no-select flex h-11 min-w-0 flex-1 items-end justify-between pb-2 text-left active:opacity-70">
+        {label}
+        {active && <Pill tone="accent">active</Pill>}
+      </button>
+    </div>
   );
 }
 
-function RoutineRow({ plans, routine, onHold }: { plans: PlansData; routine: Routine; onHold: (r: Routine, rect: DOMRect) => void }) {
+function RoutineRow({ plans, routine, onHold, when }: { plans: PlansData; routine: Routine; onHold: (r: Routine, rect: DOMRect) => void; when?: string }) {
   const navigate = useNavigate();
   const { exerciseMap } = useData();
   const names = (plans.exercisesByRoutine.get(routine.id) ?? []).map((id) => exerciseMap.get(id)?.name ?? 'Unknown');
@@ -288,7 +332,10 @@ function RoutineRow({ plans, routine, onHold }: { plans: PlansData; routine: Rou
     <button type="button" {...hold} onClick={() => navigate(`/routine/${routine.id}`)} className="no-select flex min-h-[58px] w-full items-center gap-3 border-b border-line text-left active:bg-surface/60">
       <span className="min-w-0 flex-1 py-2">
         <b className="block truncate text-[16px] font-semibold">{routine.name}</b>
-        <span className="block truncate text-[13px] text-fg2">{names.length ? names.join(', ') : 'No exercises yet'}</span>
+        <span className="block truncate text-[13px] text-fg2">
+          {when && `${when} · `}
+          {names.length ? names.join(', ') : 'No exercises yet'}
+        </span>
       </span>
       <ChevronRight size={13} className="flex-none text-fg3" />
     </button>

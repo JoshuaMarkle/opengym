@@ -11,6 +11,7 @@ import { computeRecords, isRecent } from '../../lib/records';
 import { dropChains, formatSet, formatSetWeight } from '../../lib/sets';
 import { formatNumber, formatWeight, toDisplay, unitLabel } from '../../lib/units';
 import { variationLabels } from '../../lib/variations';
+import { CardioMiniTable } from '../workout/CardioTable';
 
 export type LiftMetric = 'e1rm' | 'top';
 
@@ -82,6 +83,22 @@ export function HistoryView({ exercise, onOpenWorkout }: { exercise: Exercise; o
         const chains = dropChains(s.sets);
         const d = new Date(s.date);
         const Body = onOpenWorkout ? 'button' : 'div';
+        if (ex.type === 'cardio')
+          return (
+            <div key={`${s.workoutId}-${s.exerciseId}`}>
+              {header && <div className="mt-4 pb-1 text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase">{header}</div>}
+              <Body
+                {...(onOpenWorkout ? { type: 'button' as const, onClick: () => onOpenWorkout(s.workoutId) } : {})}
+                className="grid w-full grid-cols-[42px_1fr] items-start gap-3 border-b border-line py-2.5 text-left"
+              >
+                <span className="pt-1 text-center leading-[1.1]">
+                  <small className="block text-[10.5px] font-bold text-fg2 uppercase">{weekdayShort(d.getDay())}</small>
+                  <b className="text-[19px]">{d.getDate()}</b>
+                </span>
+                <CardioMiniTable exercise={ex} sets={s.sets} units={settings.units} />
+              </Body>
+            </div>
+          );
         return (
           <div key={`${s.workoutId}-${s.exerciseId}`}>
             {header && <div className="mt-4 pb-1 text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase">{header}</div>}

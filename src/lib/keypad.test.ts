@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyKey, parseWeightText, type KeypadOptions } from './keypad';
+import { applyKey, parseWeightText, type KeypadKey, type KeypadOptions } from './keypad';
 
 const W: KeypadOptions = { mode: 'weight', step: 5, allowNegative: true };
 const R: KeypadOptions = { mode: 'reps', step: 1, allowRange: true };
@@ -49,5 +49,46 @@ describe('keypad', () => {
     expect(applyKey('122.4', false, { type: 'inc' }, K)).toBe('122.5');
     expect(applyKey('122.4', false, { type: 'dec' }, K)).toBe('120');
     expect(applyKey('122.5', false, { type: 'inc' }, K)).toBe('125');
+  });
+});
+
+describe('cardio modes', () => {
+  const time = { mode: 'time' as const, step: 60 };
+  const run = (keys: KeypadKey[], o: Parameters<typeof applyKey>[3], start = '', fresh = true) => {
+    let t = start;
+    let f = fresh;
+    for (const k of keys) {
+      t = applyKey(t, f, k, o);
+      f = false;
+    }
+    return t;
+  };
+  const d = (x: string): KeypadKey => ({ type: 'digit', d: x });
+
+  it('time: digits and one colon, two digits after it', () => {
+    expect(run([d('5'), { type: 'colon' }, d('3'), d('0'), d('9')], time)).toBe('5:30');
+    expect(run([{ type: 'colon' }, d('4'), d('5')], time)).toBe('0:45');
+    expect(run([d('2'), d('5')], time)).toBe('25');
+  });
+
+  it('time: ± a minute, snapping to whole minutes', () => {
+    expect(applyKey('5:00', false, { type: 'inc' }, time)).toBe('6:00');
+    expect(applyKey('5:30', false, { type: 'inc' }, time)).toBe('6:00');
+    expect(applyKey('5:30', false, { type: 'dec' }, time)).toBe('5:00');
+    expect(applyKey('20', false, { type: 'inc' }, time)).toBe('21:00');
+    expect(applyKey('1:00', false, { type: 'dec' }, time)).toBe('');
+  });
+
+  it('decimal: no minus, ± by its step', () => {
+    const o = { mode: 'decimal' as const, step: 0.1 };
+    expect(applyKey('3.5', false, { type: 'inc' }, o)).toBe('3.6');
+    expect(applyKey('3.5', false, { type: 'minus' }, o)).toBe('3.5');
+    expect(run([d('1'), { type: 'dot' }, d('7')], o)).toBe('1.7');
+  });
+
+  it('int: no decimal point', () => {
+    const o = { mode: 'int' as const, step: 50 };
+    expect(run([d('5'), { type: 'dot' }, d('0'), d('0')], o)).toBe('500');
+    expect(applyKey('500', false, { type: 'inc' }, o)).toBe('550');
   });
 });

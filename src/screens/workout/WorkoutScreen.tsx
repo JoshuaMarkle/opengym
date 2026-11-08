@@ -2,10 +2,12 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Navigate, useNavigate } from 'react-router';
 import { ChartIcon, ChevronDown, ChevronLeft } from '../../components/icons';
-import { Keypad } from '../../components/Keypad';
+import { Keypad, ModeTabs, type KeypadTab } from '../../components/Keypad';
 import { Alert, HoldMenu, Sheet, SheetOption, useToast, type MenuItem } from '../../components/overlays';
+import { BarPicker, PlatePad } from '../../components/PlatePad';
 import { Button, cx, EmptyState, IconButton, TextField } from '../../components/ui';
 import { type ActiveExercise, type ActiveWorkoutData, useActiveWorkout, useData } from '../../data/DataProvider';
+import { setExercisePrefs } from '../../data/exercises';
 import { lastSession } from '../../data/history';
 import {
   addDropSet,
@@ -16,6 +18,7 @@ import {
   discardWorkout,
   duplicateSet,
   finishWorkout,
+  linkWorkoutSuperset,
   moveSetToTop,
   removeWorkoutExercise,
   renameWorkout,
@@ -25,25 +28,45 @@ import {
   setCurrentExercise,
   setWorkoutStart,
   toggleWarmup,
+  unlinkWorkoutSuperset,
   updateSet,
   type FinishCheck,
 } from '../../data/workouts';
 import { db } from '../../db/db';
 import { muscleLabel, type Exercise, type WorkoutSet } from '../../db/types';
 import { useNow } from '../../hooks/useNow';
-import { fmtClock, fmtDuration, fmtTime, fromLocalInputValue, toLocalInputValue } from '../../lib/dates';
-import { applyKey, parseRepsText, parseWeightText, type KeypadKey } from '../../lib/keypad';
+import {
+  cardioFields,
+  cardioSummary,
+  editTextOf,
+  FIELD_NAME,
+  fieldPatch,
+  fieldTab,
+  fieldValue,
+  keypadFor,
+  parseFieldText,
+  segmentPlaceholders,
+  type CardioField,
+  type CardioValues,
+} from '../../lib/cardio';
+import { carryOver } from '../../lib/carryOver';
+import { fmtClock, fmtDuration, fmtMonthDay, fmtTime, fromLocalInputValue, toLocalInputValue } from '../../lib/dates';
+import { applyKey, parseRepsText, parseWeightText, type KeypadKey, type KeypadOptions } from '../../lib/keypad';
+import { barLabel, hasPlatePad } from '../../lib/plates';
 import { describeChange, type RoutineChange } from '../../lib/routineDiff';
-import { setLabels } from '../../lib/sets';
-import { fromDisplay, unitLabel } from '../../lib/units';
+import { formatSet, hasWeightColumn, setLabels, workingIndex } from '../../lib/sets';
+import { isFolded, nextTarget, supersetBlocks, supersetRound, supersetTags, type MemberSets } from '../../lib/supersets';
+import { displayWeight, formatNumber, fromDisplay, unitLabel } from '../../lib/units';
 import { variationLabels } from '../../lib/variations';
 import { useGiveUp } from '../../hooks/useGiveUp';
 import { ExercisePicker } from '../exercises/ExercisePicker';
 import { useVariations } from '../progress/LiftViews';
 import { AllExercises } from './AllExercises';
+import { CardioTable } from './CardioTable';
 import { ExerciseMenu } from './ExerciseMenu';
 import { LookbackSheet } from './LookbackSheet';
-import { SetTable, weightEditText, weightFromEdit, type Field } from './SetTable';
+import { SetTable, weightEditText, weightFromEdit } from './SetTable';
+import { SupersetSheet } from './SupersetSheet';
 
 /** 4.x: the workout in progress. No tab bar; Prev / Next move between exercises. */
 export function WorkoutScreen() {
@@ -55,16 +78,30 @@ export function WorkoutScreen() {
   return <Workout data={active} finishingRef={finishing} />;
 }
 
-type Overlay = 'options' | 'rename' | 'start' | 'exercise' | 'lookback' | 'add' | 'replace' | 'discard' | 'remove' | null;
+type Overlay =
+  | 'options'
+  | 'rename'
+  | 'start'
+  | 'exercise'
+  | 'lookback'
+  | 'add'
+  | 'replace'
+  | 'discard'
+  | 'remove'
+  | 'superset'
+  | 'supersetAdd'
+  | 'bar'
+  | null;
 
 type FinishState =
   | { step: 'empty' }
   | { step: 'unticked'; unticked: FinishCheck['unticked'] }
   | { step: 'routine'; changes: RoutineChange[]; count: boolean };
 
+/** The box being typed into: 'weight' | 'reps' for lifts, a CardioField for cardio. */
 interface Editing {
   setId: string;
-  field: Field;
+  field: string;
   text: string;
   fresh: boolean;
 }
@@ -74,10 +111,28 @@ const TYPE_HINT: Record<Exercise['type'], string> = {
   bodyweight: ' · bodyweight',
   bodyweight_plus: ' · bodyweight + added',
   assisted: ' · assisted',
+  cardio: ' · cardio',
 };
 
-function setName(label: string) {
+const CARDIO_KEYS = ['durationSec', 'distance', 'speed', 'incline', 'level', 'calories'] as const;
+
+function setName(label: string, cardio = false) {
+  if (cardio) return `Segment ${label}`;
   return label === 'W' ? 'Warm-up' : label === 'D' ? 'Drop set' : `Set ${label}`;
+}
+
+/** The boxes in a row, left to right: what Next walks through. */
+function fieldsOf(ex: Exercise): string[] {
+  if (ex.type === 'cardio') return cardioFields(ex);
+  return hasWeightColumn(ex.type) ? ['weight', 'reps'] : ['reps'];
+}
+
+const isCardioField = (f: string): f is CardioField => f !== 'weight' && f !== 'reps';
+
+function cardioOf(s: CardioValues): CardioValues {
+  const out: CardioValues = {};
+  for (const k of CARDIO_KEYS) if (s[k] != null) out[k] = s[k];
+  return out;
 }
 
 function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef: RefObject<boolean> }) {
@@ -92,30 +147,48 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
   // 4.12: the exercise list replaces everything under the workout header.
   const [showAll, setShowAll] = useState(false);
   const [editing, setEditing] = useState<Editing | null>(null);
-  const [holdMenu, setHoldMenu] = useState<{ set: WorkoutSet; rect: DOMRect } | null>(null);
+  const [holdMenu, setHoldMenu] = useState<{ member: ActiveExercise; set: WorkoutSet; rect: DOMRect } | null>(null);
   const [finish, setFinish] = useState<FinishState | null>(null);
   const [busy, setBusy] = useState(false);
+  // B4: "↓ A2 · Barbell Row, set 2" after ✓ jumps to the partner.
+  const [banner, setBanner] = useState<{ text: string; id: number } | null>(null);
+  const [supersetPre, setSupersetPre] = useState<string[]>([]);
+  // Plates vs 123, per exercise, ahead of the saved preference catching up.
+  const [padPref, setPadPref] = useState<Record<string, boolean>>({});
 
   let idx = list.findIndex((e) => e.we.id === workout.currentExerciseId);
   if (idx < 0) idx = 0;
   const cur: ActiveExercise | undefined = list[idx];
   const ex = cur?.exercise;
-  const prevEx = list[idx - 1];
-  const nextEx = list[idx + 1];
 
-  const labels = useMemo(() => setLabels(cur?.sets ?? []), [cur?.sets]);
-  const previous = useMemo(() => (ex ? lastSession(history, ex.id)?.sets : undefined), [history, ex]);
+  // Supersets: the exercise you're on and its partners share one screen.
+  const items = useMemo(() => list.map((e) => ({ ...e, key: e.we.id, supersetGroup: e.we.supersetGroup })), [list]);
+  const blocks = useMemo(() => supersetBlocks(items), [items]);
+  const tags = useMemo(() => supersetTags(items), [items]);
+  const bi = Math.max(
+    0,
+    blocks.findIndex((b) => b.items.some((x) => x.key === cur?.we.id)),
+  );
+  const block = blocks[bi];
+  const members: ActiveExercise[] = block?.items ?? [];
+  const isSuperset = !!block?.letter;
+  const memberSets = (ticked?: string): MemberSets<WorkoutSet>[] =>
+    members.map((m) => ({ key: m.we.id, sets: m.sets.map((s) => (s.id === ticked ? { ...s, completed: true } : s)) }));
+  const round = isSuperset && cur ? supersetRound(memberSets(), cur.we.id) : { round: 1, rounds: 1 };
+
   const variations = useVariations(ex);
   const varLabels = useMemo(() => variationLabels(variations), [variations]);
   const routine = useLiveQuery(() => (workout.routineId ? db.routines.get(workout.routineId) : undefined), [workout.routineId]);
 
-  const editingSet = editing ? cur?.sets.find((s) => s.id === editing.setId) : undefined;
+  const editingMember = editing ? members.find((m) => m.sets.some((s) => s.id === editing.setId)) : undefined;
+  const editingSet = editingMember?.sets.find((s) => s.id === editing?.setId);
   const activeEdit = editingSet ? editing : null;
-  const keypadOpen = !!(activeEdit && ex);
+  const editEx = editingMember?.exercise;
+  const keypadOpen = !!(activeEdit && editEx);
 
   const doneCount = list.filter((e) => e.sets.length > 0 && e.sets.every((s) => s.completed)).length;
   const loggedCount = list.reduce((n, e) => n + e.sets.filter((s) => s.completed).length, 0);
-  const allDone = !!cur && cur.sets.length > 0 && cur.sets.every((s) => s.completed);
+  const everyDone = list.length > 0 && doneCount === list.length;
 
   // Scroll the row being edited above the keypad.
   useEffect(() => {
@@ -123,6 +196,15 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
     const el = scrollRef.current?.querySelector(`[data-set-id="${activeEdit.setId}"]`);
     el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [activeEdit?.setId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!banner) return;
+    const t = window.setTimeout(() => setBanner(null), 2200);
+    return () => window.clearTimeout(t);
+  }, [banner]);
+
+  const scrollToSet = (setId: string) =>
+    window.setTimeout(() => scrollRef.current?.querySelector(`[data-set-id="${setId}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 60);
 
   const jump = useCallback(
     (weId: string) => {
@@ -135,40 +217,74 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
     [workout.id],
   );
 
+  /** Within a superset: switch the highlighted exercise without leaving the screen. */
+  const focus = (m: ActiveExercise, setId?: string) => {
+    if (m.we.id !== cur?.we.id) void setCurrentExercise(workout.id, m.we.id);
+    const target = setId ?? m.sets.find((s) => !s.completed)?.id;
+    if (target) scrollToSet(target);
+  };
+
   const openAll = () => {
     setEditing(null);
     setShowAll(true);
   };
 
+  const lastOf = (exerciseId: string) => lastSession(history, exerciseId);
+
+  /** The bar the plate pad and the empty-bar placeholder use, in lb (undefined = none). */
+  const barLbOf = (e: Exercise): number | undefined => {
+    if (e.barLb != null) return e.barLb > 0 ? e.barLb : undefined;
+    return e.equipment === 'barbell' ? fromDisplay(settings.barWeight, units) : undefined;
+  };
+  const barDisplayOf = (e: Exercise) => (e.barLb != null ? displayWeight(e.barLb, units) : e.equipment === 'barbell' ? settings.barWeight : 0);
+
   // ───── keypad
 
-  const startEdit = (set: WorkoutSet, field: Field) => {
-    if (!ex) return;
-    const text = field === 'weight' ? weightEditText(set.weight, ex, units) : set.reps != null ? String(set.reps) : '';
+  const startEdit = (m: ActiveExercise, set: WorkoutSet, field: string) => {
+    const e = m.exercise;
+    const text =
+      field === 'weight'
+        ? weightEditText(set.weight, e, units)
+        : field === 'reps'
+          ? set.reps != null
+            ? String(set.reps)
+            : ''
+          : editTextOf(field as CardioField, fieldValue(set, field as CardioField), e, units);
     setEditing({ setId: set.id, field, text, fresh: true });
+    if (m.we.id !== cur?.we.id) void setCurrentExercise(workout.id, m.we.id);
   };
 
-  const save = (set: WorkoutSet, field: Field, text: string) => {
-    if (!ex) return;
+  const keypadOptions = (e: Exercise, field: string): KeypadOptions => {
+    if (field === 'weight') return { mode: 'weight', allowNegative: e.type === 'assisted' || e.type === 'bodyweight_plus', step: settings.weightStep };
+    if (field === 'reps') return { mode: 'reps', step: 1 };
+    const k = keypadFor(field as CardioField, e, units);
+    return { mode: k.mode, step: k.step };
+  };
+
+  const save = (m: ActiveExercise, set: WorkoutSet, field: string, text: string) => {
+    const e = m.exercise;
     if (field === 'weight') {
       const v = parseWeightText(text);
-      void updateSet(set.id, { weight: weightFromEdit(v === undefined ? undefined : fromDisplay(v, units), ex) });
-    } else {
+      void updateSet(set.id, { weight: weightFromEdit(v === undefined ? undefined : fromDisplay(v, units), e) });
+    } else if (field === 'reps') {
       void updateSet(set.id, { reps: parseRepsText(text) });
+    } else {
+      const f = field as CardioField;
+      void updateSet(set.id, fieldPatch(f, parseFieldText(f, text, e, units)));
     }
   };
 
   const onKey = (k: KeypadKey) => {
-    if (!activeEdit || !editingSet || !ex) return;
-    const allowNegative = activeEdit.field === 'weight' && (ex.type === 'assisted' || ex.type === 'bodyweight_plus');
-    const text = applyKey(activeEdit.text, activeEdit.fresh, k, { mode: activeEdit.field, allowNegative, step: settings.weightStep });
+    if (!activeEdit || !editingSet || !editingMember) return;
+    const text = applyKey(activeEdit.text, activeEdit.fresh, k, keypadOptions(editingMember.exercise, activeEdit.field));
     setEditing({ ...activeEdit, text, fresh: false });
-    save(editingSet, activeEdit.field, text);
+    save(editingMember, editingSet, activeEdit.field, text);
   };
 
   // Hardware keyboard (iPad / desktop) mirrors the keypad.
   const onKeyRef = useRef(onKey);
   onKeyRef.current = onKey;
+  const onNextRef = useRef(() => {});
   useEffect(() => {
     if (!activeEdit) return;
     const h = (e: KeyboardEvent) => {
@@ -176,13 +292,18 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
       let k: KeypadKey | null = null;
       if (/^[0-9]$/.test(e.key)) k = { type: 'digit', d: e.key };
       else if (e.key === '.' || e.key === ',') k = { type: 'dot' };
+      else if (e.key === ':') k = { type: 'colon' };
       else if (e.key === '-') k = { type: 'minus' };
       else if (e.key === 'Backspace') k = { type: 'backspace' };
       else if (e.key === 'ArrowUp') k = { type: 'inc' };
       else if (e.key === 'ArrowDown') k = { type: 'dec' };
-      else if (e.key === 'Escape' || e.key === 'Enter') {
+      else if (e.key === 'Escape') {
         setEditing(null);
         e.preventDefault();
+        return;
+      } else if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        onNextRef.current();
         return;
       }
       if (k) {
@@ -196,32 +317,109 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
 
   // ───── sets
 
-  const onToggle = (set: WorkoutSet) => {
-    if (!ex) return;
+  /**
+   * Tick a set. Empty boxes take their grey value: the set above's numbers (or the
+   * empty bar) for lifts, last time's segment for cardio. `typed` is the box being
+   * edited, which may be ahead of the saved value. Returns false and opens the
+   * missing box when there's nothing to log.
+   */
+  const tick = (m: ActiveExercise, set: WorkoutSet, typed?: { field: string; text: string }): boolean => {
+    const e = m.exercise;
+    if (e.type === 'cardio') {
+      const own = cardioOf(set);
+      if (typed && isCardioField(typed.field)) Object.assign(own, fieldPatch(typed.field, parseFieldText(typed.field, typed.text, e, units)));
+      const ph = segmentPlaceholders(m.sets, lastOf(e.id)?.sets).get(set.id) ?? {};
+      const patch: CardioValues & { completed: boolean } = { completed: true };
+      for (const f of cardioFields(e)) {
+        const v = fieldValue(own, f) ?? fieldValue(ph, f);
+        if (v != null) Object.assign(patch, fieldPatch(f, v));
+      }
+      if (!patch.durationSec) {
+        setEditing({ setId: set.id, field: 'time', text: '', fresh: true });
+        toast({ message: 'Add the time to tick this segment', duration: 2200 });
+        return false;
+      }
+      void updateSet(set.id, patch);
+      return true;
+    }
+    const c = carryOver(m.sets).get(set.id);
+    const typedReps = typed?.field === 'reps' ? parseRepsText(typed.text) : set.reps;
+    const reps = typedReps != null && typedReps > 0 ? typedReps : c?.reps;
+    if (reps == null) {
+      setEditing({ setId: set.id, field: 'reps', text: '', fresh: true });
+      toast({ message: 'Add the reps to tick this set', duration: 2200 });
+      return false;
+    }
+    const patch: Partial<WorkoutSet> = { completed: true, reps };
+    if (e.type === 'weight' && set.weight == null) {
+      const weight = c?.weight ?? barLbOf(e);
+      if (weight == null) {
+        setEditing({ setId: set.id, field: 'weight', text: '', fresh: true });
+        toast({ message: 'Add the weight to tick this set', duration: 2200 });
+        return false;
+      }
+      patch.weight = weight;
+    }
+    void updateSet(set.id, patch);
+    return true;
+  };
+
+  const setWord = (m: ActiveExercise, s: WorkoutSet) => {
+    if (m.exercise.type === 'cardio') return `segment ${m.sets.indexOf(s) + 1}`;
+    if (s.kind === 'warmup') return 'warm-up';
+    if (s.kind === 'drop') return 'drop set';
+    return `set ${workingIndex(m.sets, s.id)}`;
+  };
+
+  /**
+   * Where you go after a set is ticked. In a superset: the partner's set (B4),
+   * with a brief banner. Otherwise the next open set of the same exercise.
+   */
+  const advance = (m: ActiveExercise, set: WorkoutSet): { member: ActiveExercise; set: WorkoutSet } | null => {
+    if (isSuperset) {
+      const t = nextTarget(memberSets(set.id), m.we.id, set.id);
+      if (!t) return null;
+      const tm = members.find((x) => x.we.id === t.key)!;
+      const ts = tm.sets.find((s) => s.id === t.setId)!;
+      if (tm.we.id !== m.we.id) {
+        void setCurrentExercise(workout.id, tm.we.id);
+        setBanner({ text: `${tags.get(tm.we.id)} · ${tm.exercise.name}, ${setWord(tm, ts)}`, id: Date.now() });
+        scrollToSet(ts.id);
+      }
+      return { member: tm, set: ts };
+    }
+    const at = m.sets.findIndex((s) => s.id === set.id);
+    const next = m.sets.slice(at + 1).find((s) => !s.completed);
+    return next ? { member: m, set: next } : null;
+  };
+
+  const onToggle = (m: ActiveExercise, set: WorkoutSet) => {
     setEditing(null);
     if (set.completed) {
       void updateSet(set.id, { completed: false });
       return;
     }
-    if (set.reps == null || set.reps <= 0) {
-      setEditing({ setId: set.id, field: 'reps', text: '', fresh: true });
-      toast({ message: 'Add the reps to tick this set', duration: 2200 });
-      return;
-    }
-    const patch: Partial<WorkoutSet> = { completed: true };
-    if (ex.type === 'weight' && set.weight == null) {
-      if (ex.equipment === 'barbell') patch.weight = fromDisplay(settings.barWeight, units);
-      else {
-        setEditing({ setId: set.id, field: 'weight', text: '', fresh: true });
-        toast({ message: 'Add the weight to tick this set', duration: 2200 });
-        return;
-      }
-    }
-    void updateSet(set.id, patch);
+    if (tick(m, set) && isSuperset) advance(m, set);
   };
 
-  const onDelete = async (set: WorkoutSet) => {
-    const label = setName(labels.get(set.id) ?? '');
+  /** Keypad → Next walks the row's boxes; ✓ Done on the last box ticks the set and opens the next one. */
+  const onNext = () => {
+    if (!activeEdit || !editingSet || !editingMember) return;
+    const fields = fieldsOf(editingMember.exercise);
+    const i = fields.indexOf(activeEdit.field);
+    if (i >= 0 && i < fields.length - 1) {
+      startEdit(editingMember, editingSet, fields[i + 1]);
+      return;
+    }
+    if (!editingSet.completed && !tick(editingMember, editingSet, activeEdit)) return;
+    const target = advance(editingMember, editingSet);
+    if (target) startEdit(target.member, target.set, fieldsOf(target.member.exercise)[0]);
+    else setEditing(null);
+  };
+  onNextRef.current = onNext;
+
+  const onDelete = async (m: ActiveExercise, set: WorkoutSet) => {
+    const label = m.exercise.type === 'cardio' ? `Segment ${m.sets.indexOf(set) + 1}` : setName(setLabels(m.sets).get(set.id) ?? '');
     if (editing?.setId === set.id) setEditing(null);
     const removed = await deleteSet(set.id);
     if (removed.length)
@@ -232,9 +430,9 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
       });
   };
 
-  const holdItems = (set: WorkoutSet): MenuItem[] => {
+  const holdItems = (m: ActiveExercise, set: WorkoutSet): MenuItem[] => {
     const items: MenuItem[] = [];
-    if (set.kind !== 'drop') {
+    if (set.kind !== 'drop' && m.exercise.type !== 'cardio') {
       items.push(
         set.kind === 'warmup'
           ? { label: 'Mark as working set', glyph: '1', onClick: () => void toggleWarmup(set.id) }
@@ -243,22 +441,22 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
       items.push({ label: 'Move to top', glyph: '⤒', onClick: () => void moveSetToTop(set.id) });
     }
     items.push({ label: 'Duplicate', glyph: '⧉', onClick: () => void duplicateSet(set.id) });
-    items.push({ label: 'Delete', glyph: '✕', tone: 'danger', onClick: () => void onDelete(set) });
+    items.push({ label: 'Delete', glyph: '✕', tone: 'danger', onClick: () => void onDelete(m, set) });
     return items;
   };
 
-  const addDrop = async () => {
-    if (!cur || !ex) return;
+  const addDrop = async (m: ActiveExercise) => {
     setEditing(null);
-    const id = await addDropSet(cur.we.id, ex.type);
+    focus(m);
+    const id = await addDropSet(m.we.id, m.exercise.type);
     if (!id) toast({ message: 'Tick a set first. A drop goes under the last completed set.', duration: 3000 });
   };
 
-  const addSet = async () => {
-    if (!cur) return;
+  const addSet = async (m: ActiveExercise) => {
     setEditing(null);
-    await addWorkingSet(cur.we.id);
-    window.setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' }), 50);
+    focus(m);
+    const id = await addWorkingSet(m.we.id);
+    scrollToSet(id);
   };
 
   // ───── finishing (5.1 → 5.2 → save → 5.3)
@@ -289,7 +487,11 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
 
   const startFinish = async () => {
     setEditing(null);
-    const check = await checkUnticked(workout.id, (id) => exerciseMap.get(id)?.name ?? 'Exercise');
+    const check = await checkUnticked(
+      workout.id,
+      (id) => exerciseMap.get(id)?.name ?? 'Exercise',
+      (id) => exerciseMap.get(id)?.type === 'cardio',
+    );
     if (!loggedCount && !check.unticked.length) setFinish({ step: 'empty' });
     else if (check.unticked.length) setFinish({ step: 'unticked', unticked: check.unticked });
     else await routineStep(false, 0);
@@ -323,11 +525,46 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
     }
   };
 
+  // ───── prev / next (blocks: a superset counts as one stop)
+
+  const openMember = (b: (typeof blocks)[number]) => b.items.find((m) => m.sets.some((s) => !s.completed)) ?? b.items[0];
+  const stopLabel = (m: ActiveExercise) => (tags.get(m.we.id) ? `${tags.get(m.we.id)} · ${m.exercise.name}` : m.exercise.name);
+  type Nav = { small: string; text: string; go: () => void };
+  let prevNav: Nav | null = null;
+  let nextNav: Nav | null = null;
+  if (cur) {
+    const mi = members.findIndex((m) => m.we.id === cur.we.id);
+    if (isSuperset && mi > 0) {
+      const m = members[mi - 1];
+      prevNav = { small: 'Prev', text: stopLabel(m), go: () => focus(m) };
+    } else if (bi > 0) {
+      const m = openMember(blocks[bi - 1]);
+      prevNav = { small: 'Prev', text: stopLabel(m), go: () => jump(m.we.id) };
+    }
+    if (isSuperset) {
+      // The partner whose turn is next (B3: "A2 · Row set 2").
+      for (let k = 1; k < members.length && !nextNav; k++) {
+        const m = members[(mi + k) % members.length];
+        const s = m.sets.find((x) => !x.completed);
+        if (s) nextNav = { small: `Next · ${setWord(m, s)}`, text: stopLabel(m), go: () => focus(m, s.id) };
+      }
+    }
+    if (!nextNav && bi < blocks.length - 1) {
+      const m = openMember(blocks[bi + 1]);
+      nextNav = { small: 'Next', text: stopLabel(m), go: () => jump(m.we.id) };
+    }
+  }
+
   // ───── render
 
   const header = (
     <header className="flex flex-none items-center gap-1 border-b border-line py-1 pr-4 pl-1">
-      <button type="button" aria-label="Leave workout (it keeps running)" onClick={() => navigate('/')} className="flex h-11 w-9 flex-none items-center justify-center text-accent">
+      <button
+        type="button"
+        aria-label={showAll ? 'Back to the exercise' : 'All exercises'}
+        onClick={() => (showAll ? setShowAll(false) : openAll())}
+        className="flex h-11 w-9 flex-none items-center justify-center text-accent"
+      >
         <ChevronLeft size={18} />
       </button>
       <button type="button" onClick={() => setOverlay('options')} className="min-w-0 flex-1 py-1 text-left" aria-label="Workout options">
@@ -350,6 +587,242 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
     </header>
   );
 
+  const subtitle = (m: ActiveExercise) => {
+    const e = m.exercise;
+    if (e.type === 'cardio') {
+      const last = lastOf(e.id);
+      const line = last ? cardioSummary(last.sets, e, units) : '';
+      if (line) return `Last: ${line} · ${fmtMonthDay(last!.date)}`;
+    }
+    return `Exercise ${list.indexOf(m) + 1} of ${list.length}${TYPE_HINT[e.type]}`;
+  };
+
+  const icons = (
+    <div className="-mt-1 -mr-1.5 flex flex-none">
+      <IconButton label="History, charts and records" onClick={() => setOverlay('lookback')}>
+        <ChartIcon size={15} />
+      </IconButton>
+      <IconButton label="Exercise options" onClick={() => setOverlay('exercise')}>
+        •••
+      </IconButton>
+    </div>
+  );
+
+  const variationChips = cur && ex && variations.length > 1 && (
+    <div className="no-scrollbar -mx-4 mt-2.5 flex gap-1.5 overflow-x-auto px-4" role="radiogroup" aria-label="Variation">
+      {variations.map((v) => {
+        const on = v.id === ex.id;
+        return (
+          <button
+            key={v.id}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            onClick={() => !on && void replaceWorkoutExercise(cur.we.id, v.id)}
+            className={cx(
+              'h-8 flex-none rounded-[8px] border px-3 text-[13px] font-semibold whitespace-nowrap transition-colors',
+              on ? 'border-accent bg-done text-fg' : 'border-line-strong text-fg2',
+            )}
+          >
+            {varLabels.get(v.id)}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  const editingCell = (m: ActiveExercise) => (activeEdit && editingMember?.we.id === m.we.id ? { setId: activeEdit.setId, field: activeEdit.field, text: activeEdit.text } : null);
+
+  const table = (m: ActiveExercise) =>
+    m.exercise.type === 'cardio' ? (
+      <CardioTable
+        exercise={m.exercise}
+        sets={m.sets}
+        previous={lastOf(m.exercise.id)?.sets}
+        units={units}
+        editing={editingCell(m)}
+        onEdit={(s, f) => startEdit(m, s, f)}
+        onToggle={(s) => onToggle(m, s)}
+        onDelete={(s) => void onDelete(m, s)}
+        onMenu={(s, rect) => setHoldMenu({ member: m, set: s, rect })}
+      />
+    ) : (
+      <SetTable
+        exercise={m.exercise}
+        sets={m.sets}
+        previous={lastOf(m.exercise.id)?.sets}
+        units={units}
+        editing={editingCell(m)}
+        barPlaceholderLb={m.exercise.type === 'weight' ? barLbOf(m.exercise) : undefined}
+        onEdit={(s, f) => startEdit(m, s, f)}
+        onToggle={(s) => onToggle(m, s)}
+        onToggleWarmup={(s) => void toggleWarmup(s.id)}
+        onDelete={(s) => void onDelete(m, s)}
+        onMenu={(s, rect) => setHoldMenu({ member: m, set: s, rect })}
+      />
+    );
+
+  const addButtons = (m: ActiveExercise) =>
+    m.exercise.type === 'cardio' ? (
+      <>
+        <div className="mt-2 grid">
+          <QuickButton onClick={() => void addSet(m)}>+ Segment</QuickButton>
+        </div>
+        {m.sets.length === 1 && <p className="mt-3 text-[13px] leading-normal text-fg2">Most cardio is a single row. Segments are there for warm-up / main / cool-down if you want them.</p>}
+      </>
+    ) : (
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <QuickButton tone="warn" onClick={() => void addDrop(m)}>
+          + Drop
+        </QuickButton>
+        <QuickButton onClick={() => void addSet(m)}>+ Set</QuickButton>
+      </div>
+    );
+
+  const emptySets = (m: ActiveExercise) => !m.sets.length && <p className="py-4 text-center text-[14px] text-fg2">{m.exercise.type === 'cardio' ? 'No segments. Add one below.' : 'No sets. Add one below.'}</p>;
+
+  /** B3–B4: the superset on one screen, inside the blue bracket. */
+  const supersetView = () => {
+    if (!cur || !block?.letter) return null;
+    const mi = members.findIndex((m) => m.we.id === cur.we.id);
+    let partner: ActiveExercise | undefined;
+    for (let k = 1; k < members.length && !partner; k++) {
+      const m = members[(mi + k) % members.length];
+      if (m.sets.some((s) => !s.completed)) partner = m;
+    }
+    return (
+      <div key={`ss-${members[0].we.id}`} className="anim-page">
+        <div className="mt-3.5 flex items-center justify-between gap-2">
+          <span className="text-[11px] font-bold tracking-[0.07em] text-accent uppercase">
+            Superset {block.letter} · Round {round.round} of {round.rounds}
+          </span>
+          {partner && (
+            <span className="text-[12px] font-semibold text-fg2">
+              {tags.get(cur.we.id)} → {tags.get(partner.we.id)}
+            </span>
+          )}
+        </div>
+        <div className="mt-2 border-l-2 border-accent pl-3">
+          {members.map((m) => {
+            const focused = m.we.id === cur.we.id;
+            const tag = tags.get(m.we.id);
+            if (!focused && isFolded({ key: m.we.id, sets: m.sets }, cur.we.id, round.round)) {
+              const done = m.sets.filter((s) => s.completed && s.kind === 'working');
+              const all = m.sets.every((s) => s.completed);
+              return (
+                <button key={m.we.id} type="button" onClick={() => focus(m)} className="flex min-h-[52px] w-full items-center gap-2.5 border-b border-line text-left">
+                  <TagPill tag={tag} />
+                  <b className="min-w-0 flex-1 truncate text-[16px] font-semibold">{m.exercise.name}</b>
+                  <span className="flex flex-none items-center gap-1.5 text-[13px] text-fg2">
+                    <span className="max-w-[150px] truncate">{done.map((s) => formatSet(s, m.exercise.type, units)).join(' · ')}</span>
+                    {all && <span className="font-bold text-accent">✓</span>}
+                  </span>
+                </button>
+              );
+            }
+            return (
+              <section key={m.we.id} className={cx('pb-3 transition-opacity', !focused && 'opacity-55')}>
+                <div className="mt-1 flex items-start justify-between gap-2">
+                  <button type="button" onClick={() => focus(m)} className="flex min-h-11 min-w-0 items-center gap-2.5 text-left" aria-label={`${tag} ${m.exercise.name}${focused ? ' (current)' : ''}`}>
+                    <TagPill tag={tag} on={focused} />
+                    <span className={cx('min-w-0 truncate font-bold tracking-[-0.01em]', focused ? 'text-[20px]' : 'text-[17px]')}>{m.exercise.name}</span>
+                  </button>
+                  {focused && icons}
+                </div>
+                {focused && variationChips}
+                {table(m)}
+                {emptySets(m)}
+                {focused && addButtons(m)}
+              </section>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  // Keypad for the box being edited.
+  const keypad = (() => {
+    if (!activeEdit || !editingSet || !editingMember || !editEx) return null;
+    const field = activeEdit.field;
+    const fields = fieldsOf(editEx);
+    const fi = fields.indexOf(field);
+    const cardio = editEx.type === 'cardio';
+    const plateOk = field === 'weight' && hasPlatePad(editEx.type, editEx.equipment);
+    const platesOn = plateOk && (padPref[editEx.id] ?? editEx.platePad ?? false);
+    const opts = keypadOptions(editEx, field);
+    const label = cardio
+      ? FIELD_NAME[field as CardioField]
+      : `${setName(setLabels(editingMember.sets).get(editingSet.id) ?? '')} · ${field === 'weight' ? 'Weight' : 'Reps'}`;
+    const tabs: KeypadTab[] = fields.map((f) => ({
+      id: f,
+      label: cardio ? fieldTab(f as CardioField, editEx, units) : f === 'weight' ? (unitLabel(units) === 'lb' ? 'lbs' : 'kg') : 'reps',
+    }));
+    const stepLabel = field === 'weight' ? `${settings.weightStep} ${unitLabel(units)}` : field === 'reps' ? '1 rep' : keypadFor(field as CardioField, editEx, units).stepLabel;
+    const setPad = (v: 'numbers' | 'plates') => {
+      setPadPref((p) => ({ ...p, [editEx.id]: v === 'plates' }));
+      void setExercisePrefs(editEx.id, { platePad: v === 'plates' });
+    };
+    return (
+      <Keypad
+        left={plateOk ? <ModeTabs value={platesOn ? 'plates' : 'numbers'} onChange={setPad} /> : label}
+        tabs={tabs}
+        tab={field}
+        onTab={(f) => f !== field && startEdit(editingMember, editingSet, f)}
+        right={
+          platesOn ? (
+            <button type="button" onClick={() => setOverlay('bar')} className="flex h-11 flex-none items-center" aria-label="Choose the bar">
+              <span className="flex h-[30px] items-center gap-1 rounded-[8px] bg-surface px-2.5 text-[13px] font-semibold">
+                {barLabel(barDisplayOf(editEx), units)}
+                <ChevronDown size={9} />
+              </span>
+            </button>
+          ) : undefined
+        }
+        next={{ done: fi === fields.length - 1, onPress: onNext }}
+        bottomLeft={
+          field === 'weight'
+            ? { key: 'minus', enabled: !!opts.allowNegative }
+            : field === 'reps'
+              ? { key: 'dash', enabled: false }
+              : opts.mode === 'time'
+                ? { key: 'colon', enabled: true }
+                : { key: 'minus', enabled: false }
+        }
+        decimal={field === 'weight' || opts.mode === 'decimal'}
+        stepLabel={stepLabel}
+        onKey={onKey}
+        onClose={() => setEditing(null)}
+        panel={
+          platesOn ? (
+            <PlatePad
+              key={editingSet.id}
+              units={units}
+              bar={barDisplayOf(editEx)}
+              initialTotal={editingSet.weight != null ? displayWeight(editingSet.weight, units) : undefined}
+              onTotal={(t) => {
+                const text = formatNumber(t, 2);
+                setEditing((e) => (e ? { ...e, text, fresh: true } : e));
+                save(editingMember, editingSet, 'weight', text);
+              }}
+              onDone={onNext}
+            />
+          ) : undefined
+        }
+      />
+    );
+  })();
+
+  const supersetCandidates = cur
+    ? list
+        .filter((e) => !members.some((m) => m.we.id === e.we.id) && e.exercise.type !== 'cardio')
+        .map((e) => ({
+          key: e.we.id,
+          name: e.exercise.name,
+          sub: supersetPre.includes(e.we.id) ? 'just added' : tags.get(e.we.id) ? `in superset ${tags.get(e.we.id)![0]}` : 'in this workout',
+        }))
+    : [];
+
   return (
     <div className="flex h-full flex-col">
       {header}
@@ -370,71 +843,24 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
               + Add exercise
             </Button>
           </div>
+        ) : isSuperset ? (
+          supersetView()
         ) : (
           <div key={cur.we.id} className="anim-page">
             <div className="mt-3.5 flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <h1 className="text-[22px] leading-tight font-bold tracking-[-0.01em]">{ex.name}</h1>
-                <button type="button" onClick={openAll} className="mt-0.5 flex h-6 items-center gap-1 text-[13px] text-fg2">
-                  Exercise {idx + 1} of {list.length}
-                  {TYPE_HINT[ex.type]}
-                  <ChevronDown size={9} />
+                <button type="button" onClick={openAll} className="mt-0.5 flex h-6 max-w-full items-center gap-1 text-[13px] text-fg2">
+                  <span className="truncate">{subtitle(cur)}</span>
+                  <ChevronDown size={9} className="flex-none" />
                 </button>
               </div>
-              <div className="-mt-1 -mr-1.5 flex flex-none">
-                <IconButton label="History, charts and records" onClick={() => setOverlay('lookback')}>
-                  <ChartIcon size={15} />
-                </IconButton>
-                <IconButton label="Exercise options" onClick={() => setOverlay('exercise')}>
-                  •••
-                </IconButton>
-              </div>
+              {icons}
             </div>
-
-            {variations.length > 1 && (
-              <div className="no-scrollbar -mx-4 mt-2.5 flex gap-1.5 overflow-x-auto px-4" role="radiogroup" aria-label="Variation">
-                {variations.map((v) => {
-                  const on = v.id === ex.id;
-                  return (
-                    <button
-                      key={v.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={on}
-                      onClick={() => !on && void replaceWorkoutExercise(cur.we.id, v.id)}
-                      className={cx(
-                        'h-8 flex-none rounded-[8px] border px-3 text-[13px] font-semibold whitespace-nowrap transition-colors',
-                        on ? 'border-accent bg-done text-fg' : 'border-line-strong text-fg2',
-                      )}
-                    >
-                      {varLabels.get(v.id)}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            <SetTable
-              exercise={ex}
-              sets={cur.sets}
-              previous={previous}
-              units={units}
-              editing={activeEdit ? { setId: activeEdit.setId, field: activeEdit.field, text: activeEdit.text } : null}
-              barPlaceholderLb={ex.equipment === 'barbell' ? fromDisplay(settings.barWeight, units) : undefined}
-              onEdit={startEdit}
-              onToggle={onToggle}
-              onToggleWarmup={(s) => void toggleWarmup(s.id)}
-              onDelete={(s) => void onDelete(s)}
-              onMenu={(s, rect) => setHoldMenu({ set: s, rect })}
-            />
-            {!cur.sets.length && <p className="py-4 text-center text-[14px] text-fg2">No sets. Add one below.</p>}
-
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <QuickButton tone="warn" onClick={() => void addDrop()}>
-                + Drop
-              </QuickButton>
-              <QuickButton onClick={() => void addSet()}>+ Set</QuickButton>
-            </div>
+            {variationChips}
+            {table(cur)}
+            {emptySets(cur)}
+            {addButtons(cur)}
           </div>
         )}
       </div>
@@ -443,23 +869,37 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
 
       {/* Prev / Next stay above the keypad so you can move on without closing it first. */}
       {cur && !showAll && (
-        <div className="flex-none" data-dock>
+        <div className="relative flex-none" data-dock>
+          {banner && (
+            <div
+              key={banner.id}
+              role="status"
+              className="anim-toast pointer-events-none absolute inset-x-3 bottom-full mb-2 flex h-11 items-center justify-center gap-1.5 rounded-[11px] border border-accent bg-[color-mix(in_srgb,#2e8bff_16%,var(--og-bg))] px-3 text-[14px] font-semibold text-accent"
+            >
+              <span aria-hidden>↓</span>
+              <span className="truncate">{banner.text}</span>
+            </div>
+          )}
           <nav
-            className={cx('grid grid-cols-2 gap-2 border-t border-line px-3', keypadOpen ? 'py-2' : 'pt-2.5 pb-[max(10px,env(safe-area-inset-bottom))]')}
+            className={cx('grid grid-cols-2 gap-2 border-t border-line bg-bg px-3', keypadOpen ? 'py-2' : 'pt-2.5 pb-[max(10px,env(safe-area-inset-bottom))]')}
             aria-label="Exercises"
           >
-            {prevEx ? (
-              <NavButton small="Prev" onClick={() => jump(prevEx.we.id)} side="left" compact={keypadOpen}>
-                {prevEx.exercise.name}
+            {prevNav ? (
+              <NavButton small={prevNav.small} onClick={prevNav.go} side="left" compact={keypadOpen}>
+                {prevNav.text}
               </NavButton>
             ) : (
               <NavButton small="No previous" onClick={openAll} tone="white" compact={keypadOpen}>
                 All exercises
               </NavButton>
             )}
-            {nextEx ? (
-              <NavButton small="Next" onClick={() => jump(nextEx.we.id)} side="right" tone={allDone ? 'accent' : undefined} compact={keypadOpen}>
-                {nextEx.exercise.name}
+            {nextNav ? (
+              <NavButton small={nextNav.small} onClick={nextNav.go} side="right" compact={keypadOpen}>
+                {nextNav.text}
+              </NavButton>
+            ) : everyDone ? (
+              <NavButton small="All done" onClick={() => void startFinish()} tone="accent" align="right" compact={keypadOpen}>
+                Finish workout
               </NavButton>
             ) : (
               <NavButton small="Last one" onClick={openAll} tone="white" align="right" compact={keypadOpen}>
@@ -467,36 +907,28 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
               </NavButton>
             )}
           </nav>
-          {activeEdit && editingSet && ex && (
-            <Keypad
-              title={`${setName(labels.get(editingSet.id) ?? '')} · ${activeEdit.field === 'weight' ? 'Weight' : 'Reps'}`}
-              mode={activeEdit.field}
-              onModeChange={
-                ex.type === 'bodyweight'
-                  ? undefined
-                  : (m) => {
-                      if (m !== activeEdit.field) startEdit(editingSet, m);
-                    }
-              }
-              weightLabel={unitLabel(units) === 'lb' ? 'lbs' : 'kg'}
-              stepLabel={`${settings.weightStep} ${unitLabel(units)}`}
-              allowNegative={activeEdit.field === 'weight' && (ex.type === 'assisted' || ex.type === 'bodyweight_plus')}
-              onKey={onKey}
-              onClose={() => setEditing(null)}
-            />
-          )}
+          {keypad}
         </div>
       )}
 
       {/* ───── overlays */}
 
-      <HoldMenu open={!!holdMenu} anchor={holdMenu?.rect} items={holdMenu ? holdItems(holdMenu.set) : []} onClose={() => setHoldMenu(null)} />
+      <HoldMenu
+        open={!!holdMenu}
+        anchor={holdMenu?.rect}
+        items={holdMenu ? holdItems(holdMenu.member, holdMenu.set) : []}
+        onClose={() => setHoldMenu(null)}
+      />
 
       <WorkoutOptions
         open={overlay === 'options'}
         name={workout.name}
         startedAt={workout.startedAt}
         onClose={() => setOverlay(null)}
+        onPause={() => {
+          setOverlay(null);
+          navigate('/');
+        }}
         onRename={() => setOverlay('rename')}
         onStart={() => setOverlay('start')}
         onDiscard={() => setOverlay('discard')}
@@ -528,6 +960,19 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
           if (cur.sets.some((s) => s.completed)) setOverlay('remove');
           else void removeWorkoutExercise(cur.we.id);
         }}
+        superset={
+          cur && ex?.type !== 'cardio'
+            ? {
+                tag: tags.get(cur.we.id),
+                canAdd: members.length < 3,
+                onLink: () => {
+                  setSupersetPre([]);
+                  setOverlay('superset');
+                },
+                onUnlink: () => void unlinkWorkoutSuperset(cur.we.id),
+              }
+            : undefined
+        }
       />
       <Alert
         open={overlay === 'remove'}
@@ -549,6 +994,46 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
           { label: 'Cancel', onClick: () => setOverlay(null) },
         ]}
       />
+
+      {cur && ex && (
+        <SupersetSheet
+          open={overlay === 'superset'}
+          anchorName={ex.name}
+          groupSize={isSuperset ? members.length : 1}
+          candidates={supersetCandidates}
+          preselect={supersetPre}
+          addLabel="adds it to this workout"
+          onAddAnother={() => setOverlay('supersetAdd')}
+          onClose={() => setOverlay(null)}
+          onMake={(keys) => {
+            setOverlay(null);
+            void linkWorkoutSuperset(cur.we.id, keys);
+          }}
+        />
+      )}
+      <ExercisePicker
+        open={overlay === 'supersetAdd'}
+        mode="single"
+        title="Superset with…"
+        excludeIds={list.map((e) => e.exercise.id)}
+        onCancel={() => setOverlay('superset')}
+        onPick={async (id) => {
+          const ids = await addExercisesToWorkout(workout.id, [id]);
+          setSupersetPre(ids.slice(0, 1));
+          setOverlay('superset');
+        }}
+      />
+
+      {editEx && (
+        <BarPicker
+          open={overlay === 'bar'}
+          exerciseName={editEx.name}
+          units={units}
+          bar={barDisplayOf(editEx)}
+          onClose={() => setOverlay(null)}
+          onPick={(w) => void setExercisePrefs(editEx.id, { barLb: fromDisplay(w, units) })}
+        />
+      )}
 
       <LookbackSheet
         exercise={ex}
@@ -636,6 +1121,16 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
   );
 }
 
+/** A1 / A2 tag: blue on the exercise you're on, grey on its partners. */
+export function TagPill({ tag, on }: { tag?: string; on?: boolean }) {
+  if (!tag) return null;
+  return (
+    <span className={cx('flex h-[20px] min-w-[26px] flex-none items-center justify-center rounded-[5px] px-1 text-[11px] font-extrabold', on ? 'bg-accent text-white' : 'bg-surface-2 text-fg2')}>
+      {tag}
+    </span>
+  );
+}
+
 function untickedMessage(labels: string[]): string {
   const shown = labels.slice(0, 2);
   const more = labels.length - shown.length;
@@ -708,6 +1203,7 @@ function WorkoutOptions({
   name,
   startedAt,
   onClose,
+  onPause,
   onRename,
   onStart,
   onDiscard,
@@ -716,6 +1212,7 @@ function WorkoutOptions({
   name: string;
   startedAt: number;
   onClose: () => void;
+  onPause: () => void;
   onRename: () => void;
   onStart: () => void;
   onDiscard: () => void;
@@ -723,6 +1220,9 @@ function WorkoutOptions({
   const now = useNow(30_000);
   return (
     <Sheet open={open} onClose={onClose} title={name} subtitle={`Started ${fmtTime(startedAt)} · ${fmtDuration(now - startedAt)}`}>
+      <SheetOption onClick={onPause} detail="resume from Home">
+        Pause workout
+      </SheetOption>
       <SheetOption onClick={onRename}>Rename this workout</SheetOption>
       <SheetOption onClick={onStart} detail={fmtTime(startedAt)}>
         Change start time

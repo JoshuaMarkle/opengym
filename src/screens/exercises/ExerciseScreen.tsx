@@ -7,6 +7,7 @@ import { BackButton, BarButton, Check, cx, EmptyState, LabelAction, Note, Screen
 import { useData } from '../../data/DataProvider';
 import { deleteExercise, mergeExercise, routinesUsing, setVariations } from '../../data/exercises';
 import { equipmentLabel, muscleLabel, type Exercise } from '../../db/types';
+import { cardioTotals, columnsLabel, formatHours } from '../../lib/cardio';
 import { fmtMonthDay } from '../../lib/dates';
 import { computeRecords } from '../../lib/records';
 import { TYPE_LABEL, TYPE_TAG } from '../../lib/sets';
@@ -46,8 +47,11 @@ export function ExerciseScreen() {
     );
 
   const units = settings.units;
+  const cardioTime = exercise.type === 'cardio' ? cardioTotals(sessions.flatMap((s) => s.sets)).durationSec : 0;
   const best =
-    exercise.type === 'weight'
+    exercise.type === 'cardio'
+      ? { label: 'Total time', value: formatHours(cardioTime) }
+      : exercise.type === 'weight'
       ? { label: 'Best est. 1RM', value: rec?.bestE1rm ? formatNumber(Math.round(toDisplay(rec.bestE1rm.value, units)), 0) : '—' }
       : { label: 'Most reps', value: rec?.mostReps ? String(rec.mostReps.reps) : '—' };
 
@@ -66,7 +70,7 @@ export function ExerciseScreen() {
         {TYPE_TAG[exercise.type] && <Tag>{TYPE_TAG[exercise.type]}</Tag>}
       </h1>
       <p className="mt-1 text-[13px] text-fg2">
-        {muscleLabel(exercise.muscle)} · {equipmentLabel(exercise.equipment)} · {TYPE_LABEL[exercise.type]}
+        {exercise.type === 'cardio' ? `Cardio · ${columnsLabel(exercise, units)}` : `${muscleLabel(exercise.muscle)} · ${equipmentLabel(exercise.equipment)} · ${TYPE_LABEL[exercise.type]}`}
         {exercise.isCustom ? ' · custom' : ''}
       </p>
 
@@ -79,6 +83,8 @@ export function ExerciseScreen() {
         ]}
       />
 
+      {exercise.type !== 'cardio' && (
+        <>
       <SectionLabel action={<LabelAction onClick={() => setLinkOpen(true)}>{variations.length > 1 ? 'Edit links' : 'Link'}</LabelAction>}>Variations</SectionLabel>
       {variations.length > 1 ? (
         <div className="mt-2.5 flex flex-wrap gap-1.5">
@@ -98,10 +104,16 @@ export function ExerciseScreen() {
         <p className="mt-2.5 text-[14px] text-fg2">None linked.</p>
       )}
       <Note>Linked exercises show as buttons when logging. Each keeps its own history.</Note>
+        </>
+      )}
 
       <SectionLabel>More</SectionLabel>
-      <button type="button" onClick={() => navigate(`/progress/lift/${id}`)} className="flex min-h-[52px] w-full items-center justify-between gap-3 border-b border-line text-left text-[16px]">
-        History, charts & records
+      <button
+        type="button"
+        onClick={() => navigate(exercise.type === 'cardio' ? `/progress/cardio/${id}` : `/progress/lift/${id}`)}
+        className="flex min-h-[52px] w-full items-center justify-between gap-3 border-b border-line text-left text-[16px]"
+      >
+        {exercise.type === 'cardio' ? 'Weekly totals & sessions' : 'History, charts & records'}
         <ChevronRight size={13} className="text-fg3" />
       </button>
       <div className="flex min-h-[52px] items-center justify-between gap-3 border-b border-line text-[16px]">

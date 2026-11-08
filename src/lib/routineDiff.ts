@@ -6,6 +6,8 @@ export interface StructureItem {
   exerciseId: string;
   warmups: number;
   working: number;
+  /** Superset letter (normalized), when part of one. */
+  supersetGroup?: string;
 }
 
 export type RoutineChange =
@@ -14,7 +16,9 @@ export type RoutineChange =
   | { type: 'replaced'; fromId: string; toId: string }
   | { type: 'sets'; exerciseId: string; from: number; to: number }
   | { type: 'warmups'; exerciseId: string; from: number; to: number }
-  | { type: 'moved'; exerciseId: string; beforeId?: string };
+  | { type: 'moved'; exerciseId: string; beforeId?: string }
+  | { type: 'superset'; exerciseIds: string[] }
+  | { type: 'unlinked'; exerciseIds: string[] };
 
 /** Longest increasing subsequence (returns the values kept). */
 function lis(values: number[]): Set<number> {
@@ -97,6 +101,25 @@ export function diffRoutine(
     if (r.working !== w.working) changes.push({ type: 'sets', exerciseId: w.exerciseId, from: r.working, to: w.working });
     if (r.warmups !== w.warmups) changes.push({ type: 'warmups', exerciseId: w.exerciseId, from: r.warmups, to: w.warmups });
   }
+
+  // Supersets: a group made or broken up during the workout is a change (same slots, swaps included).
+  const groups = (items: StructureItem[], map: (id: string) => string) => {
+    const m = new Map<string, string[]>();
+    for (const it of items) if (it.supersetGroup) m.set(it.supersetGroup, [...(m.get(it.supersetGroup) ?? []), map(it.exerciseId)]);
+    return [...m.values()].filter((g) => g.length > 1);
+  };
+  const toRoutineId = (id: string) => [...pairs.entries()].find(([, to]) => to === id)?.[0] ?? id;
+  const sig = (g: string[]) => [...g].sort().join('|');
+  const rGroups = groups(routine, (id) => id);
+  const wGroups = groups(workout, toRoutineId);
+  const rSigs = new Set(rGroups.map(sig));
+  const wSigs = new Set(wGroups.map(sig));
+  const backToWorkout = (id: string) => pairs.get(id) ?? id;
+  for (const g of wGroups) if (!rSigs.has(sig(g))) changes.push({ type: 'superset', exerciseIds: g.map(backToWorkout) });
+  for (const g of rGroups) {
+    const present = g.filter((id) => wIds.includes(backToWorkout(id)));
+    if (!wSigs.has(sig(g)) && present.length > 1) changes.push({ type: 'unlinked', exerciseIds: present.map(backToWorkout) });
+  }
   return changes;
 }
 
@@ -113,6 +136,10 @@ export function describeChange(c: RoutineChange, name: (id: string) => string): 
       return { sign: '↻', text: `${name(c.exerciseId)}: ${c.from} → ${plural(c.to, 'set')}` };
     case 'warmups':
       return { sign: '↻', text: `${name(c.exerciseId)}: ${c.from} → ${plural(c.to, 'warm-up')}` };
+    case 'superset':
+      return { sign: '+', text: `Superset: ${c.exerciseIds.map(name).join(' + ')}` };
+    case 'unlinked':
+      return { sign: '−', text: `No longer a superset: ${c.exerciseIds.map(name).join(' + ')}` };
     case 'moved':
       return {
         sign: '↻',

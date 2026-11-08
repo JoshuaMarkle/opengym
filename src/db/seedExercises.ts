@@ -1,4 +1,4 @@
-import type { Equipment, ExerciseType, Muscle } from './types';
+import type { CardioColumn, DistanceUnit, Equipment, ExerciseType, Muscle } from './types';
 
 /**
  * Built-in exercise library. IDs are deterministic (`ex-<slug>`) so backups,
@@ -11,6 +11,10 @@ export interface SeedExercise {
   equipment: Equipment;
   type?: ExerciseType;
   group?: string;
+  /** Cardio presets (C6): the columns after time. */
+  cardio?: CardioColumn[];
+  distanceUnit?: DistanceUnit;
+  isRun?: boolean;
 }
 
 
@@ -178,6 +182,16 @@ export const SEED_EXERCISES: SeedExercise[] = [
   { name: 'Thruster', muscle: 'other', equipment: 'barbell' },
   { name: 'Kettlebell Swing', muscle: 'other', equipment: 'other' },
   { name: 'Turkish Get-up', muscle: 'other', equipment: 'other' },
+
+  // ── Cardio presets (C6): ordinary cardio exercises with their columns picked
+  { name: 'Treadmill', muscle: 'other', equipment: 'machine', type: 'cardio', cardio: ['distance', 'avgSpeed'], isRun: true },
+  { name: 'Bike', muscle: 'other', equipment: 'machine', type: 'cardio', cardio: ['distance', 'level'] },
+  { name: 'Rower', muscle: 'other', equipment: 'machine', type: 'cardio', cardio: ['distance', 'split500'], distanceUnit: 'm' },
+  { name: 'Stair Climber', muscle: 'other', equipment: 'machine', type: 'cardio', cardio: ['speed', 'level'] },
+  { name: 'Elliptical', muscle: 'other', equipment: 'machine', type: 'cardio', cardio: ['distance', 'level'] },
+  { name: 'Run / Walk Outside', muscle: 'other', equipment: 'other', type: 'cardio', cardio: ['distance', 'pace'], isRun: true },
+  { name: 'Jump Rope', muscle: 'other', equipment: 'other', type: 'cardio', cardio: [] },
+  { name: 'Generic Cardio', muscle: 'other', equipment: 'other', type: 'cardio', cardio: [] },
 ];
 
 

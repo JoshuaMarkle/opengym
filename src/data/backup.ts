@@ -1,6 +1,6 @@
 import { db, TABLE_NAMES, type TableName } from '../db/db';
 import { ensureSeeded } from '../db/seed';
-import type { Exercise, ExerciseType, Folder, Routine, RoutineExercise, RoutineSet, Settings, Workout, WorkoutExercise, WorkoutSet } from '../db/types';
+import type { Exercise, ExerciseType, Folder, PlanSchedule, Routine, RoutineExercise, RoutineSet, Settings, Workout, WorkoutExercise, WorkoutSet } from '../db/types';
 import { isoDate } from '../lib/dates';
 import { uuid } from '../lib/id';
 import type { ImportedWorkout, ParsedImport } from '../lib/importParser';
@@ -10,7 +10,8 @@ import { toCsv } from '../lib/csv';
 import { formatWeight, fromDisplay } from '../lib/units';
 import { getSettings, updateSettings } from './settings';
 
-export const SCHEMA_VERSION = 1;
+/** 2: cardio fields on sets, cardio columns on exercises, superset groups. Older backups load as is. */
+export const SCHEMA_VERSION = 2;
 
 export interface BackupFile {
   app: 'opengym';
@@ -146,8 +147,10 @@ export async function importRoutinesFromBackup(backup: BackupFile): Promise<numb
       await db.folders.add({ ...f, id, order: order++, active: !hasActive && f.active && !f.archived, createdAt: t, updatedAt: t });
     }
     let n = 0;
+    const routineMap = new Map<string, string>();
     for (const r of routines) {
       const rid = uuid();
+      routineMap.set(r.id, rid);
       await db.routines.add({ ...r, id: rid, folderId: r.folderId ? folderMap.get(r.folderId) : undefined, createdAt: t, updatedAt: t });
       for (const re of res.filter((x) => x.routineId === r.id)) {
         if (!(await db.exercises.get(re.exerciseId))) {
@@ -162,6 +165,17 @@ export async function importRoutinesFromBackup(backup: BackupFile): Promise<numb
         }
       }
       n++;
+    }
+    // Schedules point at routines by id: follow them to the new copies.
+    const remap = (id: string | null) => (id ? (routineMap.get(id) ?? null) : null);
+    for (const f of folders) {
+      if (!f.schedule) continue;
+      const schedule: PlanSchedule = {
+        ...f.schedule,
+        versions: f.schedule.versions.map((v) => ({ ...v, days: v.days.map(remap) })),
+        overrides: Object.fromEntries(Object.entries(f.schedule.overrides ?? {}).map(([k, o]) => [k, { ...o, routineId: remap(o.routineId) }])),
+      };
+      await db.folders.update(folderMap.get(f.id)!, { schedule });
     }
     return n;
   });
@@ -205,11 +219,21 @@ export async function exportCsv(): Promise<File> {
           s.kind === 'working' ? n : '',
           s.weight == null ? '' : formatWeight(s.weight, units),
           s.reps ?? '',
+          s.durationSec ?? '',
+          s.distance == null ? '' : Math.round(s.distance * 10) / 10,
+          s.speed == null ? '' : Math.round(s.speed * 100) / 100,
+          s.incline ?? '',
+          s.level ?? '',
+          s.calories ?? '',
+          we.supersetGroup ?? '',
         ]);
       }
     }
   }
-  const csv = toCsv(['Workout', 'Start', 'End', 'Exercise', 'Set Type', 'Set', `Weight (${units})`, 'Reps'], rows);
+  const csv = toCsv(
+    ['Workout', 'Start', 'End', 'Exercise', 'Set Type', 'Set', `Weight (${units})`, 'Reps', 'Seconds', 'Distance (m)', 'Speed (km/h)', 'Incline (%)', 'Level', 'Calories', 'Superset'],
+    rows,
+  );
   return new File([csv], `opengym-workouts-${isoDate(Date.now())}.csv`, { type: 'text/csv' });
 }
 

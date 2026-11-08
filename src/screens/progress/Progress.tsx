@@ -3,14 +3,17 @@ import { useNavigate } from 'react-router';
 import { Sparkline } from '../../components/charts';
 import { CheckGlyph, ChevronDown, ProgressIcon } from '../../components/icons';
 import { Sheet, SheetOption } from '../../components/overlays';
-import { cx, EmptyState, LabelAction, LargeHeader, Screen, SectionLabel } from '../../components/ui';
+import { cx, EmptyState, LabelAction, LargeHeader, Screen, SectionLabel, Segmented } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { defaultPinned, hasEnoughForProgress, liftPoints, liftTrend } from '../../data/lifts';
 import type { Exercise, Units } from '../../db/types';
 import { CHART_RANGES, RANGE_WORDS, type ChartRange } from '../../lib/chart';
 import { formatNumber, formatWeight, toDisplay, unitLabel } from '../../lib/units';
+import { CardioProgress } from './Cardio';
 
 const RANGE_KEY = 'og-progress-range';
+const VIEW_KEY = 'og-progress-view';
+type View = 'lifts' | 'cardio';
 const RANGE_LABEL: Record<ChartRange, string> = { '1M': 'Last month', '3M': 'Last 3 months', '6M': 'Last 6 months', '1Y': 'Last year', All: 'All time' };
 
 function loadRange(): ChartRange {
@@ -58,7 +61,25 @@ function changeText(change: number, pct: number | undefined, ex: Exercise, units
 /** 7.1 / 7.6: pinned lifts at a glance. */
 export function Progress() {
   const navigate = useNavigate();
-  const { history, settings } = useData();
+  const { history, settings, exerciseMap } = useData();
+  const isCardio = (id: string) => exerciseMap.get(id)?.type === 'cardio';
+  const anyCardio = [...history.sessionsByExercise.keys()].some(isCardio);
+  const [viewRaw, setViewRaw] = useState<View>(() => {
+    try {
+      return localStorage.getItem(VIEW_KEY) === 'cardio' ? 'cardio' : 'lifts';
+    } catch {
+      return 'lifts';
+    }
+  });
+  const view: View = anyCardio ? viewRaw : 'lifts';
+  const setView = (v: View) => {
+    setViewRaw(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {
+      /* ignore */
+    }
+  };
   const pinned = usePinned();
   const [range, setRangeState] = useState<ChartRange>(loadRange);
   const [rangeOpen, setRangeOpen] = useState(false);
@@ -81,7 +102,7 @@ export function Progress() {
     [pinned, history, range, settings.oneRmFormula],
   );
 
-  const enough = hasEnoughForProgress(history);
+  const enough = hasEnoughForProgress(history, isCardio);
   const withChange = rows.filter((r) => r.trend.change !== undefined);
   const up = withChange.filter((r) => (r.trend.change ?? 0) > (r.ex.type === 'bodyweight' ? 0.5 : 0.25)).length;
   // % only means something for est. 1RM. Added/assisted weight starts near 0, so its % would swamp the average.
@@ -97,7 +118,19 @@ export function Progress() {
         <LargeHeader
           title="Progress"
           right={
-            enough && (
+            <>
+              {anyCardio && (
+                <Segmented
+                  className="w-[132px]"
+                  options={[
+                    { value: 'lifts' as const, label: 'Lifts' },
+                    { value: 'cardio' as const, label: 'Cardio' },
+                  ]}
+                  value={view}
+                  onChange={setView}
+                />
+              )}
+              {enough && view === 'lifts' && (
               <button
                 type="button"
                 onClick={() => setRangeOpen(true)}
@@ -109,12 +142,15 @@ export function Progress() {
                   <ChevronDown size={10} />
                 </span>
               </button>
-            )
+              )}
+            </>
           }
         />
       }
     >
-      {!enough ? (
+      {view === 'cardio' ? (
+        <CardioProgress />
+      ) : !enough ? (
         <EmptyState icon={<ProgressIcon size={24} />} title="Not enough data yet" className="pt-24">
           Log an exercise in two different workouts and its trend shows up here.
         </EmptyState>
