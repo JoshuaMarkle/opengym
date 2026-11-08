@@ -1,4 +1,5 @@
 import type { SVGProps } from 'react';
+import { LOGO_COLORS, LOGO_RECTS } from '../lib/logo';
 
 type P = SVGProps<SVGSVGElement> & { size?: number };
 
@@ -10,7 +11,7 @@ const svg = (size: number, props: SVGProps<SVGSVGElement>) => ({
   ...props,
 });
 
-// ── Tab bar: the solid set from design/brand/nav/solid (SPEC §8 Icons)
+// ── Tab bar: the solid set in design/brand/tabs (SPEC §8 Icons)
 export function HomeIcon({ size = 24, ...p }: P) {
   return (
     <svg viewBox="0 0 24 24" {...svg(size, p)}>
@@ -69,15 +70,6 @@ export function ChartIcon({ size = 16, ...p }: P) {
   return (
     <svg viewBox="0 0 16 12" {...svg(size, { height: (size * 12) / 16, ...p })}>
       <polyline points="1,10 5,6 8,8 14,2" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-export function SearchIcon({ size = 15, ...p }: P) {
-  return (
-    <svg viewBox="0 0 13 13" {...svg(size, p)}>
-      <circle cx="5.5" cy="5.5" r="4.3" stroke="currentColor" strokeWidth="1.6" fill="none" />
-      <line x1="8.6" y1="8.6" x2="12" y2="12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   );
 }
@@ -178,14 +170,6 @@ export function ArrowGlyph({ size = 14, ...p }: P) {
   );
 }
 
-export function PlusGlyph({ size = 14, ...p }: P) {
-  return (
-    <svg viewBox="0 0 14 14" {...svg(size, p)}>
-      <path d="M7 1.5v11M1.5 7h11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 /** ≡ drag handle */
 export function Handle({ className = '' }: { className?: string }) {
   return (
@@ -197,35 +181,21 @@ export function Handle({ className = '' }: { className?: string }) {
   );
 }
 
-/** The OpenGym mark: bar, collar, two 45s and a smaller plate. */
-export function LogoMark({ size = 40, rounded = true }: { size?: number; rounded?: boolean }) {
+/** The OpenGym logo (src/lib/logo.ts). Bar and background follow the theme. */
+export function LogoMark({ size = 40 }: { size?: number }) {
   return (
     <svg viewBox="0 0 1024 1024" width={size} height={size} aria-label="OpenGym">
       <defs>
         <clipPath id="og-logo-clip">
-          <rect width="1024" height="1024" rx={rounded ? 224 : 0} />
+          <rect width="1024" height="1024" rx="224" />
         </clipPath>
       </defs>
       <g clipPath="url(#og-logo-clip)">
-        {/* Brand logo: dark or light version follows the theme (brand/logos/opengym-logo-{dark,light}.svg). */}
         <rect width="1024" height="1024" fill="var(--og-bg)" />
-        <rect x="-60" y="480" width="830" height="64" rx="32" fill="var(--og-logo-bar)" />
-        <rect x="174" y="435" width="38" height="154" rx="14" fill="var(--og-logo-bar)" />
-        <rect x="234" y="202" width="156" height="620" rx="30" fill="#2E8BFF" />
-        <rect x="408" y="202" width="156" height="620" rx="30" fill="#2E8BFF" />
-        <rect x="582" y="312" width="132" height="400" rx="30" fill="#2E8BFF" />
+        {LOGO_RECTS.map((r, i) => (
+          <rect key={i} x={r.x} y={r.y} width={r.w} height={r.h} rx={r.r} fill={r.part === 'plate' ? LOGO_COLORS.plate : 'var(--og-logo-bar)'} />
+        ))}
       </g>
     </svg>
-  );
-}
-
-/** "opengym." wordmark */
-export function Wordmark({ className = '' }: { className?: string }) {
-  return (
-    <span className={`tracking-[-0.03em] ${className}`}>
-      <span className="font-normal text-fg2">open</span>
-      <span className="font-extrabold text-fg">gym</span>
-      <span className="font-extrabold text-accent">.</span>
-    </span>
   );
 }

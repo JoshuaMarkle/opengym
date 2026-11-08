@@ -7,7 +7,7 @@ import { Sheet } from './overlays';
 import { Button, cx, Radio } from './ui';
 
 /**
- * A3–A4: the plate pad. Bar drawing on the left (the right half of a barbell, like
+ * 4.16–4.17: the plate pad. Bar drawing on the left (the right half of a barbell, like
  * the logo), the total and the six plate buttons on the right, Undo / Clear / Done
  * below. A button adds that plate to each side (up to ten a side); tapping a
  * plate on the drawing takes it off. Same height as the number keypad. Values are in the display unit.
@@ -201,7 +201,7 @@ function BarDrawing({ units, stack, onRemove }: { units: Units; stack: number[];
   );
 }
 
-/** A5: which bar this exercise uses. Remembered per exercise. */
+/** 4.18: which bar this exercise uses. Remembered per exercise. */
 export function BarPicker({
   open,
   exerciseName,

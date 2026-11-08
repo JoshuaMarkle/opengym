@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router';
 import { SwipeRow } from '../../components/gestures';
 import { ChevronRight } from '../../components/icons';
@@ -35,8 +35,10 @@ import { fromDisplay, unitColumn, unitLabel } from '../../lib/units';
 import { ExercisePicker } from '../exercises/ExercisePicker';
 import { weightCellText, weightEditDisplay, weightEditText, weightFromEdit } from '../workout/SetTable';
 import { TagPill } from '../workout/WorkoutScreen';
+import { EffortBadge, EffortPad, PadClose } from '../../components/Effort';
+import { EFFORT_LABEL, effortBadge, effortSpoken } from '../../lib/effort';
 
-/** 'weight' | 'reps', or a cardio field. */
+/** 'weight' | 'reps', 'effort' (the rpe / rir tab on a reps box), or a cardio field. */
 type Field = string;
 interface Editing {
   exKey: string;
@@ -67,6 +69,7 @@ export function EditWorkout() {
               parentKey: s.parentSetId,
               weight: s.weight,
               reps: s.reps,
+              ...(s.rpe != null && { rpe: s.rpe }),
               ...(s.durationSec != null && { durationSec: s.durationSec }),
               ...(s.distance != null && { distance: s.distance }),
               ...(s.speed != null && { speed: s.speed }),
@@ -127,7 +130,7 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
     updateEx(exKey, (e) => {
       const last = [...e.sets].reverse().find((s) => s.kind === 'working');
       // Copy the last set's numbers (weight/reps, or a cardio segment's values).
-      return { ...e, sets: [...e.sets, { ...last, key: uuid(), kind: 'working', parentKey: undefined }] };
+      return { ...e, sets: [...e.sets, { ...last, key: uuid(), kind: 'working', parentKey: undefined, rpe: undefined }] };
     });
 
   const addDrop = (exKey: string, ex: Exercise) =>
@@ -168,7 +171,9 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
   const editingExercise = editingEx ? exerciseOrMissing(exerciseMap, editingEx.exerciseId) : undefined;
 
   const textOf = (s: EditedSet, field: Field, ex: Exercise) =>
-    field === 'weight' ? weightEditText(s.weight, ex, units) : field === 'reps' ? (s.reps != null ? String(s.reps) : '') : editTextOf(field as CardioField, fieldValue(s, field as CardioField), ex, units);
+    field === 'effort'
+      ? ''
+      : field === 'weight' ? weightEditText(s.weight, ex, units) : field === 'reps' ? (s.reps != null ? String(s.reps) : '') : editTextOf(field as CardioField, fieldValue(s, field as CardioField), ex, units);
   const startEdit = (exKey: string, s: EditedSet, field: Field, ex: Exercise) => setEditing({ exKey, setKey: s.key, field, text: textOf(s, field, ex), fresh: true });
   const fieldsOf = (ex: Exercise): Field[] => (ex.type === 'cardio' ? cardioFields(ex) : ex.type === 'bodyweight' ? ['reps'] : ['weight', 'reps']);
 
@@ -181,6 +186,10 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
 
   const onKey = (k: KeypadKey) => {
     if (!editing || !editingSet || !editingExercise) return;
+    if (editing.field === 'effort') {
+      if (k.type === 'backspace') updateSet(editing.exKey, editing.setKey, { rpe: undefined });
+      return;
+    }
     const ex = editingExercise;
     const text = applyKey(editing.text, editing.fresh, k, optionsFor(ex, editing.field));
     setEditing({ ...editing, text, fresh: false });
@@ -198,7 +207,7 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
   const goNext = () => {
     if (!editing || !editingSet || !editingExercise || !editingEx) return;
     const fields = fieldsOf(editingExercise);
-    const fi = fields.indexOf(editing.field);
+    const fi = editing.field === 'effort' ? fields.length - 1 : fields.indexOf(editing.field);
     if (fi < fields.length - 1) return startEdit(editing.exKey, editingSet, fields[fi + 1], editingExercise);
     const nextSet = editingEx.sets[editingEx.sets.findIndex((x) => x.key === editingSet.key) + 1];
     if (nextSet) startEdit(editing.exKey, nextSet, fields[0], editingExercise);
@@ -388,6 +397,14 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
                   const l = labels.get(s.key)!;
                   const editW = editing?.setKey === s.key && editing.field === 'weight';
                   const editR = editing?.setKey === s.key && editing.field === 'reps';
+                  const editE = editing?.setKey === s.key && editing.field === 'effort';
+                  const mode = settings.effort;
+                  const badge =
+                    mode === 'off' || s.kind !== 'working' ? null : editE ? (
+                      <EffortBadge inset tone="active" text={s.rpe != null ? effortBadge(s.rpe, mode) : '+'} label="Picking effort" />
+                    ) : s.rpe != null ? (
+                      <EffortBadge inset tone="logged" text={effortBadge(s.rpe, mode)} label={`${effortSpoken(s.rpe, mode)}. Change effort`} onPress={() => startEdit(e.key, s, 'effort', ex)} />
+                    ) : null;
                   const wText = editW ? weightEditDisplay(editing!.text, ex) : weightCellText(s.weight, ex, units);
                   return (
                     <SwipeRow
@@ -407,7 +424,7 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
                           {l}
                         </button>
                         {showW && <EditCell text={wText} editing={editW} onClick={() => startEdit(e.key, s, 'weight', ex)} label={`Set ${l} weight`} />}
-                        <EditCell text={editR ? editing!.text : s.reps != null ? String(s.reps) : ''} editing={editR} onClick={() => startEdit(e.key, s, 'reps', ex)} label={`Set ${l} reps`} />
+                        <EditCell text={editR ? editing!.text : s.reps != null ? String(s.reps) : ''} editing={editR} onClick={() => startEdit(e.key, s, 'reps', ex)} label={`Set ${l} reps`} badge={badge} />
                       </div>
                     </SwipeRow>
                   );
@@ -455,12 +472,33 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
         const cardio = ex.type === 'cardio';
         const fields = fieldsOf(ex);
         const fi = fields.indexOf(editing.field);
-        const opts = optionsFor(ex, editing.field);
-        const tabs: KeypadTab[] = fields.map((f) => ({ id: f, label: cardio ? fieldTab(f as CardioField, ex, units) : f === 'weight' ? (units === 'lb' ? 'lbs' : 'kg') : 'reps' }));
+        const effortTab = settings.effort !== 'off' && !cardio && editingSet.kind === 'working' && (editing.field === 'reps' || editing.field === 'effort');
+        const tabs: KeypadTab[] = [...fields, ...(effortTab ? ['effort'] : [])].map((f) => ({
+          id: f,
+          label: f === 'effort' ? EFFORT_LABEL[settings.effort].toLowerCase() : cardio ? fieldTab(f as CardioField, ex, units) : f === 'weight' ? (units === 'lb' ? 'lbs' : 'kg') : 'reps',
+        }));
         const who = (() => {
           const l = setLabels(editingEx!.sets.map((s, j) => ({ id: s.key, order: j, kind: s.kind, parentSetId: s.parentKey }))).get(editingSet.key);
           return l === 'W' ? 'Warm-up' : l === 'D' ? 'Drop set' : `Set ${l}`;
         })();
+        if (editing.field === 'effort' && settings.effort !== 'off') {
+          const mode = settings.effort;
+          return (
+            <Keypad
+              left={<PadClose onPress={() => setEditing(null)}>{`${who} · ${EFFORT_LABEL[mode]}`}</PadClose>}
+              tabs={tabs}
+              tab="effort"
+              onTab={(f) => f !== 'effort' && startEdit(editing.exKey, editingSet, f, ex)}
+              next={{ done: true, onPress: goNext }}
+              bottomLeft={{ key: 'minus', enabled: false }}
+              stepLabel=""
+              onKey={onKey}
+              onClose={() => setEditing(null)}
+              panel={<EffortPad mode={mode} value={editingSet.rpe} onChange={(v) => updateSet(editing.exKey, editing.setKey, { rpe: v })} />}
+            />
+          );
+        }
+        const opts = optionsFor(ex, editing.field);
         return (
           <Keypad
             left={cardio ? FIELD_NAME[editing.field as CardioField] : `${who} · ${editing.field === 'weight' ? 'Weight' : 'Reps'}`}
@@ -588,14 +626,21 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
   );
 }
 
-function EditCell({ text, editing, onClick, label }: { text: string; editing: boolean; onClick: () => void; label: string }) {
-  return (
-    <button type="button" aria-label={label} onClick={onClick} className="flex h-10 items-center">
+function EditCell({ text, editing, onClick, label, badge }: { text: string; editing: boolean; onClick: () => void; label: string; badge?: ReactNode }) {
+  const cell = (
+    <button type="button" aria-label={label} onClick={onClick} className="flex h-10 w-full items-center">
       <span className={cx('flex h-[32px] w-full items-center justify-center rounded-[8px] text-[16px] font-semibold', editing ? 'border-2 border-accent bg-edit' : 'bg-surface-2')}>
         {text ? <span>{text}</span> : !editing && <span className="text-[14px] font-medium text-fg3">—</span>}
         {editing && <span className="ml-[1px] h-[17px] w-[1.5px] animate-pulse bg-accent" />}
       </span>
     </button>
+  );
+  if (!badge) return cell;
+  return (
+    <div className="relative">
+      {cell}
+      {badge}
+    </div>
   );
 }
 

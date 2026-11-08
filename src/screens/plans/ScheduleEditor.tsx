@@ -12,12 +12,12 @@ import { usePlans } from '../../data/usePlans';
 import type { Folder, MissPolicy, ScheduleSlot } from '../../db/types';
 import { useGiveUp } from '../../hooks/useGiveUp';
 import { fmtDay, weekdayShort } from '../../lib/dates';
-import { addDayKey, currentVersion, parseDayKey, planDays, suggestDays, trainedByDay, weekOrder, withScheduleFrom, type ScheduleDraft } from '../../lib/schedule';
+import { addDayKey, currentVersion, DEFAULT_MISS, parseDayKey, planDays, suggestDays, trainedByDay, weekOrder, withScheduleFrom, type ScheduleDraft } from '../../lib/schedule';
 import { PlanStrip } from './PlanParts';
 
 const LONG_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const DRAFT_KEY = (folderId: string) => `og-schedule-draft:${folderId}`;
-/** Written by the builder after "+ New routine for this day" (B4). */
+/** Written by the builder after "+ New routine for this day" (2.19). */
 export const ASSIGN_KEY = 'og-schedule-assign';
 
 type Step = 'type' | 'cycle' | 'weekly';
@@ -57,7 +57,7 @@ function readSession<T>(key: string): T | undefined {
   }
 }
 
-/** B1–B4: pick no schedule, a repeating cycle or a weekly split, then lay it out. */
+/** 2.16–2.19: pick no schedule, a repeating cycle or a weekly split, then lay it out. */
 export function ScheduleEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -95,8 +95,8 @@ function initialDraft(folder: Folder, view: PlanView): Draft {
     cycle: (v?.kind === 'cycle' ? v.days : suggestDays('cycle', ids)).map((slot) => ({ key: newKey(), slot })),
     weekly: v?.kind === 'weekly' ? [...v.days] : suggestDays('weekly', ids),
     todayIndex: v?.kind === 'cycle' ? (view.days[0]?.cycleDay ?? 0) : 0,
-    missCycle: v?.kind === 'cycle' ? v.onMiss : 'wait',
-    missWeekly: v?.kind === 'weekly' ? v.onMiss : 'skip',
+    missCycle: v?.kind === 'cycle' ? v.onMiss : DEFAULT_MISS.cycle,
+    missWeekly: v?.kind === 'weekly' ? v.onMiss : DEFAULT_MISS.weekly,
   };
 }
 
@@ -162,7 +162,7 @@ function Editor({ folder, view }: { folder: Folder; view: PlanView }) {
 
   const assignSlot = assign ? (assign.kind === 'cycle' ? draft.cycle[assign.index]?.slot : draft.weekly[assign.index]) : undefined;
 
-  // ───── B1
+  // ───── 2.16
   if (draft.step === 'type') {
     const options: { kind: Kind; title: string; body: string; example: ReactNode }[] = [
       { kind: 'none', title: 'No schedule', body: "Whatever you did longest ago is next. Train when you can. (Today's behaviour.)", example: null },
@@ -285,7 +285,7 @@ function Editor({ folder, view }: { folder: Folder; view: PlanView }) {
     </Sheet>
   );
 
-  // ───── B3
+  // ───── 2.18
   if (draft.step === 'weekly') {
     const todayWd = new Date(parseDayKey(today)).getDay();
     const workouts = draft.weekly.filter(Boolean).length;
@@ -327,7 +327,7 @@ function Editor({ folder, view }: { folder: Folder; view: PlanView }) {
     );
   }
 
-  // ───── B2
+  // ───── 2.17
   const day1 = addDayKey(today, -Math.min(draft.todayIndex, draft.cycle.length - 1));
   return (
     <Screen header={header('Repeating cycle')}>

@@ -115,13 +115,15 @@ export interface DraftSet {
   weight: number | 'last';
   repsMin?: number;
   repsMax?: number;
+  /** Effort target, stored as RPE (A4). */
+  rpeTarget?: number;
 }
 
 export interface DraftExercise {
   key: string;
   exerciseId: string;
   sets: DraftSet[];
-  /** Superset letter; members sit next to each other (B1). */
+  /** Superset letter; members sit next to each other (2.12). */
   supersetGroup?: string;
 }
 
@@ -147,7 +149,7 @@ export async function loadRoutineDraft(routineId: string): Promise<RoutineDraft 
     exercises.push({
       key: re.id,
       exerciseId: re.exerciseId,
-      sets: [...warm, ...work].map((s) => ({ key: s.id, kind: s.kind, weight: s.weight, repsMin: s.repsMin, repsMax: s.repsMax })),
+      sets: [...warm, ...work].map((s) => ({ key: s.id, kind: s.kind, weight: s.weight, repsMin: s.repsMin, repsMax: s.repsMax, rpeTarget: s.rpeTarget })),
       ...(re.supersetGroup ? { supersetGroup: re.supersetGroup } : {}),
     });
   }
@@ -204,6 +206,7 @@ export async function saveRoutine(draft: RoutineDraft): Promise<string> {
           weight: s.weight,
           repsMin: s.repsMin,
           repsMax: s.repsMax,
+          ...(s.kind === 'working' && s.rpeTarget != null ? { rpeTarget: s.rpeTarget } : {}),
         }),
       );
     });

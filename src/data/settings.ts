@@ -1,10 +1,16 @@
 import { db } from '../db/db';
 import { defaultSettings } from '../db/seed';
-import type { Settings, Units } from '../db/types';
+import { DEFAULT_SETTINGS, type Settings, type Units } from '../db/types';
 import { UNIT_DEFAULTS } from '../lib/units';
 
 export async function getSettings(): Promise<Settings> {
-  return (await db.settings.get('settings')) ?? defaultSettings();
+  const s = await db.settings.get('settings');
+  return s ? withDefaults(s) : defaultSettings();
+}
+
+/** Settings saved before a field existed (e.g. effort) get its default. */
+export function withDefaults(s: Settings): Settings {
+  return { ...DEFAULT_SETTINGS, ...s };
 }
 
 export async function updateSettings(patch: Partial<Omit<Settings, 'id' | 'createdAt'>>): Promise<void> {

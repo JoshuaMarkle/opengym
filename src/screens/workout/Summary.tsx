@@ -1,7 +1,9 @@
+import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router';
 import { BarButton, cx, Screen, StatRow, TopBar } from '../../components/ui';
 import { exerciseOrMissing, useData } from '../../data/DataProvider';
+import { db } from '../../db/db';
 import { cardioSessions, workoutTotals, type HistoryIndex } from '../../data/history';
 import { cardioSummary, cardioTotals, longDistance, longDistanceWord } from '../../lib/cardio';
 import { fmtDay, fmtDuration, startOfWeek } from '../../lib/dates';
@@ -9,6 +11,7 @@ import { formatNumber } from '../../lib/units';
 import { recordSetIds } from '../../lib/records';
 import { compareBest, type Comparison } from '../../lib/summary';
 import { useGiveUp } from '../../hooks/useGiveUp';
+import { effortIn1rm } from '../../lib/effort';
 
 interface Row {
   key: string;
@@ -42,7 +45,7 @@ export function Summary() {
     let records = 0;
     for (const e of hw.exercises) {
       const ex = exerciseOrMissing(exerciseMap, e.we.exerciseId);
-      // Cardio shows what you did, not a faster / slower verdict (D1).
+      // Cardio shows what you did, not a faster / slower verdict (5.3).
       if (ex.type === 'cardio') {
         cardio.push({ key: e.we.id, name: ex.name, text: cardioSummary(e.sets, ex, units) });
         continue;
@@ -53,7 +56,7 @@ export function Summary() {
       const cmp = compareBest(e.sets, prevSets, ex.type, units, settings.oneRmFormula);
       if (cmp && !rows.some((r) => r.key === ex.id)) rows.push({ key: ex.id, name: ex.name, cmp });
       const sessions = history.sessionsByExercise.get(ex.id) ?? [];
-      const flagged = recordSetIds(sessions, ex.type, settings.oneRmFormula);
+      const flagged = recordSetIds(sessions, ex.type, settings.oneRmFormula, effortIn1rm(settings));
       records += e.sets.filter((s) => flagged.has(s.id)).length;
     }
     const totals = workoutTotals(hw, (eid) => exerciseMap.get(eid)?.type);
@@ -62,10 +65,12 @@ export function Summary() {
     const week = cardioSessions(history, (eid) => exerciseMap.get(eid)?.type === 'cardio').filter((c) => c.date >= weekFrom && c.date < weekFrom + 7 * 86_400_000);
     const weekT = cardioTotals(week.flatMap((c) => c.sets));
     return { hw, sameRoutine, rows, records, cardio, totals, weekT };
-  }, [history, id, exerciseMap, units, settings.oneRmFormula, settings.weekStart]);
+  }, [history, id, exerciseMap, units, settings]);
 
-  // Just finished: the history query may not have caught up with the save yet.
-  const gaveUp = useGiveUp(!data);
+  // Just finished: the history index may not have caught up with the save yet. With
+  // a lot of history that can take a while, so only give up once the workout itself is gone.
+  const saved = useLiveQuery(() => db.workouts.get(id).then((w) => w?.status === 'done'), [id]);
+  const gaveUp = useGiveUp(!data && saved === false);
   if (!data) return gaveUp ? <Navigate to="/" replace /> : null;
   const { hw, sameRoutine, rows, records, cardio, totals, weekT } = data;
   const w = hw.workout;
@@ -156,7 +161,7 @@ export function Summary() {
           ...(totals.liftCount || !totals.cardioCount ? [{ label: 'Sets', value: totals.liftSets }] : []),
           ...(!totals.liftCount && totals.cardioMeters ? [{ label: longDistanceWord(units) === 'mi' ? 'Miles' : 'Km', value: formatNumber(longDistance(totals.cardioMeters, units), 1) }] : []),
           ...(totals.cardioCount ? [{ label: 'Cardio', value: `${Math.round(totals.cardioSec / 60)} min` }] : []),
-          // Three across fits a phone: with cardio, its minutes take the Records slot (D1).
+          // Three across fits a phone: with cardio, its minutes take the Records slot (5.3).
           ...(!totals.cardioCount ? [{ label: 'Records', value: <span className={records ? 'text-tip' : ''}>{records}</span> }] : []),
         ]}
       />

@@ -10,6 +10,7 @@ import type { Exercise, Units } from '../../db/types';
 import { CHART_RANGES, RANGE_WORDS, type ChartRange } from '../../lib/chart';
 import { formatNumber, formatWeight, toDisplay, unitLabel } from '../../lib/units';
 import { CardioProgress } from './Cardio';
+import { effortIn1rm } from '../../lib/effort';
 
 const RANGE_KEY = 'og-progress-range';
 const VIEW_KEY = 'og-progress-view';
@@ -96,10 +97,10 @@ export function Progress() {
   const rows = useMemo(
     () =>
       pinned.map((ex) => {
-        const pts = liftPoints(history, [ex.id], ex.type, settings.oneRmFormula);
+        const pts = liftPoints(history, [ex.id], ex.type, settings.oneRmFormula, effortIn1rm(settings));
         return { ex, trend: liftTrend(pts, range), sessions: pts.length, hasMetric: pts.some((p) => p.metric) };
       }),
-    [pinned, history, range, settings.oneRmFormula],
+    [pinned, history, range, settings],
   );
 
   const enough = hasEnoughForProgress(history, isCardio);

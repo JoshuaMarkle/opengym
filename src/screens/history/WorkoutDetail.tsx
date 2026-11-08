@@ -15,6 +15,7 @@ import { supersetBlocks, supersetTags } from '../../lib/supersets';
 import { formatNumber, toDisplay } from '../../lib/units';
 import { CardioMiniTable } from '../workout/CardioTable';
 import { TagPill } from '../workout/WorkoutScreen';
+import { effortIn1rm, effortText } from '../../lib/effort';
 
 /** 6.6: every set, drops included. Repeat, Edit, Delete. */
 export function WorkoutDetail() {
@@ -33,10 +34,10 @@ export function WorkoutDetail() {
     if (!hw) return flagged;
     for (const e of hw.exercises) {
       const ex = exerciseOrMissing(exerciseMap, e.we.exerciseId);
-      for (const sid of recordSetIds(history.sessionsByExercise.get(ex.id) ?? [], ex.type, settings.oneRmFormula)) flagged.add(sid);
+      for (const sid of recordSetIds(history.sessionsByExercise.get(ex.id) ?? [], ex.type, settings.oneRmFormula, effortIn1rm(settings))) flagged.add(sid);
     }
     return flagged;
-  }, [hw, history, exerciseMap, settings.oneRmFormula]);
+  }, [hw, history, exerciseMap, settings]);
 
   const back = () => (window.history.length > 1 ? navigate(-1) : navigate('/history'));
 
@@ -105,7 +106,7 @@ export function WorkoutDetail() {
             </section>
           );
         const labels = setLabels(e.sets);
-        const metric = ex.type === 'weight' ? sessionMetric(e.sets, ex.type, settings.oneRmFormula) : null;
+        const metric = ex.type === 'weight' ? sessionMetric(e.sets, ex.type, settings.oneRmFormula, effortIn1rm(settings)) : null;
         return (
           <section key={e.we.id} className="mt-4">
             <button type="button" onClick={() => navigate(`/exercises/${ex.id}`)} className="mb-1 flex w-full items-baseline justify-between gap-3 text-left">
@@ -121,7 +122,10 @@ export function WorkoutDetail() {
               return (
                 <div key={s.id} className={cx('grid h-7 grid-cols-[28px_1fr_auto] items-center text-[14.5px]', s.kind === 'drop' && 'ml-1 border-l-2 border-warn pl-2.5')}>
                   <span className={cx('text-[13px] font-bold', s.kind === 'drop' ? 'text-warn' : 'text-fg2')}>{l}</span>
-                  <span>{formatSet(s, ex.type, units)}</span>
+                  <span>
+                    {formatSet(s, ex.type, units)}
+                    {settings.effort !== 'off' && s.kind === 'working' && s.rpe != null && <span className="text-fg2"> {effortText(s.rpe, settings.effort)}</span>}
+                  </span>
                   {records.has(s.id) ? <span className="rounded-[5px] bg-[color-mix(in_srgb,var(--og-tip)_16%,var(--og-bg))] px-1.5 py-[1px] text-[11px] font-bold text-tip">record</span> : <span />}
                 </div>
               );

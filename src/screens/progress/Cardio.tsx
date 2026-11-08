@@ -73,7 +73,7 @@ function fmtMetric(v: number, m: CardioMetric, units: Units, spec?: Exercise): s
   return String(Math.round(x));
 }
 
-/** Big average, change line, bars and range chips. Shared by D2 and D3. */
+/** Big average, change line, bars and range chips. Shared by 7.7 and 7.8. */
 function WeeklyChart({
   sessions,
   metric,
@@ -118,7 +118,7 @@ function WeeklyChart({
   );
 }
 
-/** D2: Progress → Cardio. How much, not how fast. */
+/** 7.7: Progress → Cardio. How much, not how fast. */
 export function CardioProgress() {
   const navigate = useNavigate();
   const { settings, exerciseMap } = useData();
@@ -187,7 +187,7 @@ export function CardioProgress() {
   );
 }
 
-/** D3: one machine. Distance (or minutes) per week, then recent sessions. */
+/** 7.8: one machine. Distance (or minutes) per week, then recent sessions. */
 export function CardioMachine() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
@@ -274,7 +274,7 @@ export function CardioMachine() {
   );
 }
 
-/** D4: fastest times at classic race distances. The only cardio "bests". */
+/** 7.9: fastest times at classic race distances. The only cardio "bests". */
 export function DistanceRecords() {
   const navigate = useNavigate();
   const { settings, exerciseMap } = useData();

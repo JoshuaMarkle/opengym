@@ -15,6 +15,7 @@ import { formatNumber, toDisplay } from '../../lib/units';
 import { variationLabels } from '../../lib/variations';
 import { useVariations } from '../progress/LiftViews';
 import { ExercisePicker } from './ExercisePicker';
+import { effortIn1rm } from '../../lib/effort';
 
 /** 8.2: stats, linked variations, where it's used, merge and delete. */
 export function ExerciseScreen() {
@@ -34,7 +35,7 @@ export function ExerciseScreen() {
   const setLinkOpen = (open: boolean) => setParams(open ? { link: '1' } : {}, { replace: true });
 
   const sessions = history.sessionsByExercise.get(id) ?? [];
-  const rec = useMemo(() => (exercise ? computeRecords(sessions, exercise.type, settings.oneRmFormula) : null), [sessions, exercise, settings.oneRmFormula]);
+  const rec = useMemo(() => (exercise ? computeRecords(sessions, exercise.type, settings.oneRmFormula, effortIn1rm(settings)) : null), [sessions, exercise, settings]);
   const back = () => (window.history.length > 1 ? navigate(-1) : navigate('/exercises'));
 
   if (!exercise || exercise.deletedAt)

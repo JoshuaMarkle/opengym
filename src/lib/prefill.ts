@@ -10,6 +10,7 @@ export interface RoutineSetLike {
   weight: number | 'last';
   repsMin?: number;
   repsMax?: number;
+  rpeTarget?: number;
 }
 
 export interface SetDraft {
@@ -18,6 +19,8 @@ export interface SetDraft {
   reps?: number;
   repsMin?: number;
   repsMax?: number;
+  /** Effort target from the routine: an outlined badge, never a logged value (A4). */
+  rpeTarget?: number;
 }
 
 /**
@@ -39,6 +42,7 @@ export function prefillFromRoutine(routineSets: RoutineSetLike[], lastSession: L
       reps: p?.reps,
       repsMin: rs.repsMin,
       repsMax: rs.repsMax,
+      ...(rs.kind === 'working' && rs.rpeTarget != null ? { rpeTarget: rs.rpeTarget } : {}),
     };
   });
 }
@@ -55,7 +59,7 @@ export function prefillFromLastSession(lastSession: LoggedSet[] | undefined, fal
  * time; otherwise the weight carries over from the last working set today.
  */
 export function nextWorkingSet(
-  current: (LoggedSet & { repsMin?: number; repsMax?: number })[],
+  current: (LoggedSet & { repsMin?: number; repsMax?: number; rpeTarget?: number })[],
   lastSession: LoggedSet[] | undefined,
 ): SetDraft {
   const ordered = orderSets(current);
@@ -68,6 +72,7 @@ export function nextWorkingSet(
     reps: prev?.reps,
     repsMin: lastWorking?.repsMin,
     repsMax: lastWorking?.repsMax,
+    ...(lastWorking?.rpeTarget != null ? { rpeTarget: lastWorking.rpeTarget } : {}),
   };
 }
 

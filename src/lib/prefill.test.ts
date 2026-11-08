@@ -28,6 +28,13 @@ describe('prefillFromRoutine', () => {
     const drafts = prefillFromRoutine([rs('working', 'last', 12, 15)], undefined);
     expect(drafts[0]).toEqual({ kind: 'working', weight: undefined, reps: undefined, repsMin: 12, repsMax: 15 });
   });
+
+  it('copies the effort target as a target only, never as a logged rating', () => {
+    const drafts = prefillFromRoutine([{ ...rs('warmup', 95, 10, 10, 0), rpeTarget: 6 }, { ...rs('working', 'last', 6, 8, 1), rpeTarget: 8.5 }], [s('working', 185, 8, { rpe: 9 })]);
+    expect(drafts[0].rpeTarget).toBeUndefined();
+    expect(drafts[1].rpeTarget).toBe(8.5);
+    expect(drafts[1]).not.toHaveProperty('rpe');
+  });
 });
 
 describe('prefillFromLastSession', () => {

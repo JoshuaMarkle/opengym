@@ -1,7 +1,7 @@
 import type { LoggedSet } from './sets';
 
 /**
- * Supersets (SPEC §10, B1–B6). Exercises sharing a `supersetGroup` letter form a
+ * Supersets (SPEC §10, 2.12–2.13, 4.19–4.20). Exercises sharing a `supersetGroup` letter form a
  * superset. Members always sit next to each other, 2–3 of them; letters are
  * reassigned A, B, C… in list order whenever the list changes.
  */
@@ -80,7 +80,7 @@ export function groupOf<T extends GroupItem>(items: T[], key: string): Block<T> 
 }
 
 /**
- * B2 "Superset with…": partners leave wherever they were and line up right after
+ * 2.13 "Superset with…": partners leave wherever they were and line up right after
  * the anchor's block, all sharing one group. Capped at three members.
  */
 export function linkSuperset<T extends GroupItem>(items: T[], anchorKey: string, partnerKeys: string[]): T[] {
@@ -125,7 +125,7 @@ export function moveBlock<T extends GroupItem>(items: T[], key: string, delta: -
 }
 
 /**
- * After a drag (B1): dropped strictly inside a superset → joins it (if there's
+ * After a drag (2.12): dropped strictly inside a superset → joins it (if there's
  * room, otherwise the move is undone); a member dragged away from its partners
  * leaves the group.
  */
@@ -149,7 +149,7 @@ export function settleDrag<T extends GroupItem>(before: T[], after: T[], movedKe
   return normalizeSupersets(list);
 }
 
-// ───────────────────────────── logging (B3–B4)
+// ───────────────────────────── logging (4.19–4.20)
 
 export interface MemberSets<S extends LoggedSet = LoggedSet> {
   key: string;
@@ -202,7 +202,7 @@ export function supersetRound<S extends LoggedSet>(members: MemberSets<S>[], foc
 }
 
 /**
- * B4: a member folds into one line when you're not on it and it has done its
+ * 4.20: a member folds into one line when you're not on it and it has done its
  * set for this round (or all of its sets), so the active table has room.
  */
 export function isFolded<S extends LoggedSet>(member: MemberSets<S>, focusedKey: string, round: number): boolean {

@@ -288,7 +288,7 @@ function FolderHeader({
   active?: boolean;
   collapsed: boolean;
   onToggle: () => void;
-  /** Tapping the name opens the folder as a plan (A2); the chevron still folds it. */
+  /** Tapping the name opens the folder as a plan (2.15); the chevron still folds it. */
   onOpen?: () => void;
   onHold?: () => void;
 }) {

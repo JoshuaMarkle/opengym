@@ -11,7 +11,7 @@ export interface SeedExercise {
   equipment: Equipment;
   type?: ExerciseType;
   group?: string;
-  /** Cardio presets (C6): the columns after time. */
+  /** Cardio presets (8.6): the columns after time. */
   cardio?: CardioColumn[];
   distanceUnit?: DistanceUnit;
   isRun?: boolean;
@@ -183,7 +183,7 @@ export const SEED_EXERCISES: SeedExercise[] = [
   { name: 'Kettlebell Swing', muscle: 'other', equipment: 'other' },
   { name: 'Turkish Get-up', muscle: 'other', equipment: 'other' },
 
-  // ── Cardio presets (C6): ordinary cardio exercises with their columns picked
+  // ── Cardio presets (8.6): ordinary cardio exercises with their columns picked
   { name: 'Treadmill', muscle: 'other', equipment: 'machine', type: 'cardio', cardio: ['distance', 'pace'], isRun: true },
   { name: 'Bike', muscle: 'other', equipment: 'machine', type: 'cardio', cardio: ['distance', 'level'] },
   { name: 'Rower', muscle: 'other', equipment: 'machine', type: 'cardio', cardio: ['distance', 'split500'], distanceUnit: 'm' },

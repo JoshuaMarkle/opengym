@@ -179,7 +179,7 @@ function LiveBlock({ data }: { data: ActiveWorkoutData }) {
 
 type HomeItem = { kind: 'workout'; day: PlanDay } | { kind: 'rest'; days: PlanDay[] };
 
-/** A3: with a schedule, Home follows it. Today first, then the next few days; rest days collapse into one line. */
+/** 3.4: with a schedule, Home follows it. Today first, then the next few days; rest days collapse into one line. */
 function ScheduledList({ folder, view, runningId }: { folder: Folder; view: PlanView; runningId?: string }) {
   const navigate = useNavigate();
   const start = useStartWorkout();
@@ -202,7 +202,7 @@ function ScheduledList({ folder, view, runningId }: { folder: Folder; view: Plan
       else items.push({ kind: 'rest', days: [d] });
     }
   }
-  // C3: the note already says today is a rest day.
+  // 3.5: the note already says today is a rest day.
   if (missed && items[0]?.kind === 'rest' && items[0].days[0].key === today) items.shift();
   const firstUp = items.find((it): it is { kind: 'workout'; day: PlanDay } => it.kind === 'workout' && it.day.state !== 'done' && it.day.planned !== runningId);
   const exCount = (rid: string) => plans.exercisesByRoutine.get(rid)?.length ?? 0;

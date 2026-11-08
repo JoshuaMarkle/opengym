@@ -1,35 +1,53 @@
+<p align="center"><img src="design/brand/logos/opengym-icon-dark.svg" width="96" alt="OpenGym logo"></p>
+
 # OpenGym
 
-A free lifting log that runs entirely on your phone. There's no account, no server, no ads and no subscription, and it works offline at the gym.
+A free lifting log that runs entirely on your phone. No account, no server, no ads, no subscription, and it works offline at the gym.
 
-- Routines in folders. Home shows what's next in your rotation and starts it in one tap.
-- Logging pre-fills each set from last time. A custom keypad, one-tap ✓, drop sets, warm-ups, swipes and hold menus cover the usual gym exceptions.
-- History has month, 6-month, year and all-time calendars plus a searchable list. Past workouts can be edited.
-- Progress shows est. 1RM, top-set and records charts for your pinned lifts, with linked variations (Flat / Incline / DB).
-- Backups are one JSON file. You can also import from Strong or Hevy CSV and export your own CSV.
+<p>
+  <img src="design/screens/3.1.png" width="200" alt="Home">
+  <img src="design/screens/4.1.png" width="200" alt="Logging sets">
+  <img src="design/screens/4.16.png" width="200" alt="Plate pad">
+  <img src="design/screens/5.3.png" width="200" alt="Workout summary">
+</p>
+<p>
+  <img src="design/screens/2.15.png" width="200" alt="Plan with a weekly schedule">
+  <img src="design/screens/6.1.png" width="200" alt="History calendar">
+  <img src="design/screens/7.2.png" width="200" alt="Est. 1RM chart">
+  <img src="design/screens/7.7.png" width="200" alt="Cardio progress">
+</p>
 
-It's built with React, TypeScript, Vite, Tailwind and Dexie (IndexedDB), and ships as an installable PWA.
+- **Plans.** Routines in folders. Give a folder a repeating cycle or weekly split and Home follows it; otherwise it suggests whatever you did longest ago.
+- **Logging.** Every set pre-fills from last time. A custom keypad with a plate calculator, one-tap ✓, drop sets, warm-ups, supersets and cardio segments, with swipes and hold menus as shortcuts. Optional RPE / RIR effort per set, as a badge on the reps box.
+- **History.** Month, 6-month, year and all-time calendars plus a searchable list. Past workouts can be edited.
+- **Progress.** Est. 1RM, top-set and records charts for pinned lifts, linked variations (Flat / Incline / DB), weekly cardio totals and running records.
+- **Your data.** Backups are one JSON file. Import from Strong or Hevy CSV, export your own CSV.
+
+Every screen is in [`design/storyboard.html`](design/storyboard.html), captured from the app.
 
 ## Run it
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173 (also on your LAN, for testing on a phone)
-npm test           # unit tests for the logic in src/lib
+npm run dev        # http://localhost:5173 with sample data (also on your LAN, for a phone)
+npm test           # unit tests for src/lib
 npm run build      # type-check + production build into dist/
 npm run preview    # serve dist/ locally
 ```
 
-Requires Node 22.12 or newer.
+Requires Node 22.18 or newer. `npm run screens` and `npm run brand` regenerate the screenshots and brand assets in `design/` and need Chromium or Chrome.
+
+On localhost the dev server uses a separate test database filled with sample history. A phone on your LAN, `npm run dev:real` and production builds use the real one.
 
 ## Deploy
 
-`npm run build` produces a static site in `dist/` that works from any static host. It uses relative paths and hash routing, so a sub-path such as GitHub Pages `/<repo>/` works too.
+`npm run build` produces a static site in `dist/` that works from any static host or sub-path (relative paths, hash routing).
 
+- **Cloudflare:** `npx wrangler deploy` (config in `wrangler.jsonc`).
 - **Netlify / Cloudflare Pages / Vercel:** build command `npm run build`, output directory `dist`.
-- **GitHub Pages:** publish the contents of `dist/` (for example with the `actions/deploy-pages` workflow).
+- **GitHub Pages:** publish `dist/` (for example with `actions/deploy-pages`).
 
-The site must be served over **HTTPS**, or the service worker (offline support and install) won't run.
+Serve it over **HTTPS**, or the service worker (offline support and install) won't run.
 
 ## Install on iPhone
 
@@ -37,19 +55,18 @@ The site must be served over **HTTPS**, or the service worker (offline support a
 2. Tap **Share**, then **Add to Home Screen**.
 3. Open OpenGym from the Home Screen icon, not from Safari.
 
-Installed, it runs full screen and offline, and iOS is much less likely to clear its storage. The app asks for persistent storage on first setup. **Settings → Back up now** saves a single file you can keep in iCloud Drive.
-
-On Android/Chrome, use **Install app** from the browser menu.
+Installed, it runs full screen and offline, and iOS is much less likely to clear its storage. **Settings → Back up now** saves a single file you can keep in iCloud Drive. On Android / Chrome, use **Install app** from the browser menu.
 
 ## Where things are
 
 | Path | What |
 | --- | --- |
-| `design/` | The spec (`SPEC.md`), storyboards and brand assets the app is built from |
+| `design/` | The spec (`SPEC.md`), the screen storyboard and brand assets |
 | `src/db/` | Data model, Dexie schema, built-in exercise library |
-| `src/lib/` | Pure logic with tests: 1RM, records, next-up, prefill, import parsing, CSV |
+| `src/lib/` | Pure logic with tests: 1RM, records, prefill, next-up, schedules, supersets, cardio, plates, import |
 | `src/data/` | Reads and writes, history index, backup / restore / import |
-| `src/components/` | Shared UI, overlays, keypad, gestures, charts, icons |
+| `src/components/` | Shared UI, overlays, keypad, plate pad, gestures, charts, icons |
 | `src/screens/` | One folder per area: onboarding, home, plans, workout, history, progress, exercises, settings |
+| `scripts/` | Screenshot and brand generators |
 
 Your data stays in the browser's IndexedDB on your device. Nothing is ever sent anywhere.

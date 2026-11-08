@@ -12,7 +12,7 @@ export interface SupersetCandidate {
 }
 
 /**
- * B2: "Superset Bench Press with…". Pick from the routine (or workout), or add a
+ * 2.13: "Superset Bench Press with…". Pick from the routine (or workout), or add a
  * new exercise. A superset holds up to three exercises; they alternate sets.
  */
 export function SupersetSheet({

@@ -2,7 +2,7 @@ import type { CardioColumn, DistanceUnit, Units } from '../db/types';
 import { formatNumber } from './units';
 
 /**
- * Cardio (SPEC §10, C1–C6). A cardio exercise logs "segments": TIME plus up to two
+ * Cardio (SPEC §10, 4.21–4.24, 8.5–8.6). A cardio exercise logs "segments": TIME plus up to two
  * columns. Values are stored in SI (seconds, meters, km/h) and converted at display,
  * the same way weights are stored in lb. Split /500m, pace and average speed are
  * worked out from time and distance, never typed.
@@ -40,7 +40,7 @@ export const MAX_CARDIO_COLUMNS = 2;
 export const COMPUTED_COLUMNS: CardioColumn[] = ['split500', 'pace', 'avgSpeed'];
 export const isComputed = (c: CardioColumn) => COMPUTED_COLUMNS.includes(c);
 
-/** The setup list (C5), in order. */
+/** The setup list (8.5), in order. */
 export const CARDIO_COLUMN_INFO: { id: CardioColumn; label: string }[] = [
   { id: 'distance', label: 'Distance' },
   { id: 'speed', label: 'Speed' },
@@ -90,8 +90,6 @@ export function distanceDisplay(ex: CardioSpec, units: Units): DistanceDisplay {
   return units === 'kg' ? 'km' : 'mi';
 }
 
-/** "mi", "km", "m": the unit word after a distance. */
-export const distanceWord = (d: DistanceDisplay) => d;
 export const speedWord = (units: Units) => (units === 'kg' ? 'km/h' : 'mph');
 
 /** Column header in the set table: TIME · MI · MPH · /500M. */
@@ -154,7 +152,7 @@ export const FIELD_NAME: Record<CardioField, string> = {
   steps: 'Steps',
 };
 
-/** Unit hint next to a column in the setup list (C5). */
+/** Unit hint next to a column in the setup list (8.5). */
 export function columnUnitHint(col: CardioColumn, ex: CardioSpec, units: Units): string {
   switch (col) {
     case 'distance':
@@ -435,7 +433,7 @@ export function longDistance(meters: number, units: Units): number {
 export const longDistanceWord = (units: Units) => (units === 'kg' ? 'km' : 'mi');
 
 /**
- * One line for a cardio session (C1 "Last:", D1, D3): "25:00 · 2.0 mi",
+ * One line for a cardio session (4.21 "Last:", 5.3, 7.8): "25:00 · 2.0 mi",
  * "3 × 2:00 · 1,495 m", "32:00 · 8.8 mi · L7". Empty when nothing was logged.
  */
 export function cardioSummary(sets: CardioValues[], ex: CardioSpec, units: Units): string {
@@ -454,7 +452,7 @@ export function cardioSummary(sets: CardioValues[], ex: CardioSpec, units: Units
   return parts.join(' · ');
 }
 
-/** "time · mi · mph": the column list shown under a preset in the picker (C6). */
+/** "time · mi · mph": the column list shown under a preset in the picker (8.6). */
 export function columnsLabel(ex: CardioSpec, units: Units): string {
   return ['time', ...cardioColumns(ex)]
     .map((c) => {
@@ -473,7 +471,7 @@ export function columnsLabel(ex: CardioSpec, units: Units): string {
 // ───────────────────────────── grey placeholders
 
 /**
- * C1: empty boxes show last time's numbers in grey and ✓ accepts them. Segments
+ * 4.21: empty boxes show last time's numbers in grey and ✓ accepts them. Segments
  * line up by position (segment 2 ↔ last session's segment 2). Only empty fields
  * get a value, so typed numbers always win.
  */

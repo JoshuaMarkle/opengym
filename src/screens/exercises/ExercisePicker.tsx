@@ -16,7 +16,7 @@ export interface PickerCurrent {
 
 export type MuscleFilter = Muscle | 'all' | 'cardio';
 
-/** All, Cardio, then the muscles (C6). */
+/** All, Cardio, then the muscles (8.6). */
 export const FILTER_CHIPS: { value: MuscleFilter; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'cardio', label: 'Cardio' },

@@ -7,6 +7,7 @@ import { liftPoints, type LiftPoint } from '../../data/lifts';
 import type { Exercise, Units } from '../../db/types';
 import { availableChartRanges, rangeStart, RANGE_WORDS, type ChartRange } from '../../lib/chart';
 import { fmtMonthDay, fmtMonthYear, weekdayShort } from '../../lib/dates';
+import { effortIn1rm, effortText, sameWeightEasier } from '../../lib/effort';
 import { computeRecords, isRecent } from '../../lib/records';
 import { dropChains, formatSet, formatSetWeight } from '../../lib/sets';
 import { formatNumber, formatWeight, toDisplay, unitLabel } from '../../lib/units';
@@ -60,8 +61,12 @@ export function Change({ value, pct, ex, units, words, className = '' }: { value
 
 // ───────────────────────────── History (4.8)
 
+/** The "·" between sets in a history line, drawn in the gap before a block (see HistoryView). */
+const SEP = "before:absolute before:-left-[8px] before:text-fg3 before:content-['·']";
+
 export function HistoryView({ exercise, onOpenWorkout }: { exercise: Exercise; onOpenWorkout?: (id: string) => void }) {
   const { history, settings, exerciseMap } = useData();
+  const effortMode = settings.effort;
   const variations = useVariations(exercise);
   const labels = useMemo(() => variationLabels(variations), [variations]);
   const sessions = useMemo(() => {
@@ -110,28 +115,25 @@ export function HistoryView({ exercise, onOpenWorkout }: { exercise: Exercise; o
                 <small className="block text-[10.5px] font-bold text-fg2 uppercase">{weekdayShort(d.getDay())}</small>
                 <b className="text-[19px]">{d.getDate()}</b>
               </span>
-              <span className="text-[14px] leading-[1.6]">
+              {/*
+                Each set is one unbreakable block ("185 × 8 @8"). The "·" before a block sits in
+                the gap and is clipped when the block starts a line, so no dot is left hanging (A6).
+                A set's drops stay in its block, in the order you did them.
+              */}
+              <span className="flex min-w-0 flex-wrap gap-x-[12px] overflow-hidden text-[14px] leading-[1.6]">
                 {chains.length ? (
-                  chains.map((c, i) => (
-                    <span key={c.set.id}>
-                      {i > 0 && (
-                        <>
-                          {' '}
-                          <span className="text-fg3">·</span>{' '}
-                        </>
-                      )}
-                      {/* Drops sit right after the set they followed, in the order you did them. */}
+                  chains.map((c) => (
+                    <span key={c.set.id} className={cx('relative whitespace-nowrap', SEP)}>
                       {[c.set, ...c.drops].map((x, j) =>
                         x.kind === 'drop' ? (
-                          <span key={x.id}>
+                          <span key={x.id} className="text-warn">
                             {j > 0 && ' '}
-                            <span className="whitespace-nowrap text-warn">
-                              <DropBadge small /> {formatSet(x, ex.type, settings.units)}
-                            </span>
+                            <DropBadge small /> {formatSet(x, ex.type, settings.units)}
                           </span>
                         ) : (
-                          <span key={x.id} className="whitespace-nowrap">
+                          <span key={x.id}>
                             {formatSet(x, ex.type, settings.units)}
+                            {effortMode !== 'off' && x.kind === 'working' && x.rpe != null && <span className="text-fg2"> {effortText(x.rpe, effortMode)}</span>}
                           </span>
                         ),
                       )}
@@ -172,7 +174,7 @@ export function ChartsView({
   const { history, settings } = useData();
   const units = settings.units;
   const ids = exerciseIds ?? [exercise.id];
-  const points = useMemo(() => liftPoints(history, ids, exercise.type, settings.oneRmFormula), [history, ids.join(','), exercise.type, settings.oneRmFormula]); // eslint-disable-line react-hooks/exhaustive-deps
+  const points = useMemo(() => liftPoints(history, ids, exercise.type, settings.oneRmFormula, effortIn1rm(settings)), [history, ids.join(','), exercise.type, settings]); // eslint-disable-line react-hooks/exhaustive-deps
   const ranges = availableChartRanges(points[0]?.date);
   const [rangeSel, setRange] = useState<ChartRange>(defaultRange);
   const range = ranges.includes(rangeSel) ? rangeSel : ranges.includes('6M') ? '6M' : ranges[ranges.length - 1];
@@ -209,7 +211,7 @@ export function ChartsView({
     const base = baseline?.metric?.value;
     hero = (
       <div className="mt-3">
-        <div className="text-[11px] font-bold tracking-[0.05em] text-fg2 uppercase">Estimated 1RM</div>
+        <div className="text-[11px] font-bold tracking-[0.05em] text-fg2 uppercase">Estimated 1RM{effortIn1rm(settings) ? ' · effort-adjusted' : ''}</div>
         <div className="text-[34px] leading-[1.1] font-bold tracking-[-0.02em]">
           {f.big}
           <small className="ml-1 text-[16px] font-semibold text-fg2">{f.unit}</small>
@@ -244,6 +246,8 @@ export function ChartsView({
 
   const best = points.reduce<LiftPoint | undefined>((a, p) => (p.metric && (!a?.metric || p.metric.value > a.metric.value) ? p : a), undefined);
   const metrics = metricsFor(exercise);
+  // A6: the same weight × reps at a lower effort than a few weeks ago.
+  const easier = settings.effort !== 'off' && exercise.type === 'weight' && m === 'e1rm' ? sameWeightEasier(points) : null;
 
   return (
     <div>
@@ -251,6 +255,15 @@ export function ChartsView({
         <Segmented className="mt-3" options={metrics} value={m} onChange={onMetric} />
       )}
       {hero}
+      {easier && settings.effort !== 'off' && (
+        <div className="mt-3">
+          <div className="text-[11px] font-bold tracking-[0.05em] text-tip uppercase">Same weight, easier</div>
+          <p className="mt-0.5 text-[14px] leading-snug">
+            {formatSet(easier, exercise.type, units)} went from {effortText(easier.fromRpe, settings.effort)} to {effortText(easier.toRpe, settings.effort)} since {fmtMonthDay(easier.since)}.{' '}
+            <span className="text-fg2">Ready for more weight.</span>
+          </p>
+        </div>
+      )}
       {chartPoints.length > 0 && <LiftChart points={chartPoints} from={start ?? points[0]?.date} style={m === 'e1rm' || exercise.type === 'bodyweight' ? 'trend' : 'top'} priorBest={priorBest} />}
       {m === 'top' && exercise.type !== 'bodyweight' && chartPoints.length > 0 && <p className="mt-1 text-[12.5px] text-fg2">Each dot = that day's top set · number = reps</p>}
       {ranges.length > 1 && (
@@ -278,8 +291,8 @@ export function RecordsView({ exercise, exerciseIds, currentReps }: { exercise: 
   const ids = exerciseIds ?? [exercise.id];
   const rec = useMemo(() => {
     const sessions = ids.flatMap((id) => history.sessionsByExercise.get(id) ?? []);
-    return computeRecords(sessions, exercise.type, settings.oneRmFormula);
-  }, [history, ids.join(','), exercise.type, settings.oneRmFormula]); // eslint-disable-line react-hooks/exhaustive-deps
+    return computeRecords(sessions, exercise.type, settings.oneRmFormula, effortIn1rm(settings));
+  }, [history, ids.join(','), exercise.type, settings]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!rec.mostReps) return <p className="py-10 text-center text-[14px] text-fg2">No records yet. Finish a workout with {exercise.name} to set some.</p>;
 

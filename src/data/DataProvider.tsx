@@ -5,6 +5,7 @@ import { defaultSettings } from '../db/seed';
 import type { Exercise, Settings, Workout, WorkoutExercise, WorkoutSet } from '../db/types';
 import { orderSets } from '../lib/sets';
 import { buildHistory, type HistoryIndex } from './history';
+import { withDefaults } from './settings';
 
 interface DataValue {
   settings: Settings;
@@ -77,7 +78,7 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
     if (settings === null || !all || !history) return null;
     const exerciseMap = new Map(all.map((e) => [e.id, e]));
     const exercises = all.filter((e) => !e.deletedAt).sort((a, b) => a.name.localeCompare(b.name));
-    return { settings: settings ?? defaultSettings(), exerciseMap, exercises, history };
+    return { settings: settings ? withDefaults(settings) : defaultSettings(), exerciseMap, exercises, history };
   }, [settings, all, history]);
 
   if (!value) return <>{fallback ?? null}</>;
@@ -151,5 +152,4 @@ export function useData(): DataValue {
 }
 
 export const useSettings = () => useData().settings;
-export const useHistory = () => useData().history;
 export const useActiveWorkout = () => useContext(ActiveContext);

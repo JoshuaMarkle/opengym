@@ -9,6 +9,7 @@ import { backUpNow, dataCounts, deleteAllData, exportCsv, shareOrDownload } from
 import { updateSettings } from '../../data/settings';
 import { TEST_MODE } from '../../db/testMode';
 import { DAY_MS, fmtAgo } from '../../lib/dates';
+import { EFFORT_LABEL } from '../../lib/effort';
 import { formatNumber } from '../../lib/units';
 import { usePinned } from '../progress/Progress';
 import { useRestoreFlow } from './RestoreFlow';
@@ -64,6 +65,7 @@ export function Settings() {
       <Item label="Weight step" value={`${formatNumber(settings.weightStep)} ${unit}`} to="/settings/weightStep" />
       <Item label="Bar weight" value={`${formatNumber(settings.barWeight)} ${unit}`} to="/settings/barWeight" />
       <Item label="Drop set amount" value={`−${settings.dropPercent}%`} to="/settings/dropPercent" />
+      <Item label="Effort (RPE / RIR)" value={EFFORT_LABEL[settings.effort]} to="/settings/effort" />
       <div className="flex min-h-[52px] items-center justify-between gap-3 border-b border-line">
         <span className="text-[16px]">Keep screen on</span>
         <Toggle label="Keep screen on during workouts" on={settings.keepScreenOn} onChange={(v) => void updateSettings({ keepScreenOn: v })} />

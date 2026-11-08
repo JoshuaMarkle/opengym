@@ -11,6 +11,8 @@ export interface LoggedSet {
   weight?: number;
   reps?: number;
   completed?: boolean;
+  /** Effort, 1–10 in half steps (SPEC §12). */
+  rpe?: number;
 }
 
 /**
@@ -157,8 +159,6 @@ export function isEmptySet(s: { reps?: number } & CardioValues): boolean {
   return (s.reps == null || s.reps <= 0) && isEmptySegment(s);
 }
 
-/** Does this exercise type need a weight to log a set? */
-export const needsWeight = (type: ExerciseType) => type === 'weight';
 /** Does the table show a weight column for this type? */
 export const hasWeightColumn = (type: ExerciseType) => type !== 'bodyweight' && type !== 'cardio';
 export const isCardio = (type: ExerciseType) => type === 'cardio';

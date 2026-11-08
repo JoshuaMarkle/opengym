@@ -1,14 +1,17 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
+import { EffortBadge } from '../../components/Effort';
 import { SwipeRow } from '../../components/gestures';
 import { CheckGlyph } from '../../components/icons';
 import { cx, DropBadge } from '../../components/ui';
 import type { Exercise, Units, WorkoutSet } from '../../db/types';
 import { carryOver } from '../../lib/carryOver';
+import { asksEffort, effortBadge, effortSpoken, effortText, takesEffort, type EffortAsk, type EffortMode } from '../../lib/effort';
 import { matchPrevious } from '../../lib/previous';
 import { formatRepRange, formatSet, hasWeightColumn, setLabels, weightColumnLabel } from '../../lib/sets';
 import { formatWeight, unitColumn } from '../../lib/units';
 
-export type Field = 'weight' | 'reps';
+/** 'effort' is the rpe / rir tab on a reps box (SPEC §12). */
+export type Field = 'weight' | 'reps' | 'effort';
 
 export interface EditingCell {
   setId: string;
@@ -58,6 +61,9 @@ export function SetTable({
   units,
   editing,
   barPlaceholderLb,
+  effort = 'off',
+  effortAsk = 'every',
+  narrow,
   onEdit,
   onToggle,
   onToggleWarmup,
@@ -70,6 +76,11 @@ export function SetTable({
   units: Units;
   editing: EditingCell | null;
   barPlaceholderLb?: number;
+  /** Effort badges on the reps box (A2, A3); 'off' shows none. */
+  effort?: EffortMode;
+  effortAsk?: EffortAsk;
+  /** Superset rows: RIR halves drop the R. */
+  narrow?: boolean;
   onEdit: (set: WorkoutSet, field: Field) => void;
   onToggle: (set: WorkoutSet) => void;
   onToggleWarmup: (set: WorkoutSet) => void;
@@ -102,6 +113,8 @@ export function SetTable({
           const ghost = !s.completed && !isCur;
           const editW = editing?.setId === s.id && editing.field === 'weight';
           const editR = editing?.setId === s.id && editing.field === 'reps';
+          const editE = editing?.setId === s.id && editing.field === 'effort';
+          const badge = effortBadgeFor(s, sets, effort, effortAsk, editE, !!narrow, () => onEdit(s, 'effort'));
           const c = s.completed ? undefined : carry.get(s.id);
           const wText = weightCellText(s.weight, exercise, units);
           const wPlaceholder = wText
@@ -140,7 +153,7 @@ export function SetTable({
                   cols,
                   s.completed && 'bg-done',
                   isDrop && 'rounded-l-none border-l-2 border-warn',
-                  (editW || editR) && !s.completed && 'bg-surface/50',
+                  (editW || editR || editE) && !s.completed && 'bg-surface/50',
                 )}
               >
                 <button
@@ -152,7 +165,15 @@ export function SetTable({
                   {label}
                 </button>
                 <span className="flex min-w-0 items-center gap-1.5 pl-1 text-[13.5px] whitespace-nowrap text-fg2">
-                  <span className="truncate">{p?.prev ? formatSet(p.prev, exercise.type, units) : '—'}</span>
+                  {/* Last time's effort sits under the set, small (A2): "185 × 8" over "@7". */}
+                  {effort !== 'off' && p?.prev?.rpe != null && takesEffort(p.prev) ? (
+                    <span className="flex min-w-0 flex-col leading-[1.15]">
+                      <span className="truncate">{formatSet(p.prev, exercise.type, units)}</span>
+                      <small className="truncate text-[11px] text-fg3">{effortText(p.prev.rpe, effort)}</small>
+                    </span>
+                  ) : (
+                    <span className="truncate">{p?.prev ? formatSet(p.prev, exercise.type, units) : '—'}</span>
+                  )}
                   {p?.prevHadDrop && <DropBadge />}
                 </span>
                 {showWeight && (
@@ -172,6 +193,7 @@ export function SetTable({
                   tone={s.completed ? 'done' : isCur ? 'current' : 'ghost'}
                   onClick={() => onEdit(s, 'reps')}
                   label={`Set ${label} reps`}
+                  badge={badge}
                 />
                 <button
                   type="button"
@@ -199,6 +221,29 @@ export function SetTable({
   );
 }
 
+/**
+ * The badge on a set's reps box (A2, A3): the logged rating; while picking, the same in
+ * blue; otherwise the routine's target outlined, or a small + where effort is asked for.
+ * Warm-ups, drops and effort Off get nothing.
+ */
+export function effortBadgeFor(
+  s: WorkoutSet,
+  sets: WorkoutSet[],
+  mode: EffortMode,
+  ask: EffortAsk,
+  picking: boolean,
+  narrow: boolean,
+  onPress: () => void,
+): ReactNode {
+  if (mode === 'off' || !takesEffort(s)) return null;
+  if (picking) return <EffortBadge tone="active" text={s.rpe != null ? effortBadge(s.rpe, mode, narrow) : '+'} label="Picking effort" />;
+  if (s.rpe != null) return <EffortBadge tone="logged" text={effortBadge(s.rpe, mode, narrow)} label={`${effortSpoken(s.rpe, mode)}. Change effort`} onPress={onPress} />;
+  if (s.completed) return null;
+  if (s.rpeTarget != null) return <EffortBadge tone="target" text={effortBadge(s.rpeTarget, mode, narrow)} label={`Target ${effortSpoken(s.rpeTarget, mode)}. Add effort`} onPress={onPress} />;
+  if (ask === 'tap' || asksEffort(ask, s, sets)) return <EffortBadge tone="add" label="Add effort" onPress={onPress} />;
+  return null;
+}
+
 export function Cell({
   text,
   placeholder,
@@ -206,6 +251,7 @@ export function Cell({
   tone,
   onClick,
   label,
+  badge,
 }: {
   text: string;
   placeholder?: string;
@@ -213,9 +259,11 @@ export function Cell({
   tone: 'done' | 'current' | 'ghost';
   onClick: () => void;
   label: string;
+  /** Effort badge on the lower right of the box. */
+  badge?: ReactNode;
 }) {
-  return (
-    <button type="button" aria-label={label} onClick={onClick} className="flex h-11 items-center justify-center px-[3px]">
+  const cell = (
+    <button type="button" aria-label={label} onClick={onClick} className="flex h-11 w-full items-center justify-center px-[3px]">
       <span
         className={cx(
           'flex h-[32px] w-full items-center justify-center rounded-[7px] text-[16px] font-semibold',
@@ -233,5 +281,12 @@ export function Cell({
         {editing && <span className="ml-[1px] h-[17px] w-[1.5px] animate-pulse bg-accent" />}
       </span>
     </button>
+  );
+  if (!badge) return cell;
+  return (
+    <div className="relative">
+      {cell}
+      {badge}
+    </div>
   );
 }

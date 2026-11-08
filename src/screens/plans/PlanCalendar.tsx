@@ -13,7 +13,7 @@ import { boxClass, DaySheet, dayCode, dayLabel, Legend } from './PlanParts';
 
 const WEEKS = 4;
 
-/** C1: four weeks of planned vs done. Tap a day from today on to change just that day (C2). */
+/** 2.20: four weeks of planned vs done. Tap a day from today on to change just that day (2.21). */
 export function PlanCalendar() {
   const { id } = useParams();
   const navigate = useNavigate();

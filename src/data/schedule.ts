@@ -29,12 +29,12 @@ async function updateSchedule(folderId: string, fn: (s: PlanSchedule | undefined
   });
 }
 
-/** B1–B3 Save: the new schedule applies from today on. */
+/** 2.16–2.18 Save: the new schedule applies from today on. */
 export async function saveSchedule(folderId: string, draft: ScheduleDraft): Promise<void> {
   await updateSchedule(folderId, (s) => withScheduleFrom(s, draft, todayKey()));
 }
 
-/** C2 / C3: change single days without touching the schedule. */
+/** 2.21 / 3.5: change single days without touching the schedule. */
 export async function changeDays(folderId: string, patch: OverridePatch): Promise<void> {
   await updateSchedule(folderId, (s) => (s ? applyOverrides(s, patch) : s));
 }
@@ -43,7 +43,7 @@ export async function resetDay(folderId: string, key: string): Promise<void> {
   await updateSchedule(folderId, (s) => (s ? applyOverrides(s, resetDayPatch(s, key)) : s));
 }
 
-/** C3 "Skip it": the workout stays missed, the note goes away. */
+/** 3.5 "Skip it": the workout stays missed, the note goes away. */
 export async function skipMissed(folderId: string, key: string): Promise<void> {
   await updateSchedule(folderId, (s) => (s ? { ...s, skipped: [...new Set([...(s.skipped ?? []), key])] } : s));
 }

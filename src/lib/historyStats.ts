@@ -2,7 +2,7 @@ import { addDays, DAY_MS, monthsSpanned, startOfWeek } from './dates';
 
 /**
  * Streaks count weeks in a row with at least STREAK_MIN workouts.
- * (Open question in SPEC §9; one workout keeps the streak alive. Forgiving by design.)
+ * One workout keeps the streak alive (SPEC §4 History). Forgiving by design.
  */
 export const STREAK_MIN = 1;
 

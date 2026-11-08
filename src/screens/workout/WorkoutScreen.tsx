@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Navigate, useNavigate } from 'react-router';
 import { ChartIcon, CheckGlyph, ChevronDown, ChevronLeft } from '../../components/icons';
+import { EffortPad, PadClose } from '../../components/Effort';
 import { BarChip, Keypad, ModeTabs, type KeypadTab } from '../../components/Keypad';
 import { Alert, HoldMenu, Sheet, SheetOption, useToast, type MenuItem } from '../../components/overlays';
 import { BarPicker, PlatePad } from '../../components/PlatePad';
@@ -52,6 +53,7 @@ import {
   type CardioValues,
 } from '../../lib/cardio';
 import { carryOver } from '../../lib/carryOver';
+import { asksEffort, EFFORT_LABEL, takesEffort } from '../../lib/effort';
 import { fmtClock, fmtDuration, fmtMonthDay, fmtTime, fromLocalInputValue, toLocalInputValue } from '../../lib/dates';
 import { applyKey, parseRepsText, parseWeightText, type KeypadKey, type KeypadOptions } from '../../lib/keypad';
 import { barShortLabel, hasPlatePad } from '../../lib/plates';
@@ -127,7 +129,7 @@ function fieldsOf(ex: Exercise): string[] {
   return hasWeightColumn(ex.type) ? ['weight', 'reps'] : ['reps'];
 }
 
-const isCardioField = (f: string): f is CardioField => f !== 'weight' && f !== 'reps';
+const isCardioField = (f: string): f is CardioField => f !== 'weight' && f !== 'reps' && f !== 'effort';
 
 function cardioOf(s: CardioValues): CardioValues {
   const out: CardioValues = {};
@@ -230,12 +232,21 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
   };
   const barDisplayOf = (e: Exercise) => (e.barLb != null ? displayWeight(e.barLb, units) : e.equipment === 'barbell' ? settings.barWeight : 0);
 
+  // Effort (SPEC §12): the rpe / rir tab on a reps box. With "Ask on" every (or the
+  // last) working set, Next on reps goes on to the effort pad before Done.
+  const rowFields = (m: ActiveExercise, set: WorkoutSet): string[] => {
+    const f = fieldsOf(m.exercise);
+    return settings.effort !== 'off' && m.exercise.type !== 'cardio' && asksEffort(settings.effortAsk, set, m.sets) ? [...f, 'effort'] : f;
+  };
+
   // ───── keypad
 
   const startEdit = (m: ActiveExercise, set: WorkoutSet, field: string) => {
     const e = m.exercise;
     const text =
-      field === 'weight'
+      field === 'effort'
+        ? ''
+        : field === 'weight'
         ? weightEditText(set.weight, e, units)
         : field === 'reps'
           ? set.reps != null
@@ -268,6 +279,11 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
 
   const onKey = (k: KeypadKey) => {
     if (!activeEdit || !editingSet || !editingMember) return;
+    if (activeEdit.field === 'effort') {
+      // The effort pad has its own keys; a hardware backspace clears it.
+      if (k.type === 'backspace') void updateSet(editingSet.id, { rpe: undefined });
+      return;
+    }
     const text = applyKey(activeEdit.text, activeEdit.fresh, k, keypadOptions(editingMember.exercise, activeEdit.field));
     setEditing({ ...activeEdit, text, fresh: false });
     save(editingMember, editingSet, activeEdit.field, text);
@@ -364,7 +380,7 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
   };
 
   /**
-   * Where you go after a set is ticked. In a superset: the partner's set (B4).
+   * Where you go after a set is ticked. In a superset: the partner's set (4.20).
    * Otherwise the next open set of the same exercise.
    */
   const advance = (m: ActiveExercise, set: WorkoutSet): { member: ActiveExercise; set: WorkoutSet } | null => {
@@ -396,7 +412,7 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
   /** Keypad → Next walks the row's boxes; ✓ Done on the last box ticks the set and opens the next one. */
   const onNext = () => {
     if (!activeEdit || !editingSet || !editingMember) return;
-    const fields = fieldsOf(editingMember.exercise);
+    const fields = rowFields(editingMember, editingSet);
     const i = fields.indexOf(activeEdit.field);
     if (i >= 0 && i < fields.length - 1) {
       startEdit(editingMember, editingSet, fields[i + 1]);
@@ -533,7 +549,7 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
       prevNav = { small: 'Prev', text: stopLabel(m), go: () => jump(m.we.id) };
     }
     if (isSuperset) {
-      // The partner whose turn is next (B3: "A2 · Row set 2").
+      // The partner whose turn is next (4.19: "A2 · Row set 2").
       for (let k = 1; k < members.length && !nextNav; k++) {
         const m = members[(mi + k) % members.length];
         const s = m.sets.find((x) => !x.completed);
@@ -645,6 +661,9 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
         units={units}
         editing={editingCell(m)}
         barPlaceholderLb={m.exercise.type === 'weight' ? barLbOf(m.exercise) : undefined}
+        effort={settings.effort}
+        effortAsk={settings.effortAsk}
+        narrow={isSuperset}
         onEdit={(s, f) => startEdit(m, s, f)}
         onToggle={(s) => onToggle(m, s)}
         onToggleWarmup={(s) => void toggleWarmup(s.id)}
@@ -672,7 +691,7 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
 
   const emptySets = (m: ActiveExercise) => !m.sets.length && <p className="py-4 text-center text-[14px] text-fg2">{m.exercise.type === 'cardio' ? 'No segments. Add one below.' : 'No sets. Add one below.'}</p>;
 
-  /** B3–B4: the superset on one screen, inside the blue bracket. */
+  /** 4.19–4.20: the superset on one screen, inside the blue bracket. */
   const supersetView = () => {
     if (!cur || !block?.letter) return null;
     const mi = members.findIndex((m) => m.we.id === cur.we.id);
@@ -732,19 +751,38 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
   const keypad = (() => {
     if (!activeEdit || !editingSet || !editingMember || !editEx) return null;
     const field = activeEdit.field;
-    const fields = fieldsOf(editEx);
+    const fields = rowFields(editingMember, editingSet);
     const fi = fields.indexOf(field);
     const cardio = editEx.type === 'cardio';
+    const who = cardio ? '' : setName(setLabels(editingMember.sets).get(editingSet.id) ?? '');
+    // Field tabs: lbs · reps, plus rpe / rir on a reps box of a working set (A2).
+    const baseTabs = fieldsOf(editEx);
+    const effortTab = settings.effort !== 'off' && !cardio && takesEffort(editingSet) && (field === 'reps' || field === 'effort');
+    const tabIds = effortTab ? [...baseTabs, 'effort'] : baseTabs;
+    const tabLabel = (f: string) =>
+      f === 'effort' ? EFFORT_LABEL[settings.effort].toLowerCase() : cardio ? fieldTab(f as CardioField, editEx, units) : f === 'weight' ? (unitLabel(units) === 'lb' ? 'lbs' : 'kg') : 'reps';
+    if (field === 'effort' && settings.effort !== 'off') {
+      const mode = settings.effort;
+      return (
+        <Keypad
+          left={<PadClose onPress={() => setEditing(null)}>{`${who} · ${EFFORT_LABEL[mode]}`}</PadClose>}
+          tabs={tabIds.map((f) => ({ id: f, label: tabLabel(f) }))}
+          tab={field}
+          onTab={(f) => f !== field && startEdit(editingMember, editingSet, f)}
+          next={{ done: true, onPress: onNext }}
+          bottomLeft={{ key: 'minus', enabled: false }}
+          stepLabel=""
+          onKey={onKey}
+          onClose={() => setEditing(null)}
+          panel={<EffortPad mode={mode} value={editingSet.rpe} onChange={(v) => void updateSet(editingSet.id, { rpe: v })} />}
+        />
+      );
+    }
     const plateOk = field === 'weight' && hasPlatePad(editEx.type, editEx.equipment);
     const platesOn = plateOk && (padPref[editEx.id] ?? editEx.platePad ?? false);
     const opts = keypadOptions(editEx, field);
-    const label = cardio
-      ? FIELD_NAME[field as CardioField]
-      : `${setName(setLabels(editingMember.sets).get(editingSet.id) ?? '')} · ${field === 'weight' ? 'Weight' : 'Reps'}`;
-    const tabs: KeypadTab[] = fields.map((f) => ({
-      id: f,
-      label: cardio ? fieldTab(f as CardioField, editEx, units) : f === 'weight' ? (unitLabel(units) === 'lb' ? 'lbs' : 'kg') : 'reps',
-    }));
+    const label = cardio ? FIELD_NAME[field as CardioField] : `${who} · ${field === 'weight' ? 'Weight' : 'Reps'}`;
+    const tabs: KeypadTab[] = tabIds.map((f) => ({ id: f, label: tabLabel(f) }));
     const stepLabel = field === 'weight' ? `${settings.weightStep} ${unitLabel(units)}` : field === 'reps' ? '1 rep' : keypadFor(field as CardioField, editEx, units).stepLabel;
     const setPad = (v: 'numbers' | 'plates') => {
       setPadPref((p) => ({ ...p, [editEx.id]: v === 'plates' }));

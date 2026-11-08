@@ -44,7 +44,7 @@ export function boxClass(day: PlanDay, isToday: boolean): string {
   return 'text-fg3';
 }
 
-/** A one-week strip: weekday + date over a box with the day's code (A1, A2, B2 preview). */
+/** A one-week strip: weekday + date over a box with the day's code (2.14, 2.15, 2.17 preview). */
 export function PlanStrip({
   days,
   codes,
@@ -127,7 +127,7 @@ export function Legend({ items }: { items: { label: string; box: string }[] }) {
   );
 }
 
-// ───────────────────────────── C2: change one day
+// ───────────────────────────── 2.21: change one day
 
 /**
  * One-off changes to a single day: do another routine, rest (and say where

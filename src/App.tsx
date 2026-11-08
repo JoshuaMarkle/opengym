@@ -27,6 +27,7 @@ import { Progress } from './screens/progress/Progress';
 import { ImportScreen } from './screens/settings/ImportScreen';
 import { SettingPicker } from './screens/settings/SettingPicker';
 import { Settings } from './screens/settings/Settings';
+import { EffortSettings } from './screens/settings/EffortSettings';
 import { Summary } from './screens/workout/Summary';
 import { WorkoutScreen } from './screens/workout/WorkoutScreen';
 
@@ -57,6 +58,7 @@ function AppRoutes() {
         <Route path="progress/cardio/:id" element={<CardioMachine />} />
         <Route path="progress/cardio-records" element={<DistanceRecords />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="settings/effort" element={<EffortSettings />} />
         <Route path="settings/:key" element={<SettingPicker />} />
       </Route>
       <Route path="settings/import" element={<ImportScreen />} />
@@ -66,13 +68,13 @@ function AppRoutes() {
       <Route path="plan/:id" element={<PlanScreen />} />
       <Route path="plan/:id/schedule" element={<ScheduleEditor />} />
       <Route path="plan/:id/calendar" element={<PlanCalendar />} />
-      <Route path="routine/new" element={<RoutineBuilder />} />
+      <Route path="routine/new" element={<RoutineBuilder key="new" />} />
       <Route path="routine/:id" element={<RoutineScreen />} />
       <Route path="routine/:id/edit" element={<RoutineBuilder />} />
       <Route path="workout" element={<WorkoutScreen />} />
       <Route path="summary/:id" element={<Summary />} />
       <Route path="exercises" element={<Library />} />
-      <Route path="exercises/new" element={<ExerciseForm />} />
+      <Route path="exercises/new" element={<ExerciseForm key="new" />} />
       <Route path="exercises/:id" element={<ExerciseScreen />} />
       <Route path="exercises/:id/edit" element={<ExerciseForm />} />
       <Route path="welcome" element={<Welcome />} />

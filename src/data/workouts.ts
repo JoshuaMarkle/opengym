@@ -70,6 +70,7 @@ function setRecords(weId: string, drafts: SetDraft[]): WorkoutSet[] {
     reps: d.reps,
     repsMin: d.repsMin,
     repsMax: d.repsMax,
+    ...(d.rpeTarget != null ? { rpeTarget: d.rpeTarget } : {}),
     completed: false,
   }));
 }
@@ -136,7 +137,7 @@ export async function repeatWorkout(workoutId: string): Promise<string> {
       sets: sets.map((s) => {
         if (cardio) return { kind: 'working' as const };
         const p = prev?.get(keys.get(s.id)!);
-        return { kind: s.kind, weight: p?.weight ?? s.weight, reps: p?.reps ?? s.reps, repsMin: s.repsMin, repsMax: s.repsMax };
+        return { kind: s.kind, weight: p?.weight ?? s.weight, reps: p?.reps ?? s.reps, repsMin: s.repsMin, repsMax: s.repsMax, rpeTarget: s.rpeTarget };
       }),
     });
   }
@@ -237,7 +238,7 @@ async function writeGrouping(list: WorkoutExercise[]): Promise<WorkoutExercise[]
   return keyed.map(({ key: _key, ...we }, i) => ({ ...we, order: i }));
 }
 
-/** Move an exercise up or down. A superset moves as one block (B5). */
+/** Move an exercise up or down. A superset moves as one block (4.12). */
 export async function moveWorkoutExercise(weId: string, delta: -1 | 1): Promise<void> {
   await db.transaction('rw', db.workoutExercises, async () => {
     const we = await db.workoutExercises.get(weId);
@@ -248,7 +249,7 @@ export async function moveWorkoutExercise(weId: string, delta: -1 | 1): Promise<
   });
 }
 
-/** B2 "Superset with…" mid-workout: partners line up after this exercise and share its group. */
+/** 2.13 "Superset with…" mid-workout: partners line up after this exercise and share its group. */
 export async function linkWorkoutSuperset(weId: string, partnerIds: string[]): Promise<void> {
   await db.transaction('rw', db.workoutExercises, async () => {
     const we = await db.workoutExercises.get(weId);
@@ -329,7 +330,7 @@ async function writeOrder(ordered: WorkoutSet[]) {
   await Promise.all(ordered.map((s, i) => (s.order === i ? undefined : db.workoutSets.update(s.id, { order: i, updatedAt: t }))));
 }
 
-export async function updateSet(setId: string, patch: Partial<Pick<WorkoutSet, 'weight' | 'reps' | 'completed'>> & CardioValues): Promise<void> {
+export async function updateSet(setId: string, patch: Partial<Pick<WorkoutSet, 'weight' | 'reps' | 'completed' | 'rpe'>> & CardioValues): Promise<void> {
   await db.workoutSets.update(setId, { ...patch, updatedAt: Date.now() });
 }
 
@@ -411,7 +412,8 @@ export async function duplicateSet(setId: string): Promise<string | undefined> {
     const s = await db.workoutSets.get(setId);
     if (!s) return undefined;
     const sets = await setsOf(s.workoutExerciseId);
-    const copy: WorkoutSet = { ...s, ...stamp(), completed: false };
+    // A copy is a new set: it keeps the target but not the logged effort.
+    const copy: WorkoutSet = { ...s, ...stamp(), completed: false, rpe: undefined };
     // Insert after the set (and after its drops, for a parent set).
     let idx = sets.findIndex((x) => x.id === setId);
     if (s.kind !== 'drop') while (sets[idx + 1]?.kind === 'drop' && sets[idx + 1].parentSetId === setId) idx++;
@@ -582,6 +584,7 @@ export async function applyWorkoutToRoutine(workoutId: string, routineId: string
         weight: src?.weight ?? ('last' as const),
         repsMin: src?.repsMin,
         repsMax: src?.repsMax,
+        ...(s.kind === 'working' && src?.rpeTarget != null ? { rpeTarget: src.rpeTarget } : {}),
       });
     });
   }
@@ -601,6 +604,7 @@ export interface EditedSet extends CardioValues {
   parentKey?: string;
   weight?: number;
   reps?: number;
+  rpe?: number;
 }
 
 export interface EditedExercise {
@@ -638,6 +642,7 @@ export async function saveWorkoutEdits(
           parentSetId: s.kind === 'drop' && s.parentKey ? idOf.get(s.parentKey) : undefined,
           weight: s.weight,
           reps: s.reps,
+          ...(s.kind === 'working' && s.rpe != null ? { rpe: s.rpe } : {}),
           durationSec: s.durationSec,
           distance: s.distance,
           speed: s.speed,

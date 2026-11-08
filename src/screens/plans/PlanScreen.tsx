@@ -14,7 +14,7 @@ import { addDayKey, currentVersion, describeSchedule, parseDayKey, planSince, we
 import { DaySheet, dayLabel, PlanStrip } from './PlanParts';
 import { FolderSheet } from './RoutineActions';
 
-/** A2: a folder as a plan. Its schedule, this week's workouts, then its routines. */
+/** 2.15: a folder as a plan. Its schedule, this week's workouts, then its routines. */
 export function PlanScreen() {
   const { id } = useParams();
   const navigate = useNavigate();

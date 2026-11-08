@@ -1,6 +1,8 @@
 // Data model (SPEC §3). Weights are always stored in lb; convert at display.
 // Every record has id (uuid), createdAt and updatedAt (epoch ms).
 
+import type { EffortAsk, EffortMode } from '../lib/effort';
+
 export type ID = string;
 
 export type ExerciseType = 'weight' | 'bodyweight' | 'bodyweight_plus' | 'assisted' | 'cardio';
@@ -36,7 +38,7 @@ export interface Exercise extends BaseRecord {
   cardioColumns?: CardioColumn[];
   /** Cardio only: distance shown in mi/km (auto) or meters. */
   distanceUnit?: DistanceUnit;
-  /** Cardio only: segments count toward the running distance records (D4). */
+  /** Cardio only: segments count toward the running distance records (7.9). */
   isRun?: boolean;
   /** Plate pad: this exercise's bar in lb (0 = no bar, plate-loaded machine). Unset = the default bar. */
   barLb?: number;
@@ -73,7 +75,7 @@ export interface ScheduleVersion {
   onMiss: MissPolicy;
 }
 
-/** A one-off change to a single day (C2). */
+/** A one-off change to a single day (2.21). */
 export interface DayOverride {
   routineId: ScheduleSlot;
   /** Part of a move or swap (shown grey-outlined; a moved-out day shows →). */
@@ -87,7 +89,7 @@ export interface PlanSchedule {
   versions: ScheduleVersion[];
   /** Day key → one-off change. */
   overrides: Record<string, DayOverride>;
-  /** Missed days the user chose to skip (C3), so the note goes away. */
+  /** Missed days the user chose to skip (3.5), so the note goes away. */
   skipped?: string[];
 }
 
@@ -117,6 +119,8 @@ export interface RoutineSet extends BaseRecord {
   weight: number | 'last';
   repsMin?: number;
   repsMax?: number; // reps empty = no target
+  /** Optional effort target, stored as RPE (SPEC §12, A4). */
+  rpeTarget?: number;
 }
 
 export interface Workout extends BaseRecord {
@@ -149,6 +153,10 @@ export interface WorkoutSet extends BaseRecord {
   /** Rep target copied from the routine, shown as a grey placeholder. */
   repsMin?: number;
   repsMax?: number;
+  /** Effort, 1–10 in half steps; RIR is shown as 10 − RPE (SPEC §12). Working sets only. */
+  rpe?: number;
+  /** Effort target copied from the routine, shown as an outlined badge. Never a logged value. */
+  rpeTarget?: number;
   // Cardio segments (kind 'working'). Stored in SI; converted at display like weights.
   durationSec?: number;
   /** meters */
@@ -184,6 +192,14 @@ export interface Settings {
   pinnedCustomized: boolean;
   lastBackupAt?: number;
   historyView: 'calendar' | 'list';
+  /** Effort per set (SPEC §12): off, or shown as RPE or RIR. */
+  effort: EffortMode;
+  /** Which sets Next on reps goes on to the effort pad for. */
+  effortAsk: EffortAsk;
+  /** Est. 1RM counts reps in reserve: 185 × 8 @8 → 10 reps to failure. */
+  effortIn1rm: boolean;
+  /** The "RPE and RIR" sheet (A5) has been shown once. */
+  effortExplained?: boolean;
   onboarded: boolean;
   createdAt: number;
   updatedAt: number;
@@ -202,6 +218,9 @@ export const DEFAULT_SETTINGS: Omit<Settings, 'createdAt' | 'updatedAt'> = {
   pinnedExerciseIds: [],
   pinnedCustomized: false,
   historyView: 'calendar',
+  effort: 'off',
+  effortAsk: 'every',
+  effortIn1rm: false,
   onboarded: false,
 };
 

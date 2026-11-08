@@ -219,6 +219,7 @@ export async function exportCsv(): Promise<File> {
           s.kind === 'working' ? n : '',
           s.weight == null ? '' : formatWeight(s.weight, units),
           s.reps ?? '',
+          s.kind === 'working' && s.rpe != null ? s.rpe : '',
           s.durationSec ?? '',
           s.distance == null ? '' : Math.round(s.distance * 10) / 10,
           s.speed == null ? '' : Math.round(s.speed * 100) / 100,
@@ -232,7 +233,7 @@ export async function exportCsv(): Promise<File> {
     }
   }
   const csv = toCsv(
-    ['Workout', 'Start', 'End', 'Exercise', 'Set Type', 'Set', `Weight (${units})`, 'Reps', 'Seconds', 'Distance (m)', 'Speed (km/h)', 'Incline (%)', 'Level', 'Calories', 'Steps', 'Superset'],
+    ['Workout', 'Start', 'End', 'Exercise', 'Set Type', 'Set', `Weight (${units})`, 'Reps', 'RPE', 'Seconds', 'Distance (m)', 'Speed (km/h)', 'Incline (%)', 'Level', 'Calories', 'Steps', 'Superset'],
     rows,
   );
   return new File([csv], `opengym-workouts-${isoDate(Date.now())}.csv`, { type: 'text/csv' });
@@ -340,6 +341,7 @@ export async function importWorkouts(
             parentSetId: kind === 'drop' ? parent : undefined,
             weight,
             reps: s.reps,
+            ...(kind === 'working' && s.rpe != null ? { rpe: s.rpe } : {}),
             completed: true,
           };
         });

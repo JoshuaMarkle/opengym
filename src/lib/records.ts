@@ -1,5 +1,6 @@
 import type { ExerciseType, OneRmFormula } from '../db/types';
 import { DAY_MS } from './dates';
+import { effortReps } from './effort';
 import { estimate1RM, MAX_REPS_FOR_1RM } from './oneRm';
 import type { LoggedSet } from './sets';
 
@@ -40,7 +41,7 @@ const workingSets = (sets: LoggedSet[]) =>
  * only), the best est. 1RM, and the heaviest single set. An equal lift later
  * doesn't replace the first time it was done.
  */
-export function computeRecords(sessions: SessionInput[], type: ExerciseType, formula: OneRmFormula = 'epley'): ExerciseRecords {
+export function computeRecords(sessions: SessionInput[], type: ExerciseType, formula: OneRmFormula = 'epley', effort = false): ExerciseRecords {
   const rec: ExerciseRecords = { byReps: new Map() };
   const chronological = [...sessions].sort((a, b) => a.date - b.date);
   for (const session of chronological) {
@@ -58,7 +59,7 @@ export function computeRecords(sessions: SessionInput[], type: ExerciseType, for
         rec.heaviest = entry;
       }
       if (type === 'weight' && weight > 0 && reps <= MAX_REPS_FOR_1RM) {
-        const value = estimate1RM(weight, reps, formula);
+        const value = estimate1RM(weight, effort ? effortReps(reps, s.rpe) : reps, formula);
         if (!rec.bestE1rm || value > rec.bestE1rm.value) rec.bestE1rm = { ...entry, value };
       }
     }
@@ -72,7 +73,7 @@ export function computeRecords(sessions: SessionInput[], type: ExerciseType, for
  * The very first session of an exercise sets a baseline and earns none.
  * Only the best qualifying set per rep count per session is flagged.
  */
-export function recordSetIds(sessions: SessionInput[], type: ExerciseType, formula: OneRmFormula = 'epley'): Set<string> {
+export function recordSetIds(sessions: SessionInput[], type: ExerciseType, formula: OneRmFormula = 'epley', effort = false): Set<string> {
   const flagged = new Set<string>();
   const chronological = [...sessions].sort((a, b) => a.date - b.date);
   const bestByReps = new Map<number, number>();
@@ -95,7 +96,7 @@ export function recordSetIds(sessions: SessionInput[], type: ExerciseType, formu
         const c = sessionBestByReps.get(r);
         if (!c || w > c.w) sessionBestByReps.set(r, { w, id: s.id });
         if (type === 'weight' && w > 0) {
-          const v = estimate1RM(w, r, formula);
+          const v = estimate1RM(w, effort ? effortReps(r, s.rpe) : r, formula);
           if (!sessionE1 || v > sessionE1.v) sessionE1 = { v, id: s.id };
         }
       }

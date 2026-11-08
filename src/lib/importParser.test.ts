@@ -4,8 +4,8 @@ import { ImportError, parseDuration, parseImportCsv, parseImportDate } from './i
 const STRONG = `Date,Workout Name,Duration,Exercise Name,Set Order,Weight,Reps,Distance,Seconds,Notes,Workout Notes,RPE
 2024-01-08 18:04:11,"Push A",1h 2m,"Bench Press (Barbell)",W,95.0,10,0,0,"","",
 2024-01-08 18:04:11,"Push A",1h 2m,"Bench Press (Barbell)",1,185.0,8,0,0,"","",
-2024-01-08 18:04:11,"Push A",1h 2m,"Bench Press (Barbell)",2,185.0,6,0,0,"","",
-2024-01-08 18:04:11,"Push A",1h 2m,"Bench Press (Barbell)",D,135.0,9,0,0,"","",
+2024-01-08 18:04:11,"Push A",1h 2m,"Bench Press (Barbell)",2,185.0,6,0,0,"","",8.5
+2024-01-08 18:04:11,"Push A",1h 2m,"Bench Press (Barbell)",D,135.0,9,0,0,"","",10
 2024-01-08 18:04:11,"Push A",1h 2m,"Chest Fly (Cable)",1,30,12,0,0,"","",
 2024-01-08 18:04:11,"Push A",1h 2m,"Running",1,0,0,5,1800,"","",
 2024-01-10 07:30:00,"Legs",45m,"Squat (Barbell)",1,225,5,0,0,"","",
@@ -18,7 +18,7 @@ const STRONG_SEMI = `Date;Workout Name;Duration;Exercise Name;Set Order;Weight;R
 
 const HEVY = `"title","start_time","end_time","description","exercise_title","superset_id","exercise_notes","set_index","set_type","weight_kg","reps","distance_km","duration_seconds","rpe"
 "Push A","5 Nov 2026, 18:10","5 Nov 2026, 19:07","","Bench Press (Barbell)",,"",0,"warmup",40,10,,,
-"Push A","5 Nov 2026, 18:10","5 Nov 2026, 19:07","","Bench Press (Barbell)",,"",1,"normal",80,8,,,
+"Push A","5 Nov 2026, 18:10","5 Nov 2026, 19:07","","Bench Press (Barbell)",,"",1,"normal",80,8,,,9
 "Push A","5 Nov 2026, 18:10","5 Nov 2026, 19:07","","Bench Press (Barbell)",,"",2,"dropset",60,9,,,
 "Push A","5 Nov 2026, 18:10","5 Nov 2026, 19:07","","Lat Pulldown (Cable)",,"",0,"failure",50,12,,,
 "Run","6 Nov 2026, 07:00","6 Nov 2026, 07:30","","Running",,"",0,"normal",,,5,1800,
@@ -37,6 +37,11 @@ describe('parseImportCsv: Strong', () => {
     expect(bench.name).toBe('Bench Press (Barbell)');
     expect(bench.sets.map((s) => s.kind)).toEqual(['warmup', 'working', 'working', 'drop']);
     expect(bench.sets[1]).toEqual({ kind: 'working', weight: 185, reps: 8 });
+  });
+  it('keeps RPE on working sets only', () => {
+    const bench = r.workouts[0].exercises[0];
+    expect(bench.sets[2].rpe).toBe(8.5);
+    expect(bench.sets[3].rpe).toBeUndefined();
   });
   it('skips cardio and rest-timer rows', () => {
     expect(r.exerciseNames).toEqual(['Bench Press (Barbell)', 'Chest Fly (Cable)', 'Squat (Barbell)']);
@@ -57,6 +62,7 @@ describe('parseImportCsv: Hevy', () => {
     const [bench, lat] = r.workouts[0].exercises;
     expect(bench.sets.map((s) => s.kind)).toEqual(['warmup', 'working', 'drop']);
     expect(lat.sets[0]).toEqual({ kind: 'working', weight: 50, reps: 12 });
+    expect(bench.sets[1].rpe).toBe(9);
   });
   it('reads start and end times', () => {
     const w = r.workouts[0];

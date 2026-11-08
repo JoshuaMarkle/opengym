@@ -31,7 +31,7 @@ const FIELD: Partial<Record<CardioColumn | 'time', CardioField>> = {
 const valueOf = (v: CardioValues, f: CardioField) => (f === 'time' ? v.durationSec : v[f]);
 
 /**
- * C1 / C3 / C4: cardio inside the row. `# | TIME | col2 | col3 | ✓`, no Previous
+ * 4.21 / 4.23 / 4.24: cardio inside the row. `# | TIME | col2 | col3 | ✓`, no Previous
  * column. Empty boxes show last time's numbers in grey and ✓ accepts them;
  * worked-out columns (split, pace) are grey and not editable. A Σ row adds up
  * the ticked segments, only when there are two or more.
@@ -164,7 +164,7 @@ function strip(s: WorkoutSet): CardioValues {
   return out;
 }
 
-/** D5: a finished cardio session as a read-only mini table. Σ only with two or more segments. */
+/** 6.6: a finished cardio session as a read-only mini table. Σ only with two or more segments. */
 export function CardioMiniTable({ exercise, sets, units }: { exercise: Exercise; sets: CardioValues[]; units: Units }) {
   const cols: (CardioColumn | 'time')[] = ['time', ...cardioColumns(exercise)];
   const grid = { gridTemplateColumns: `28px repeat(${cols.length}, minmax(0,1fr))` };

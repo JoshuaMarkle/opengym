@@ -13,11 +13,11 @@ export interface LiftPoint {
 }
 
 /** Sessions of one or more exercises (a variation group, combined), oldest first. */
-export function liftPoints(history: HistoryIndex, exerciseIds: string[], type: ExerciseType, formula: OneRmFormula): LiftPoint[] {
+export function liftPoints(history: HistoryIndex, exerciseIds: string[], type: ExerciseType, formula: OneRmFormula, effort = false): LiftPoint[] {
   const byWorkout = new Map<string, LiftPoint>();
   for (const id of exerciseIds) {
     for (const s of history.sessionsByExercise.get(id) ?? []) {
-      const p: LiftPoint = { date: s.date, workoutId: s.workoutId, exerciseId: id, sets: s.sets, metric: sessionMetric(s.sets, type, formula), top: topSet(s.sets, type) };
+      const p: LiftPoint = { date: s.date, workoutId: s.workoutId, exerciseId: id, sets: s.sets, metric: sessionMetric(s.sets, type, formula, effort), top: topSet(s.sets, type) };
       const cur = byWorkout.get(s.workoutId);
       if (!cur || (p.metric?.value ?? -Infinity) > (cur.metric?.value ?? -Infinity)) byWorkout.set(s.workoutId, p);
     }

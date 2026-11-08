@@ -29,7 +29,7 @@ export function ExerciseMenu({
   onLookback: () => void;
   onSettings: () => void;
   onRemove: () => void;
-  /** B2: "Superset with…", or "Unlink superset" once it's in one. Leave out for cardio. */
+  /** 2.13: "Superset with…", or "Unlink superset" once it's in one. Leave out for cardio. */
   superset?: { tag?: string; onLink: () => void; onUnlink: () => void; canAdd: boolean };
 }) {
   const [variationsOpen, setVariationsOpen] = useState(false);

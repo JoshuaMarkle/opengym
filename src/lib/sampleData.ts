@@ -76,7 +76,7 @@ interface PlanExercise {
   sets: string;
   /** Rounding step in lb. */
   step?: number;
-  /** Superset letter (B1): members sit next to each other. */
+  /** Superset letter (2.12): members sit next to each other. */
   superset?: string;
 }
 
@@ -156,7 +156,7 @@ const CURRENT: Plan[] = [
   },
 ];
 
-/** Sunday runs outside, from this date on: the source of the distance records (D4). */
+/** Sunday runs outside, from this date on: the source of the distance records (7.9). */
 const RUNS_FROM = new Date(2025, 8, 7).getTime();
 
 /** The older plan, used until July 2025. Its numbers are from the mid-2025 low. */
@@ -256,6 +256,22 @@ const BREAKS: [number, number][] = [
   [new Date(2025, 11, 23).getTime(), new Date(2025, 11, 30).getTime()],
   [new Date(2026, 5, 20).getTime(), new Date(2026, 6, 5).getTime()],
 ];
+
+/** Effort (SPEC §12) is rated on the last 12 weeks of sample sets, so it looks recently turned on. */
+const EFFORT_DAYS = 84;
+
+/**
+ * A believable RPE without touching the random stream: the planned set leaves ~2 reps in
+ * the tank at the day's strength; rounding the weight down or doing more reps changes that,
+ * and later sets feel a little harder. The same weight gets easier as strength goes up.
+ */
+export function sampleRpe(plannedWeight: number, plannedReps: number, weight: number, reps: number, setIndex: number): number {
+  if (!(weight > 0)) return 8;
+  const e1rm = plannedWeight * (1 + (plannedReps + 2) / 30);
+  const maxReps = 30 * (e1rm / weight - 1);
+  const rpe = 10 - (maxReps - reps) + setIndex * 0.5;
+  return Math.min(10, Math.max(6, Math.round(rpe * 2) / 2));
+}
 
 /** Training days per week (0 = Sun): Mon, Tue, Thu, Fri, Sat. */
 const TRAINING_DAYS = new Set([1, 2, 4, 5, 6]);
@@ -403,13 +419,17 @@ export function generateSampleData(opts: { now?: number; newId?: () => string; s
         workoutSets.push(rec);
         return rec.id;
       };
+      let wi = 0;
       for (const s of parsePlanSets(pe.sets)) {
         if (s.kind === 'warmup') {
           push({ kind: 'warmup', weight: s.weight, reps: s.reps });
           continue;
         }
         const jitter = Math.round((rand() - 0.5) * 2.4); // −1…+1 reps
-        const parentId = push({ kind: 'working', weight: round(s.weight * dayScale), reps: Math.max(1, s.reps + jitter) });
+        const weight = round(s.weight * dayScale);
+        const reps = Math.max(1, s.reps + jitter);
+        const parentId = push({ kind: 'working', weight, reps, ...(midnight >= end - EFFORT_DAYS * DAY ? { rpe: sampleRpe(s.weight * dayScale, s.reps, weight, reps, wi) } : {}) });
+        wi++;
         let parent = parentId;
         for (const d of s.drops) parent = push({ kind: 'drop', parentSetId: parent, weight: round(d.weight * dayScale), reps: Math.max(1, d.reps + Math.round((rand() - 0.5) * 2)) });
       }

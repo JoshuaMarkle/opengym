@@ -170,7 +170,7 @@ export function Sparkline({ values, width = 70, height = 26 }: { values: number[
 }
 
 /**
- * D2 / D3: one bar per week. The current week is blue (it isn't over yet); the
+ * 7.7 / 7.8: one bar per week. The current week is blue (it isn't over yet); the
  * dashed line is the average. Month labels sit under the first week of each month.
  */
 export function WeeklyBars({ weeks, values, avg, height = 170, format = (v: number) => formatNumber(v, 1) }: { weeks: number[]; values: number[]; avg?: number; height?: number; format?: (v: number) => string }) {

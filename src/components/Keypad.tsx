@@ -9,7 +9,7 @@ export interface KeypadTab {
 }
 
 /**
- * The 4×4 keypad (4.2 / 2.4, A1–A2, C2). Left three columns: 1–9, then the
+ * The 4×4 keypad (2.4, 4.2, 4.15, 4.22). Left three columns: 1–9, then the
  * bottom-left key (− sign, – range or : for time), 0 and the decimal point.
  * Right column: close · + step · − step · backspace.
  *
@@ -130,7 +130,7 @@ export function Keypad({
 /** Height of the number grid: the plate pad matches it exactly. */
 export const KEYPAD_GRID_HEIGHT = 4 * 50 + 3 * 6;
 
-/** 123 | Plates on the left of the header (A1, A3). */
+/** 123 | Plates on the left of the header (4.2, 4.16). */
 export function ModeTabs({ value, onChange }: { value: 'numbers' | 'plates'; onChange: (v: 'numbers' | 'plates') => void }) {
   return (
     <Pills
@@ -146,7 +146,7 @@ export function ModeTabs({ value, onChange }: { value: 'numbers' | 'plates'; onC
   );
 }
 
-/** "Bar 45 ▾" beside the mode tabs on Plates (A3, A5). Drawn like a pill; 44 px tall to tap. */
+/** "Bar 45 ▾" beside the mode tabs on Plates (4.16, 4.18). Drawn like a pill; 44 px tall to tap. */
 export function BarChip({ label, onPress }: { label: string; onPress: () => void }) {
   return (
     <button

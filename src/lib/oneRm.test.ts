@@ -42,6 +42,15 @@ describe('sessionMetric', () => {
   it('charts added weight for BW + added', () => {
     expect(sessionMetric([s('working', 0, 12), s('working', 25, 8)], 'bodyweight_plus')!.value).toBe(25);
   });
+  it('with effort, counts reps in reserve: 185 × 8 @8 is 10 reps to failure', () => {
+    const sets = [s('working', 185, 8, { rpe: 8 }), s('working', 195, 6, { rpe: 10 })];
+    const m = sessionMetric(sets, 'weight', 'epley', true)!;
+    expect(m.weight).toBe(185);
+    expect(m.reps).toBe(8);
+    expect(m.value).toBeCloseTo(185 * (1 + 10 / 30), 5);
+    // Off: the same sets rank by reps done.
+    expect(sessionMetric(sets, 'weight', 'epley', false)!.value).toBeCloseTo(234.33, 2);
+  });
   it('charts the negative weight for assisted (less assist = higher)', () => {
     expect(sessionMetric([s('working', -40, 10), s('working', -30, 8)], 'assisted')!.value).toBe(-30);
   });

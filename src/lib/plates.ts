@@ -2,7 +2,7 @@ import type { Equipment, ExerciseType, Units } from '../db/types';
 import { formatNumber } from './units';
 
 /**
- * Plate pad (SPEC §10, A3–A5). Everything here is in the display unit (lb or kg).
+ * Plate pad (SPEC §10, 4.16–4.18). Everything here is in the display unit (lb or kg).
  * A "stack" is one side of the bar, inner plate first, in the order loaded.
  * Total = bar + 2 × the stack.
  */
@@ -15,7 +15,7 @@ export const PLATES: Record<Units, number[]> = {
 
 export type BarId = 'barbell' | 'light' | 'ez' | 'trap' | 'custom' | 'none';
 
-/** A5: the bar picker. "No bar" makes the pad work for plate-loaded machines. */
+/** 4.18: the bar picker. "No bar" makes the pad work for plate-loaded machines. */
 export const BAR_OPTIONS: Record<Units, { id: Exclude<BarId, 'custom'>; label: string; weight: number }[]> = {
   lb: [
     { id: 'barbell', label: 'Barbell', weight: 45 },

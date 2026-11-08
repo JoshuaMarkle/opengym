@@ -45,6 +45,14 @@ describe('computeRecords', () => {
   });
 });
 
+describe('computeRecords with effort', () => {
+  it('best est. 1RM counts reps in reserve only when asked', () => {
+    const sessions = [{ workoutId: 'a', date: 1, sets: [s('working', 200, 5, { rpe: 7 }), s('working', 210, 5, { rpe: 10 })] }];
+    expect(computeRecords(sessions, 'weight').bestE1rm!.weight).toBe(210);
+    expect(computeRecords(sessions, 'weight', 'epley', true).bestE1rm!.weight).toBe(200);
+  });
+});
+
 describe('isRecent', () => {
   it('is true within 30 days', () => {
     const now = Date.UTC(2026, 10, 5);

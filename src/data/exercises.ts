@@ -13,7 +13,7 @@ export interface ExerciseInput {
   isRun?: boolean;
 }
 
-/** Plate pad choices remembered per exercise (A5). Not an edit, so it doesn't need the form. */
+/** Plate pad choices remembered per exercise (4.18). Not an edit, so it doesn't need the form. */
 export async function setExercisePrefs(id: string, prefs: Partial<Pick<Exercise, 'barLb' | 'platePad'>>): Promise<void> {
   await db.exercises.update(id, prefs);
 }

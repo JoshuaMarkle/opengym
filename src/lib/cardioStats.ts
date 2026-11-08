@@ -3,7 +3,7 @@ import { cardioTotals, longDistance, MI_M, type CardioValues } from './cardio';
 import { addDays, DAY_MS, startOfWeek } from './dates';
 
 /**
- * Cardio progress (SPEC §10, D2–D4) is about how much you do: minutes, distance
+ * Cardio progress (SPEC §10, 7.7–7.9) is about how much you do: minutes, distance
  * and sessions per week. The only "bests" are classic race distances.
  */
 
@@ -15,7 +15,6 @@ export interface CardioSession {
 }
 
 export type CardioRange = '4W' | '3M' | '6M' | '1Y' | 'All';
-export const CARDIO_RANGES: CardioRange[] = ['4W', '3M', '6M', '1Y', 'All'];
 export type CardioMetric = 'minutes' | 'distance' | 'sessions';
 
 export const RANGE_PHRASE: Record<CardioRange, string> = {
@@ -134,7 +133,7 @@ export interface MachineTotal {
   last: number;
 }
 
-/** D2 "By machine": totals per cardio exercise since `from`, most time first. */
+/** 7.7 "By machine": totals per cardio exercise since `from`, most time first. */
 export function machineTotals(sessions: CardioSession[], from: number | undefined): MachineTotal[] {
   const m = new Map<string, MachineTotal>();
   for (const s of sessions) {
@@ -150,7 +149,7 @@ export function machineTotals(sessions: CardioSession[], from: number | undefine
   return [...m.values()].sort((a, b) => b.durationSec - a.durationSec || b.last - a.last);
 }
 
-// ───────────────────────────── distance records (D4)
+// ───────────────────────────── distance records (7.9)
 
 export const RACE_DISTANCES: { id: string; label: string; meters: number }[] = [
   { id: 'mile', label: '1 mile', meters: MI_M },

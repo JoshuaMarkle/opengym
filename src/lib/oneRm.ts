@@ -1,4 +1,5 @@
 import type { ExerciseType, OneRmFormula } from '../db/types';
+import { effortReps } from './effort';
 import type { LoggedSet } from './sets';
 
 /** Sets above this rep count don't feed the 1RM estimate or the rep records. */
@@ -27,12 +28,13 @@ const completedWorking = (sets: LoggedSet[]) =>
 
 /**
  * The progress metric for one session (SPEC §4):
- * - weight: est. 1RM of the best working set (no warm-ups, no drops, ≤ 12 reps)
+ * - weight: est. 1RM of the best working set (no warm-ups, no drops, ≤ 12 reps).
+ *   With `effort`, rated sets count their reps in reserve (SPEC §12): 185 × 8 @8 → 10 reps.
  * - bodyweight: most reps in a working set
  * - bodyweight + added: the heaviest added weight
  * - assisted: the least assistance (weights are negative, so the max)
  */
-export function sessionMetric(sets: LoggedSet[], type: ExerciseType, formula: OneRmFormula = 'epley'): SessionPoint | null {
+export function sessionMetric(sets: LoggedSet[], type: ExerciseType, formula: OneRmFormula = 'epley', effort = false): SessionPoint | null {
   const work = completedWorking(sets);
   if (!work.length) return null;
   if (type === 'bodyweight') {
@@ -50,7 +52,7 @@ export function sessionMetric(sets: LoggedSet[], type: ExerciseType, formula: On
   let best: SessionPoint | null = null;
   for (const s of work) {
     if ((s.reps ?? 0) > MAX_REPS_FOR_1RM || !((s.weight ?? 0) > 0)) continue;
-    const v = estimate1RM(s.weight!, s.reps!, formula);
+    const v = estimate1RM(s.weight!, effort ? effortReps(s.reps!, s.rpe) : s.reps!, formula);
     if (!best || v > best.value || (v === best.value && s.weight! > (best.weight ?? 0))) {
       best = { value: v, weight: s.weight, reps: s.reps! };
     }

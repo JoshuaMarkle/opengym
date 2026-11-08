@@ -221,7 +221,7 @@ export function weekCounts(days: PlanDay[]): { done: number; total: number } {
   return { done: workouts.filter((d) => d.state === 'done').length, total: workouts.length };
 }
 
-// ───────────────────────────── one-off changes (C2, C3)
+// ───────────────────────────── one-off changes (2.21, 3.5)
 
 export type OverridePatch = Record<string, DayOverride | undefined>;
 
@@ -275,7 +275,7 @@ export function swapTarget(days: PlanDay[], key: string): PlanDay | undefined {
 }
 
 /**
- * C3: the note on Home the day after a missed workout. Only for plans that
+ * 3.5: the note on Home the day after a missed workout. Only for plans that
  * keep to the calendar; "Wait for me" cycles never miss.
  */
 export function missedYesterday(days: PlanDay[], today: string, schedule: PlanSchedule): PlanDay | undefined {
@@ -293,7 +293,7 @@ export function doItTodayPatch(missed: PlanDay, today: string): OverridePatch {
   return moveDayPatch(missed.key, missed.planned!, today);
 }
 
-// ───────────────────────────── editing the schedule (B1–B4)
+// ───────────────────────────── editing the schedule (2.16–2.19)
 
 export interface ScheduleDraft {
   kind: ScheduleKind;

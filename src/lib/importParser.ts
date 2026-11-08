@@ -1,5 +1,6 @@
 import type { SetKind, Units } from '../db/types';
 import { parseCsvObjects } from './csv';
+import { parseRpe } from './effort';
 
 /**
  * Import from Strong / Hevy (SPEC §4, 9.5). Parses their CSV exports into
@@ -12,6 +13,8 @@ export interface ImportedSet {
   kind: SetKind;
   weight?: number;
   reps: number;
+  /** Their RPE column, working sets only (SPEC §12). */
+  rpe?: number;
 }
 
 export interface ImportedExercise {
@@ -111,8 +114,8 @@ function unitsFromHeader(headers: string[]): Units | undefined {
   return undefined;
 }
 
-function pushSet(ex: ImportedExercise, kind: SetKind, weight: number | undefined, reps: number) {
-  ex.sets.push({ kind, weight, reps });
+function pushSet(ex: ImportedExercise, kind: SetKind, weight: number | undefined, reps: number, rpe?: number) {
+  ex.sets.push({ kind, weight, reps, ...(rpe != null && kind === 'working' ? { rpe } : {}) });
 }
 
 function finalize(map: Map<string, ImportedWorkout>, source: ImportSource, units: Units | undefined, skipped: number): ParsedImport {
@@ -167,7 +170,7 @@ function parseStrong(headers: string[], rows: Record<string, string>[]): ParsedI
       map.set(key, w);
     }
     const kind: SetKind = order === 'W' ? 'warmup' : order === 'D' ? 'drop' : 'working';
-    pushSet(getExercise(w, exName), kind, num(r[weightCol]), reps);
+    pushSet(getExercise(w, exName), kind, num(r[weightCol]), reps, parseRpe(r['RPE']));
   }
   return finalize(map, 'strong', units, skipped);
 }
@@ -196,7 +199,7 @@ function parseHevy(headers: string[], rows: Record<string, string>[]): ParsedImp
     }
     const t = (r['set_type'] ?? '').toLowerCase();
     const kind: SetKind = t === 'warmup' ? 'warmup' : t === 'dropset' ? 'drop' : 'working';
-    pushSet(getExercise(w, exName), kind, weightCol ? num(r[weightCol]) : undefined, reps);
+    pushSet(getExercise(w, exName), kind, weightCol ? num(r[weightCol]) : undefined, reps, parseRpe(r['rpe']));
   }
   return finalize(map, 'hevy', units, skipped);
 }
@@ -223,7 +226,7 @@ function parseOpenGym(headers: string[], rows: Record<string, string>[]): Parsed
     }
     const t = (r['Set Type'] ?? '').toLowerCase();
     const kind: SetKind = t.startsWith('warm') ? 'warmup' : t.startsWith('drop') ? 'drop' : 'working';
-    pushSet(getExercise(w, r['Exercise']), kind, num(r[weightCol]), reps);
+    pushSet(getExercise(w, r['Exercise']), kind, num(r[weightCol]), reps, parseRpe(r['RPE']));
   }
   return finalize(map, 'opengym', units, skipped);
 }

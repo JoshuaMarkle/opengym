@@ -14,7 +14,6 @@ const MONTHS_LONG = [
 export const weekdayShort = (d: number) => WEEKDAYS_SHORT[d];
 export const weekdayLetter = (d: number) => WEEKDAYS_SHORT[d][0];
 export const monthShort = (m: number) => MONTHS_SHORT[m];
-export const monthLong = (m: number) => MONTHS_LONG[m];
 export const monthLetter = (m: number) => MONTHS_SHORT[m][0];
 
 export function startOfDay(ts: number): number {
@@ -54,10 +53,6 @@ export function daysInMonth(year: number, month: number): number {
 export function dayKey(ts: number): string {
   const d = new Date(ts);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-export function sameDay(a: number, b: number): boolean {
-  return dayKey(a) === dayKey(b);
 }
 
 /** Whole calendar days between two timestamps (b − a). */

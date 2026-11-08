@@ -1,38 +1,37 @@
 # OpenGym
 
-Offline-first lifting log PWA (React + TypeScript + Vite + Dexie + Tailwind). No backend.
+Offline-first lifting log PWA (React + TypeScript + Vite + Dexie + Tailwind). No backend; all data is in IndexedDB on the phone.
 
 ## Read first
-- `design/SPEC.md`: decisions, data model, rules, build order. It wins over everything else.
-- `design/storyboards/complete.html`: every screen, with IDs like 4.1. Match its layout, copy and states.
-- Ignore `design/storyboards/v1`–`v8` unless asked; they're superseded.
-
-## Rules
-- Store weights in lb internally; convert at display.
-- Dark theme first; every color comes from the CSS variables in `src/index.css` (SPEC §8). Flat rows and hairlines, no cards or shadows.
-- Use tabular numbers everywhere digits appear. Tap targets are at least 44 px.
-- Gestures (swipe, long-press) must always have a visible alternative.
-- Never lose logged data: persist the active workout on every change; confirm before any destructive action.
-- Don't add anything listed under "Out of scope for v1" in SPEC §1.
-- Put pure logic (1RM, records, next-up, prefill, import parsing) in `src/lib/` with Vitest tests.
-- Icons: only the tab bar uses the solid nav icons (`design/brand/nav/solid`). In-app controls keep the storyboard glyphs (▶ + ✓ ••• ≡ W/D).
+- `design/SPEC.md`: rules, data model, design principles. Code comments cite it as `SPEC §4`.
+- `design/storyboard.html` + `design/screens/<id>.png`: every screen, captured from the app. Comments cite screen IDs like `4.1`.
 
 ## Commands
-- `npm run dev`: dev server (http://localhost:5173). In dev, `window.__og.db` exposes the Dexie database.
-- `npm run build`: type-check, then build the PWA into `dist/`.
-- `npm run preview`: serve the built `dist/` locally.
-- `npm test`: run the Vitest unit tests (`src/**/*.test.ts`).
-- `npm run typecheck`: `tsc -b` only.
+- `npm run dev`: dev server at http://localhost:5173 with sample history in a separate test database. `npm run dev:real` uses the real one.
+- `npm test`: Vitest (`src/**/*.test.ts`). `npm run typecheck`: `tsc -b` (app and scripts). `npm run build`: typecheck + PWA build into `dist/`.
+- `npm run screens [-- 4 2.1]`: re-screenshot screens into `design/` (needs Chromium/Chrome). Run after UI changes.
+- `npm run brand`: regenerate logo SVGs, PWA icons and the brand board from `src/lib/logo.ts` and `src/index.css`.
 
 ## Layout
 - `src/db/`: Dexie schema, types, built-in exercise library (`ex-<slug>` ids, `vg-…` variation groups).
-- `src/lib/`: pure logic plus tests (no React, no Dexie).
-- `src/data/`: reads and writes (workouts, routines, exercises, history index, backup/import, settings) and `DataProvider`.
-- `src/components/`: shared UI (`ui.tsx`), overlays (Sheet, Alert, HoldMenu, Toast), Keypad, gestures, charts, icons.
-- `src/screens/<area>/`: one folder per storyboard section (onboarding, home, plans, workout, history, progress, exercises, settings).
-- Routing is a HashRouter so the build works from any static host or sub-path.
+- `src/lib/`: pure logic with tests (no React, no Dexie): 1RM, records, prefill, next-up, schedules, supersets, cardio, plates, import parsing.
+- `src/data/`: reads and writes (workouts, routines, exercises, schedule, history index, backup/import, settings) and `DataProvider`.
+- `src/components/`: shared UI (`ui.tsx`), overlays (Sheet, Alert, HoldMenu, Toast), Keypad, PlatePad, gestures, charts, icons.
+- `src/screens/<area>/`: onboarding, home, plans, workout, history, progress, exercises, settings.
+- `scripts/`: `screens.ts`, `brand.ts` and a small headless-Chrome driver (`chrome.ts`). Plain Node, no build step.
+
+## Rules
+- Store weights in lb; convert at display. Assisted weights are negative; BW + added stores only the added weight.
+- Every color comes from the CSS variables in `src/index.css`. Flat rows and hairlines, no cards or shadows.
+- Tabular numbers wherever digits appear. Tap targets ≥ 44 px.
+- Gestures (swipe, long-press) always have a visible alternative.
+- Never lose logged data: persist the active workout on every change; confirm before destructive actions.
+- Nothing from SPEC §1 "Out of scope".
+- New pure logic goes in `src/lib/` with a Vitest test.
+- Only the tab bar uses the solid icons; in-app controls use the glyphs ▶ + ✓ ••• ≡ W/D.
+- New or changed screen: add its catalog entry and scene in `scripts/screens.ts`, re-run it, and cite its ID in comments.
 
 ## Gotchas
-- Live queries lag a navigation by a frame. Screens that open right after a write (workout, summary) wait briefly via `useGiveUp` before deciding their record is missing.
+- Live queries lag a navigation by a frame. Screens opened right after a write (workout, summary) wait briefly via `useGiveUp` before deciding their record is missing.
 - Toasts dock above anything marked `data-dock` (tab bar, keypad, pinned footers).
-- Assisted weights are stored negative; bodyweight + added stores only the added weight.
+- Routing is a `HashRouter`; in dev, `window.__og.db` is the Dexie instance.
