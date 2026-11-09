@@ -21,3 +21,6 @@ npm-debug.log*
 
 # cloudflare wrangler
 .wrangler/
+
+# python (design/training-logic-reference.py)
+__pycache__/

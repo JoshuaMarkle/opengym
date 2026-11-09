@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SEED_EXERCISES, seedExerciseId } from '../db/seedExercises';
-import { generateSampleData, parsePlanSets, strengthAt } from './sampleData';
+import { comebackAt, generateSampleData, parsePlanSets, sampleRir, strengthAt } from './sampleData';
 
 const NOW = new Date(2026, 10, 6, 12).getTime();
 const data = generateSampleData({ now: NOW });
@@ -56,7 +56,68 @@ describe('generateSampleData', () => {
     const weOf = new Map(data.workoutExercises.map((w) => [w.id, w]));
     const recent = data.workoutSets.filter((s) => bench.has(s.workoutExerciseId) && s.kind === 'working' && byId.get(weOf.get(s.workoutExerciseId)!.workoutId)!.startedAt > at(2026, 10, 15));
     expect(recent.length).toBeGreaterThan(0);
-    for (const s of recent) expect(s.weight).toBeGreaterThanOrEqual(150);
+    const avg = recent.reduce((a, s) => a + s.weight!, 0) / recent.length;
+    expect(avg).toBeGreaterThan(150);
+    expect(avg).toBeLessThan(160);
+  });
+});
+
+describe('sample gaps, variety and effort', () => {
+  const byId = new Map(data.workouts.map((w) => [w.id, w]));
+  const weOf = new Map(data.workoutExercises.map((w) => [w.id, w]));
+  const dayOf = (setId: string) => byId.get(weOf.get(data.workoutSets.find((s) => s.id === setId)!.workoutExerciseId)!.workoutId)!.startedAt;
+
+  it('has seven weeks with nothing logged in Feb–Mar 2026', () => {
+    const inGap = data.workouts.filter((w) => w.startedAt >= at(2026, 2, 9) && w.startedAt < at(2026, 3, 30));
+    expect(inGap).toEqual([]);
+    expect(data.workouts.some((w) => w.startedAt >= at(2026, 1, 26) && w.startedAt < at(2026, 2, 9))).toBe(true);
+    expect(data.workouts.some((w) => w.startedAt >= at(2026, 3, 30) && w.startedAt < at(2026, 4, 13))).toBe(true);
+  });
+
+  it('comes back lighter after a long break, fading over four weeks', () => {
+    expect(comebackAt(at(2026, 3, 31))).toBeGreaterThan(0.05);
+    expect(comebackAt(at(2026, 4, 14))).toBeLessThan(comebackAt(at(2026, 3, 31)));
+    expect(comebackAt(at(2026, 5, 1))).toBe(0);
+    expect(comebackAt(at(2025, 9, 1))).toBe(0);
+  });
+
+  it('varies isolation lifts more than bench, without silly reps', () => {
+    const reps = (id: string) => {
+      const wes = new Set(data.workoutExercises.filter((w) => w.exerciseId === id).map((w) => w.id));
+      return data.workoutSets.filter((s) => wes.has(s.workoutExerciseId) && s.kind === 'working' && s.order <= 1).map((s) => s.reps!);
+    };
+    const spread = (xs: number[]) => {
+      const m = xs.reduce((a, b) => a + b, 0) / xs.length;
+      return Math.sqrt(xs.reduce((a, b) => a + (b - m) ** 2, 0) / xs.length);
+    };
+    expect(spread(reps('ex-lateral-raise'))).toBeGreaterThan(spread(reps('ex-bench-press')));
+    for (const r of [...reps('ex-lateral-raise'), ...reps('ex-bench-press')]) {
+      expect(r).toBeGreaterThanOrEqual(2);
+      expect(r).toBeLessThanOrEqual(16);
+    }
+  });
+
+  it('rates working sets as RIR for the last ~5 months only, mostly whole numbers', () => {
+    const rated = data.workoutSets.filter((s) => s.rpe != null);
+    expect(rated.length).toBeGreaterThan(500);
+    for (const s of rated) expect(s.kind).toBe('working');
+    const first = Math.min(...rated.map((s) => dayOf(s.id)));
+    expect(first).toBeGreaterThan(at(2026, 5, 15));
+    expect(first).toBeLessThan(at(2026, 6, 30));
+    const whole = rated.filter((s) => Number.isInteger(s.rpe)).length;
+    expect(whole / rated.length).toBeGreaterThan(0.7);
+    const rir = rated.map((s) => 10 - s.rpe!);
+    expect(Math.min(...rir)).toBe(0);
+    expect(Math.max(...rir)).toBe(5);
+  });
+
+  it('writes down RIR close to the truth near failure and low far from it', () => {
+    let n = 0;
+    const rand = () => ((n = (n * 9301 + 49297) % 233280) / 233280);
+    const avg = (t: number) => Array.from({ length: 400 }, () => 10 - sampleRir(t, rand)).reduce((a, b) => a + b, 0) / 400;
+    expect(avg(1)).toBeCloseTo(1, 0);
+    expect(avg(8)).toBeLessThanOrEqual(5);
+    expect(avg(8)).toBeGreaterThan(4);
   });
 });
 

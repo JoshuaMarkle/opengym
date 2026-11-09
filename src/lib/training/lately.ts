@@ -1,11 +1,12 @@
 // Home "Lately" (training-logic §21, proposal D6): at most 2 quiet lines, one goal and
 // one trend, and only when something changed. Priority: goal done > goal behind >
-// status change to Climbing or Slipping > milestone ready. Each line shows on the day
-// it first appears, then moves to Progress.
+// status change to Climbing or Slipping. Each line shows on the day it first appears,
+// then moves to Progress. Milestones never prompt here: they're a ladder you look at on
+// the lift's trend, and become prompts only once you make one a goal.
 
-export type LatelyKind = 'goalDone' | 'goalBehind' | 'status' | 'milestone';
-const RANK: Record<LatelyKind, number> = { goalDone: 0, goalBehind: 1, status: 2, milestone: 3 };
-const GROUP: Record<LatelyKind, 'goal' | 'trend'> = { goalDone: 'goal', goalBehind: 'goal', status: 'trend', milestone: 'trend' };
+export type LatelyKind = 'goalDone' | 'goalBehind' | 'status';
+const RANK: Record<LatelyKind, number> = { goalDone: 0, goalBehind: 1, status: 2 };
+const GROUP: Record<LatelyKind, 'goal' | 'trend'> = { goalDone: 'goal', goalBehind: 'goal', status: 'trend' };
 
 export interface LatelyCandidate {
   /** Stable id: the same news never shows on two days. */

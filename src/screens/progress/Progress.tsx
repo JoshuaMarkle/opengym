@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Sparkline } from '../../components/charts';
-import { CheckGlyph, ChevronDown, ProgressIcon } from '../../components/icons';
+import { CheckGlyph, ChevronDown, ProgressIcon, WarnGlyph } from '../../components/icons';
 import { Sheet, SheetOption } from '../../components/overlays';
 import { cx, EmptyState, LabelAction, LargeHeader, Screen, SectionLabel, Segmented } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
@@ -231,7 +231,6 @@ export function Progress() {
       ) : (
         <>
           <div className="mt-3">
-            <div className="text-[11px] font-bold tracking-[0.05em] text-fg2 uppercase">Focus lifts · est. 1RM</div>
             <div className="text-[30px] leading-tight font-bold tracking-[-0.02em] tabular-nums">
               {avg === undefined ? '—' : `${avg >= 0 ? '+' : '−'}${Math.abs(Math.round(avg))}%`}
               <small className="ml-1.5 text-[15px] font-semibold text-fg2">average {RANGE_WORDS[range]}</small>
@@ -245,7 +244,10 @@ export function Progress() {
                   </span>
                 ))
               ) : (
-                <span className="text-fg2">Statuses need 6 sessions in 8 weeks</span>
+                <span className="inline-flex items-center gap-1.5 font-normal text-fg2">
+                  <WarnGlyph size={14} className="flex-none text-warn" />
+                  Statuses need 6 sessions in 8 weeks
+                </span>
               )}
             </span>
             {phase !== 'build' && (

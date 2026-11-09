@@ -10,7 +10,7 @@ import { goalView, useGoals } from '../../data/goals';
 import { updateSettings } from '../../data/settings';
 import { currentPhase, liftTraining } from '../../data/training';
 import { DAY_MS, dayKey, startOfWeek } from '../../lib/dates';
-import { markSeen, milestoneList, milestoneRows, pickLately, type LatelyCandidate } from '../../lib/training';
+import { markSeen, pickLately, type LatelyCandidate } from '../../lib/training';
 import { fmtGoal } from '../progress/TrainingViews';
 import { usePinned } from '../progress/Progress';
 
@@ -51,20 +51,6 @@ export function Lately({ now }: { now: number }) {
             to: `/progress/lift/${ex.id}/trend`,
           });
         }
-      }
-      {
-        const sessions = history.sessionsByExercise.get(ex.id) ?? [];
-        const sets = sessions.flatMap((s) => s.sets.filter((x) => x.kind === 'working' && x.reps != null).map((x) => ({ weight: x.weight, reps: x.reps!, date: s.date })));
-        const ready = lift.points.length ? milestoneRows(milestoneList(ex.type, ex.equipment, units), sets, lift.now).find((m) => m.state === 'ready') : undefined;
-        if (ready && ready.weight != null)
-          out.push({
-            key: `milestone:${ex.id}:${ready.weight}x${ready.reps}`,
-            kind: 'milestone',
-            glyph: '!',
-            tone: 'text-warn',
-            text: `${ex.name} ${fmtGoal({ weight: ready.weight, reps: ready.reps }, ex, units)} is ready · est. 1RM covers it`,
-            to: `/progress/lift/${ex.id}/trend`,
-          });
       }
     }
     for (const g of goals) {

@@ -4,6 +4,7 @@ export * from './decide';
 export * from './goals';
 export * from './math';
 export * from './month';
+export * from './next';
 export * from './project';
 export * from './steps';
 export * from './strength';

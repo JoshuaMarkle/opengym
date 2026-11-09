@@ -155,9 +155,12 @@ export function SwipeRow({
   };
 
   const armed = Math.abs(dx) >= SWIPE_TRIGGER;
+  // Clip only while the row is moving, so at rest things can hang off its edge (the
+  // effort badge on a reps box corner, A2).
+  const moving = dx !== 0 || animating;
 
   return (
-    <div ref={elRef} className={cx('relative overflow-hidden', rounded && 'rounded-[9px]', className)}>
+    <div ref={elRef} className={cx('relative', moving && 'overflow-hidden', rounded && 'rounded-[9px]', className)}>
       {dx > 0 && right && (
         <div className={cx('absolute inset-0 flex items-center pl-4 text-[14px] font-bold text-white transition-colors', armed ? 'bg-[#4a4a4a]' : 'bg-[#2e2e2e]')}>
           {right.label}
@@ -169,7 +172,7 @@ export function SwipeRow({
         </div>
       )}
       <div
-        className={cx('no-select relative touch-pan-y bg-bg', animating && 'transition-transform duration-200')}
+        className={cx('no-select relative touch-pan-y bg-bg', rounded && 'rounded-[9px]', animating && 'transition-transform duration-200')}
         style={{ transform: dx ? `translateX(${dx}px)` : undefined }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}

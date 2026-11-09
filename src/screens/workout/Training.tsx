@@ -50,30 +50,6 @@ export function barState(t: WorkoutTraining, s: WorkoutSuggestion | undefined, s
   return autoOk ? 'none' : 'offer';
 }
 
-export interface SetHint {
-  text: string;
-  /** A lighter weight: orange, like the bar. */
-  down?: boolean;
-}
-
-/**
- * Lines under Previous (A1, A5): "try 205" where the weight changes (orange when lighter),
- * "try 9 reps" where it stays and one more rep is the goal, "aim 11" once the weights are
- * in the boxes (Auto, ✓).
- */
-export function hintsFor(t: WorkoutTraining, s: WorkoutSuggestion | undefined, settings: Settings, ex: Exercise, units: Units): Map<string, SetHint> {
-  const out = new Map<string, SetHint>();
-  if (t.kind !== 'ready') return out;
-  const filled = s?.outcome === 'accepted' || s?.auto;
-  t.setIds.forEach((id, i) => {
-    const w = t.sg.weights[i];
-    const aim = t.sg.aims[i];
-    if (!filled && t.sg.moves[i] !== 'keep' && w != null) out.set(id, { text: `try ${fmtW(w, ex, units)}`, down: t.sg.moves[i] === 'down' });
-    else if (aim != null) out.set(id, { text: filled || settings.suggestMode === 'auto' ? `aim ${aim}` : `try ${aim} reps` });
-  });
-  return out;
-}
-
 function weeksText(days: number) {
   return days < 14 ? `${days} days` : `${Math.round(days / 7)} weeks`;
 }
@@ -107,7 +83,7 @@ export function TrainingBar({
       <div className="mt-2.5 flex min-h-11 items-center gap-2 border-b border-line">
         <span className={cx('flex min-w-0 flex-1 items-center gap-1.5 text-[14px] font-semibold', tone)}>
           <CheckGlyph size={13} className="flex-none" />
-          <span className="truncate">Using {line}</span>
+          <span className="truncate">Using the suggested weights</span>
         </span>
         <button type="button" onClick={onUndo} className="flex h-11 items-center px-1 text-[15px] font-semibold text-accent active:opacity-60">
           Undo
@@ -129,7 +105,8 @@ export function TrainingBar({
     title = 'Weights set for you';
     sub = `${line} from last session`;
   } else {
-    title = `Next: ${line}`;
+    // The numbers are in the Previous → Next column; the bar only asks.
+    title = 'Use suggested weights?';
     sub = t.sg.reason + (t.sg.bigStep ? ' · big step' : '');
   }
   const glyph = state === 'auto' ? '' : down ? '▼ ' : '▲ ';
@@ -186,17 +163,18 @@ export function GapPrompt({
 }) {
   const weighted = t.lastWeight != null && exercise.type !== 'bodyweight';
   return (
-    <div className="mt-2.5 border-b border-line pb-1">
-      <div className="flex items-start gap-2">
+    <div className="mt-2.5">
+      <div className="flex items-center gap-2">
         <div className="min-w-0 flex-1">
           <b className="block text-[15px] leading-snug font-bold text-warn">Back after {weeksText(t.days)}?</b>
           <span className="block text-[12.5px] text-fg2">
             {exercise.name} was last logged {fmtMonthDay(t.lastDate)}
           </span>
         </div>
-        <RoundButton label="Not now" onClick={onDismiss}>
-          <span className="text-[13px] font-bold">✕</span>
-        </RoundButton>
+        {/* Radio-sized, centred over the options' radios; the 44 px target overhangs the edge. */}
+        <button type="button" aria-label="Not now" onClick={onDismiss} className="-mr-[11px] flex h-11 w-11 flex-none items-center justify-center active:scale-90">
+          <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-surface-2 text-[10px] leading-none font-bold text-fg2">✕</span>
+        </button>
       </div>
       <GapOption
         title="I took a break"
@@ -208,7 +186,6 @@ export function GapPrompt({
         detail={weighted ? `Keep normal suggestions from ${fmtW(t.lastWeight, exercise, units)}` : 'Keep normal suggestions'}
         onClick={() => onAnswer('notLogged')}
       />
-      <p className="py-2 text-[12.5px] leading-snug text-fg2">Either way, nothing changes until you pick. Auto doesn't fill weights for this lift today.</p>
     </div>
   );
 }

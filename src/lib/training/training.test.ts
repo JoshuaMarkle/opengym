@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { markSeen, pickLately, type LatelyCandidate } from './lately';
 import { DAY, WEEK } from './constants';
-import { goalState, likelyWeight, meetsGoal, milestoneList, milestoneRows } from './goals';
+import { goalForMilestone, goalState, likelyWeight, meetsGoal, milestoneList, milestoneRows } from './goals';
 import { monthReview } from './month';
 import { canProject, currentRate, etaWeeks, goalTarget, project, rateLabel, verdict } from './project';
 import { comeback, defaultStep, learnedStep } from './steps';
@@ -235,6 +235,19 @@ describe('goals and milestones', () => {
     expect(milestoneList('bodyweight', 'bodyweight', 'lb')[0]).toEqual({ reps: 5, target: 5 });
     expect(milestoneList('assisted', 'machine', 'lb', -40).map((m) => m.weight)).toEqual([-20, 0]);
   });
+  it('finds the goal a milestone already is', () => {
+    const goals = [
+      { id: 'old', weight: 225, reps: 1, doneAt: 5 },
+      { id: 'open', weight: 225.0006, reps: 1 },
+      { id: 'gone', weight: 315, reps: 1, deletedAt: 9 },
+      { id: 'bw', weight: 0, reps: 15 },
+    ];
+    expect(goalForMilestone({ weight: 225, reps: 1 }, goals)?.id).toBe('open');
+    expect(goalForMilestone({ weight: 225, reps: 1 }, goals.slice(0, 1))?.id).toBe('old');
+    expect(goalForMilestone({ weight: 225, reps: 5 }, goals)).toBeUndefined();
+    expect(goalForMilestone({ weight: 315, reps: 1 }, goals)).toBeUndefined();
+    expect(goalForMilestone({ reps: 15 }, goals)?.id).toBe('bw');
+  });
 });
 
 describe('tips (§23)', () => {
@@ -291,7 +304,7 @@ describe('whatChanged (D3)', () => {
 describe('Home Lately (D6)', () => {
   const c = (key: string, kind: LatelyCandidate['kind'], weight = 0): LatelyCandidate => ({ key, kind, weight });
   it('keeps one goal line and one trend line, by priority', () => {
-    const lines = pickLately([c('m1', 'milestone'), c('s1', 'status', 2), c('s2', 'status', 5), c('gb', 'goalBehind'), c('gd', 'goalDone')], [], '2026-11-08');
+    const lines = pickLately([c('s1', 'status', 2), c('s2', 'status', 5), c('gb', 'goalBehind'), c('gd', 'goalDone')], [], '2026-11-08');
     expect(lines.map((l) => l.key)).toEqual(['gd', 's2']);
   });
   it('shows a line on the day it first appeared, then never again', () => {

@@ -16,7 +16,7 @@ import { useNavigate } from 'react-router';
 import { useLongPress } from '../../components/gestures';
 import { ChevronRight, Handle } from '../../components/icons';
 import { Alert, Sheet, SheetOption, useToast } from '../../components/overlays';
-import { BarButton, cx, EmptyState, LabelAction, LargeHeader, Pill, Screen } from '../../components/ui';
+import { BarButton, cx, EmptyState, LabelAction, LargeHeader, Pill, Screen, Segmented } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { importRoutinesFromBackup, readBackup } from '../../data/backup';
 import { deleteRoutine, saveLayout } from '../../data/routines';
@@ -25,11 +25,23 @@ import { usePlans, type PlansData } from '../../data/usePlans';
 import type { Folder, Routine } from '../../db/types';
 import { useStartWorkout } from '../../hooks/StartWorkout';
 import { dayKey, startOfWeek } from '../../lib/dates';
-import { addDayKey, currentVersion, describeWhen } from '../../lib/schedule';
-import { PlanStrip } from './PlanParts';
+import { addDayKey, currentVersion, describeWhen, type PlanDay } from '../../lib/schedule';
+import { DaySheet, PlanGrid, PlanStrip } from './PlanParts';
+import { PlanHistoryCalendar } from './PlanHistoryCalendar';
 import { FolderSheet, NewFolderSheet, useRoutineActions } from './RoutineActions';
 
 const COLLAPSE_KEY = 'og-collapsed-folders';
+const VIEW_KEY = 'og-plans-view';
+
+type PlansTab = 'calendar' | 'routines';
+
+function loadTab(): PlansTab {
+  try {
+    return localStorage.getItem(VIEW_KEY) === 'routines' ? 'routines' : 'calendar';
+  } catch {
+    return 'calendar';
+  }
+}
 
 function loadCollapsed(): Set<string> {
   try {
@@ -51,6 +63,15 @@ export function Plans() {
   const [newFolder, setNewFolder] = useState(false);
   const [folderSheet, setFolderSheet] = useState<Folder | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(loadCollapsed);
+  const [tab, setTabState] = useState<PlansTab>(loadTab);
+  const setTab = (t: PlansTab) => {
+    setTabState(t);
+    try {
+      localStorage.setItem(VIEW_KEY, t);
+    } catch {
+      /* ignore */
+    }
+  };
   const fileRef = useRef<HTMLInputElement>(null);
 
   const toggle = (id: string) =>
@@ -91,7 +112,7 @@ export function Plans() {
               </BarButton>
             ) : (
               <>
-                {!empty && <BarButton onClick={() => setEditing(true)}>Edit</BarButton>}
+                {!empty && tab === 'routines' && <BarButton onClick={() => setEditing(true)}>Edit</BarButton>}
                 <BarButton aria-label="New" className="text-[30px] leading-none font-normal" onClick={() => setPlusOpen(true)}>
                   +
                 </BarButton>
@@ -115,7 +136,23 @@ export function Plans() {
       ) : editing ? (
         <EditLayout plans={plans} onFolderMenu={setFolderSheet} onNewFolder={() => setNewFolder(true)} />
       ) : (
-        <ViewLayout plans={plans} collapsed={collapsed} onToggle={toggle} onHold={actions.openMenu} onFolderMenu={setFolderSheet} />
+        <>
+          {/* 2.23 (prototype): plan + history on one calendar. */}
+          <Segmented
+            className="mt-1"
+            options={[
+              { value: 'calendar' as const, label: 'Calendar' },
+              { value: 'routines' as const, label: 'Routines' },
+            ]}
+            value={tab}
+            onChange={setTab}
+          />
+          {tab === 'calendar' ? (
+            <PlanHistoryCalendar folder={activeFolder} />
+          ) : (
+            <ViewLayout plans={plans} collapsed={collapsed} onToggle={toggle} onHold={actions.openMenu} onFolderMenu={setFolderSheet} />
+          )}
+        </>
       )}
 
       {/* 2.2 */}
@@ -194,8 +231,10 @@ function ViewLayout({
   const archived = plans.folders.filter((f) => f.archived);
   const unfiled = plans.byFolder.get('') ?? [];
 
+  const active = ordered.find((f) => f.active);
   return (
     <div>
+      {active && <ActiveCalendar folder={active} />}
       {ordered.map((f) => (
         <FolderGroup key={f.id} plans={plans} folder={f} collapsed={collapsed.has(f.id)} onToggle={() => onToggle(f.id)} onHold={onHold} onFolderMenu={() => onFolderMenu(f)} />
       ))}
@@ -230,6 +269,24 @@ function ViewLayout({
   );
 }
 
+/**
+ * 2.1: the active plan's last week, this week and two ahead, with status, above its folder.
+ * Tap a day from today on to change just that day (2.21); the folder name opens the plan.
+ */
+function ActiveCalendar({ folder }: { folder: Folder }) {
+  const { settings } = useData();
+  const weekFrom = dayKey(startOfWeek(Date.now(), settings.weekStart));
+  const view = usePlanView(folder, addDayKey(weekFrom, -7), addDayKey(weekFrom, 20));
+  const [sheetDay, setSheetDay] = useState<PlanDay | null>(null);
+  if (!view?.scheduled) return null;
+  return (
+    <div className="mt-3">
+      <PlanGrid days={view.days} codes={view.codes} today={view.today} weekStart={settings.weekStart} onOpen={(d) => d.key >= view.today && d.state !== 'off' && setSheetDay(d)} />
+      {sheetDay && <DaySheet folder={folder} day={sheetDay} view={view} onClose={() => setSheetDay(null)} />}
+    </div>
+  );
+}
+
 function FolderGroup({
   plans,
   folder,
@@ -256,8 +313,8 @@ function FolderGroup({
   return (
     <div>
       <FolderHeader title={folder.name} count={list.length} active={folder.active} collapsed={collapsed} onToggle={onToggle} onOpen={openPlan} onHold={onFolderMenu} />
-      {!collapsed && scheduled && view && (
-        <div className="border-b border-line pb-3">
+      {!collapsed && scheduled && view && !folder.active && (
+        <div className="border-b border-line pt-3 pb-3">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold tracking-[0.07em] text-fg2 uppercase">Schedule · {version?.kind === 'cycle' ? 'Cycle' : 'Weekly'}</span>
             <LabelAction onClick={openPlan}>Edit plan ›</LabelAction>
@@ -293,7 +350,8 @@ function FolderHeader({
   onHold?: () => void;
 }) {
   const hold = useLongPress(() => onHold?.(), !!onHold);
-  const chevron = <span className={cx('inline-block h-[7px] w-[7px] flex-none border-r-2 border-b-2 border-fg2 transition-transform', collapsed ? '-rotate-45' : 'mb-[3px] rotate-45')} />;
+  // Centered on the name's caps (measured in 2.14). A down chevron's ink sits low in its box, so lift it.
+  const chevron = <span className={cx('inline-block h-[7px] w-[7px] flex-none border-r-2 border-b-2 border-fg2 transition-transform', collapsed ? '-translate-x-[1px] -translate-y-[1px] -rotate-45' : '-translate-y-[3px] rotate-45')} />;
   const label = (
     <span className="flex min-w-0 items-center gap-2 text-[12.5px] font-bold tracking-[0.05em] text-fg/80 uppercase">
       <span className="truncate">{title}</span>
@@ -302,7 +360,7 @@ function FolderHeader({
   );
   if (!onOpen)
     return (
-      <button type="button" onClick={onToggle} {...hold} aria-expanded={!collapsed} className="no-select mt-4 flex h-10 w-full items-end justify-between border-b border-line pb-2 text-left">
+      <button type="button" onClick={onToggle} {...hold} aria-expanded={!collapsed} className="no-select mt-4 flex h-11 w-full items-center justify-between border-b border-line text-left">
         <span className="flex min-w-0 items-center gap-2">
           {chevron}
           {label}
@@ -311,11 +369,11 @@ function FolderHeader({
       </button>
     );
   return (
-    <div className="mt-4 flex h-10 w-full items-end border-b border-line">
-      <button type="button" onClick={onToggle} aria-expanded={!collapsed} aria-label={collapsed ? 'Expand' : 'Collapse'} className="flex h-11 w-[22px] flex-none items-center justify-start pb-1">
+    <div className="mt-4 flex h-11 w-full items-center border-b border-line">
+      <button type="button" onClick={onToggle} aria-expanded={!collapsed} aria-label={collapsed ? 'Expand' : 'Collapse'} className="flex h-11 w-[22px] flex-none items-center justify-start">
         {chevron}
       </button>
-      <button type="button" onClick={onOpen} {...hold} className="no-select flex h-11 min-w-0 flex-1 items-end justify-between pb-2 text-left active:opacity-70">
+      <button type="button" onClick={onOpen} {...hold} className="no-select flex h-11 min-w-0 flex-1 items-center justify-between text-left active:opacity-70">
         {label}
         {active && <Pill tone="accent">active</Pill>}
       </button>

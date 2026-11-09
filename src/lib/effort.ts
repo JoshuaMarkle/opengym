@@ -2,6 +2,7 @@
 // Stored once as WorkoutSet.rpe (half steps); RIR is only a way of showing it
 // (RIR = 10 − RPE, "5+" for RPE ≤ 5), so switching modes never loses data.
 
+import type { KeypadKey } from './keypad';
 import type { LoggedSet } from './sets';
 
 export type EffortMode = 'off' | 'rpe' | 'rir';
@@ -31,7 +32,7 @@ export const PAD_KEYS: Record<'rpe' | 'rir', PadKey[]> = {
     { value: 10, label: '10', word: 'Max' },
   ],
   rir: [
-    { value: 0, label: '0', word: 'Max' },
+    { value: 0, label: '0', word: 'Failure' },
     { value: 1, label: '1', word: 'Very hard' },
     { value: 2, label: '2', word: 'Hard' },
     { value: 3, label: '3', word: 'Challenging' },
@@ -39,6 +40,73 @@ export const PAD_KEYS: Record<'rpe' | 'rir', PadKey[]> = {
     { value: 5, label: '5+', word: 'Easy' },
   ],
 };
+
+/**
+ * The effort pad is laid out like the number keypad (same keys, same height), so a
+ * quick thumb lands in the same place. Each digit is its own key: RIR 0–5 (5 is "5+"),
+ * RPE 5–9 with 0 standing for 10 and 5 for "≤5". The rest are off: no RIR of 6 or more.
+ */
+export function padDigit(d: number, mode: 'rpe' | 'rir'): PadKey | undefined {
+  if (mode === 'rir') return d <= 5 ? PAD_KEYS.rir.find((k) => k.value === d) : undefined;
+  const v = d === 0 ? 10 : d;
+  return v >= 5 ? PAD_KEYS.rpe.find((k) => k.value === v) : undefined;
+}
+
+/**
+ * A key on the effort pad (or a hardware key) applied to the stored RPE, with ½ taken
+ * from the value itself. The pad keeps its own sticky ½ (pressEffortPad).
+ */
+export function applyEffortKey(rpe: number | undefined, k: KeypadKey, mode: 'rpe' | 'rir'): number | undefined {
+  return pressEffortPad({ rpe, half: padFromRpe(rpe, mode).half }, k, mode).rpe;
+}
+
+/** The effort pad's state: the stored RPE and its ½ toggle, which stays on between picks. */
+export interface EffortPadState {
+  rpe?: number;
+  half: boolean;
+}
+
+/** The pad's whole-step range in its own units: RIR 0 (failure) to 5+, RPE ≤5 to 10. */
+const STEP_RANGE = { rir: [0, 5], rpe: [5, 10] } as const;
+
+/** The key + / − step from. Empty RIR starts at 0; empty RPE has nothing to step. */
+function stepBase(rpe: number | undefined, mode: 'rpe' | 'rir'): number | undefined {
+  if (rpe == null) return mode === 'rir' ? 0 : undefined;
+  return padFromRpe(rpe, mode).base;
+}
+
+/** Can + / − move? Not past the ends: no + on RIR 5+ (RPE 10), no − on RIR 0 (RPE ≤5). */
+export function canStep(rpe: number | undefined, dir: 'inc' | 'dec', mode: 'rpe' | 'rir'): boolean {
+  const base = stepBase(rpe, mode);
+  if (base == null) return false;
+  const [lo, hi] = STEP_RANGE[mode];
+  return dir === 'inc' ? base < hi : base > lo;
+}
+
+/**
+ * A key on the effort pad. A digit picks its value (plus ½ when the toggle is on), "."
+ * flips the ½ toggle (always, even with nothing picked or on the top key, where it
+ * waits for the next pick), + / − move one whole key in the pad's own units (keeping
+ * ½), backspace clears both. Keys the pad doesn't take change nothing.
+ */
+export function pressEffortPad(st: EffortPadState, k: KeypadKey, mode: 'rpe' | 'rir'): EffortPadState {
+  if (k.type === 'backspace') return { rpe: undefined, half: false };
+  if (k.type === 'digit') {
+    const key = padDigit(Number(k.d), mode);
+    return key ? { ...st, rpe: rpeFromPad({ base: key.value, half: st.half }, mode) } : st;
+  }
+  if (k.type === 'dot') {
+    const half = !st.half;
+    const base = padFromRpe(st.rpe, mode).base;
+    return { half, rpe: base != null && canHalf(base, mode) ? rpeFromPad({ base, half }, mode) : st.rpe };
+  }
+  if (k.type === 'inc' || k.type === 'dec') {
+    if (!canStep(st.rpe, k.type, mode)) return st;
+    const base = stepBase(st.rpe, mode)! + (k.type === 'inc' ? 1 : -1);
+    return { ...st, rpe: rpeFromPad({ base, half: st.half }, mode) };
+  }
+  return st;
+}
 
 /** What the pad shows as picked: a key's whole value and whether ½ is on. */
 export interface PadState {

@@ -1,12 +1,12 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Navigate, useNavigate } from 'react-router';
-import { ChartIcon, CheckGlyph, ChevronDown, ChevronLeft } from '../../components/icons';
-import { EffortPad, PadClose } from '../../components/Effort';
+import { ChartIcon, CheckGlyph, ChevronDown, ChevronLeft, KeyboardGlyph, PencilGlyph } from '../../components/icons';
+import { EffortPad } from '../../components/Effort';
 import { BarChip, Keypad, ModeTabs, type KeypadTab } from '../../components/Keypad';
 import { Alert, HoldMenu, Sheet, SheetOption, useToast, type MenuItem } from '../../components/overlays';
 import { BarPicker, PlatePad } from '../../components/PlatePad';
-import { Button, cx, EmptyState, IconButton, TextField } from '../../components/ui';
+import { AddButton, Button, cx, EmptyState, IconButton, TextField } from '../../components/ui';
 import { type ActiveExercise, type ActiveWorkoutData, useActiveWorkout, useData } from '../../data/DataProvider';
 import { setExercisePrefs } from '../../data/exercises';
 import { updateSettings } from '../../data/settings';
@@ -59,12 +59,13 @@ import {
   type CardioValues,
 } from '../../lib/cardio';
 import { carryOver } from '../../lib/carryOver';
-import { asksEffort, EFFORT_LABEL, takesEffort } from '../../lib/effort';
+import { applyEffortKey, asksEffort, EFFORT_LABEL, takesEffort } from '../../lib/effort';
 import { fmtClock, fmtDuration, fmtMonthDay, fmtTime, fromLocalInputValue, toLocalInputValue } from '../../lib/dates';
 import { applyKey, parseRepsText, parseWeightText, type KeypadKey, type KeypadOptions } from '../../lib/keypad';
 import { barShortLabel, hasPlatePad } from '../../lib/plates';
 import { describeChange, type RoutineChange } from '../../lib/routineDiff';
 import { formatSet, hasWeightColumn, setLabels, workingIndex } from '../../lib/sets';
+import { nextSet, type NextSet } from '../../lib/training';
 import { isFolded, nextTarget, supersetBlocks, supersetRound, supersetTags, type MemberSets } from '../../lib/supersets';
 import { displayWeight, formatNumber, fromDisplay, unitLabel } from '../../lib/units';
 import { variationLabels } from '../../lib/variations';
@@ -77,7 +78,7 @@ import { ExerciseMenu } from './ExerciseMenu';
 import { LookbackSheet } from './LookbackSheet';
 import { SetTable, weightEditText, weightFromEdit } from './SetTable';
 import { SupersetSheet } from './SupersetSheet';
-import { barState, GapPrompt, hintsFor, TipLine, TrainingBar, WhySheet } from './Training';
+import { barState, GapPrompt, TipLine, TrainingBar, WhySheet } from './Training';
 
 /** 4.x: the workout in progress. No tab bar; Prev / Next move between exercises. */
 export function WorkoutScreen() {
@@ -322,8 +323,11 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
   const onKey = (k: KeypadKey) => {
     if (!activeEdit || !editingSet || !editingMember) return;
     if (activeEdit.field === 'effort') {
-      // The effort pad has its own keys; a hardware backspace clears it.
-      if (k.type === 'backspace') void updateSet(editingSet.id, { rpe: undefined });
+      // Hardware keys reach the effort pad too: digits, "." for ½, ↑ ↓, backspace.
+      if (settings.effort !== 'off') {
+        const rpe = applyEffortKey(editingSet.rpe, k, settings.effort);
+        if (rpe !== editingSet.rpe) void updateSet(editingSet.id, { rpe });
+      }
       return;
     }
     const text = applyKey(activeEdit.text, activeEdit.fresh, k, keypadOptions(editingMember.exercise, activeEdit.field));
@@ -476,6 +480,7 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
         message: `${label} deleted`,
         actionLabel: 'Undo',
         onAction: () => void restoreSets(removed),
+        borderless: true,
       });
   };
 
@@ -616,14 +621,20 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
       >
         <ChevronLeft size={18} />
       </button>
-      <button type="button" onClick={() => setOverlay('options')} className="min-w-0 flex-1 py-1 text-left" aria-label="Workout options">
-        <span className="flex items-center gap-1.5 text-[17px] font-bold">
-          <span className="truncate">{workout.name}</span>
-          <ChevronDown size={11} className="flex-none text-fg2" />
-        </span>
+      <div className="min-w-0 flex-1 py-1">
+        <span className="block truncate text-[17px] font-bold">{workout.name}</span>
         <span className="block text-[12.5px] text-fg2">
           <Clock since={workout.startedAt} /> · {doneCount} of {list.length} done
         </span>
+      </div>
+      {/* 5.4: pause, rename, start time, discard. */}
+      <button
+        type="button"
+        aria-label="Workout options"
+        onClick={() => setOverlay('options')}
+        className="flex h-11 w-11 flex-none items-center justify-center text-accent active:opacity-60"
+      >
+        <PencilGlyph size={18} />
       </button>
       <button
         type="button"
@@ -682,10 +693,10 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
 
   const editingCell = (m: ActiveExercise) => (activeEdit && editingMember?.we.id === m.we.id ? { setId: activeEdit.setId, field: activeEdit.field, text: activeEdit.text } : null);
 
-  /** Auto-filled LBS boxes still holding the app's weight (blue until edited). */
+  /** LBS boxes the app filled (Auto, or ✓ on the bar) still holding its weight: blue until edited. */
   const autoIdsOf = (m: ActiveExercise): Set<string> | undefined => {
     const sg = m.we.suggestion;
-    if (!sg?.auto || sg.outcome === 'dismissed') return undefined;
+    if (!sg || sg.outcome === 'dismissed' || !(sg.auto || sg.outcome === 'accepted')) return undefined;
     const ids = new Set<string>();
     m.sets.filter((x) => x.kind === 'working').forEach((x, i) => x.weight != null && sg.weights[i] === x.weight && ids.add(x.id));
     return ids;
@@ -724,6 +735,18 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
     );
   };
 
+  /** 4.27: today's target per working set, for "previous → next". */
+  const nextOf = (m: ActiveExercise): Map<string, NextSet> | undefined => {
+    const t = training.get(m.we.id);
+    if (t?.kind !== 'ready') return undefined;
+    const out = new Map<string, NextSet>();
+    t.setIds.forEach((id, i) => {
+      const n = nextSet(t.sg, i);
+      if (n) out.set(id, n);
+    });
+    return out;
+  };
+
   const acceptSuggestion = (m: ActiveExercise) => {
     const t = training.get(m.we.id);
     if (t?.kind !== 'ready') return;
@@ -758,7 +781,9 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
         effort={settings.effort}
         effortAsk={settings.effortAsk}
         narrow={isSuperset}
-        hints={hintsFor(training.get(m.we.id) ?? { kind: 'none' }, m.we.suggestion, settings, m.exercise, units)}
+        next={nextOf(m)}
+        showNext={settings.showNext !== false}
+        onToggleNext={() => void updateSettings({ showNext: settings.showNext === false })}
         autoIds={autoIdsOf(m)}
         onEdit={(s, f) => startEdit(m, s, f)}
         onToggle={(s) => onToggle(m, s)}
@@ -772,16 +797,16 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
     m.exercise.type === 'cardio' ? (
       <>
         <div className="mt-2 grid">
-          <QuickButton onClick={() => void addSet(m)}>+ Segment</QuickButton>
+          <AddButton onClick={() => void addSet(m)}>+ Segment</AddButton>
         </div>
         {m.sets.length === 1 && <p className="mt-3 text-[13px] leading-normal text-fg2">Most cardio is a single row. Segments are there for warm-up / main / cool-down if you want them.</p>}
       </>
     ) : (
       <div className="mt-2 grid grid-cols-2 gap-2">
-        <QuickButton tone="warn" onClick={() => void addDrop(m)}>
+        <AddButton tone="warn" onClick={() => void addDrop(m)}>
           + Drop
-        </QuickButton>
-        <QuickButton onClick={() => void addSet(m)}>+ Set</QuickButton>
+        </AddButton>
+        <AddButton onClick={() => void addSet(m)}>+ Set</AddButton>
       </div>
     );
 
@@ -852,9 +877,9 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
     const fi = fields.indexOf(field);
     const cardio = editEx.type === 'cardio';
     const who = cardio ? '' : setName(setLabels(editingMember.sets).get(editingSet.id) ?? '');
-    // Field tabs: lbs · reps, plus rpe / rir on a reps box of a working set (A2).
+    // Field tabs: lbs · reps, plus rpe / rir on any box of a working set (A2).
     const baseTabs = fieldsOf(editEx);
-    const effortTab = settings.effort !== 'off' && !cardio && takesEffort(editingSet) && (field === 'reps' || field === 'effort');
+    const effortTab = settings.effort !== 'off' && !cardio && takesEffort(editingSet);
     const tabIds = effortTab ? [...baseTabs, 'effort'] : baseTabs;
     const tabLabel = (f: string) =>
       f === 'effort' ? EFFORT_LABEL[settings.effort].toLowerCase() : cardio ? fieldTab(f as CardioField, editEx, units) : f === 'weight' ? (unitLabel(units) === 'lb' ? 'lbs' : 'kg') : 'reps';
@@ -862,7 +887,7 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
       const mode = settings.effort;
       return (
         <Keypad
-          left={<PadClose onPress={() => setEditing(null)}>{`${who} · ${EFFORT_LABEL[mode]}`}</PadClose>}
+          left={`${who} · ${EFFORT_LABEL[mode]}`}
           tabs={tabIds.map((f) => ({ id: f, label: tabLabel(f) }))}
           tab={field}
           onTab={(f) => f !== field && startEdit(editingMember, editingSet, f)}
@@ -871,7 +896,7 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
           stepLabel=""
           onKey={onKey}
           onClose={() => setEditing(null)}
-          panel={<EffortPad mode={mode} value={editingSet.rpe} onChange={(v) => void updateSet(editingSet.id, { rpe: v })} />}
+          panel={<EffortPad key={editingSet.id} mode={mode} value={editingSet.rpe} onChange={(v) => void updateSet(editingSet.id, { rpe: v })} onClose={() => setEditing(null)} />}
         />
       );
     }
@@ -934,6 +959,25 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
     );
   })();
 
+  /**
+   * The floating keyboard button, bottom right (4.1): opens the keypad on the next open set, the
+   * current exercise's first (or, in a superset, the next member's). Hidden when every
+   * set is ticked or the keypad is already up.
+   */
+  const padTarget = (() => {
+    if (!cur || keypadOpen || showAll) return null;
+    for (const m of [cur, ...members.filter((x) => x.we.id !== cur.we.id)]) {
+      const set = m.sets.find((s) => !s.completed);
+      if (set) return { member: m, set };
+    }
+    return null;
+  })();
+  const openPad = () => {
+    if (!padTarget) return;
+    startEdit(padTarget.member, padTarget.set, fieldsOf(padTarget.member.exercise)[0]);
+    scrollToSet(padTarget.set.id);
+  };
+
   const supersetCandidates = cur
     ? list
         .filter((e) => !members.some((m) => m.we.id === e.we.id) && e.exercise.type !== 'cardio')
@@ -953,7 +997,7 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
         onClick={(e) => {
           if (activeEdit && e.target === e.currentTarget) setEditing(null);
         }}
-        className={cx('scroll-y min-h-0 flex-1 px-4', activeEdit ? 'pb-24' : 'pb-6', showAll && 'hidden')}
+        className={cx('scroll-y min-h-0 flex-1 px-4', activeEdit || padTarget ? 'pb-24' : 'pb-6', showAll && 'hidden')}
       >
         {!cur || !ex ? (
           <div className="pt-20">
@@ -992,6 +1036,19 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
       {/* Prev / Next stay above the keypad so you can move on without closing it first. */}
       {cur && !showAll && (
         <div className="relative flex-none" data-dock>
+          {padTarget && (
+            // The nav buttons' grey, in a ring of the page colour so it stands off whatever scrolls under it.
+            <button
+              type="button"
+              aria-label={`Open the keypad on ${setWord(padTarget.member, padTarget.set)}`}
+              onClick={openPad}
+              // Toasts (Undo after a delete) share its row and stop short of it.
+              data-dock-side
+              className="absolute right-3 bottom-full z-20 mb-3 flex h-12 w-12 items-center justify-center rounded-[11px] bg-surface-2 text-fg ring-2 ring-bg active:brightness-125"
+            >
+              <KeyboardGlyph size={22} />
+            </button>
+          )}
           <nav
             className={cx('grid grid-cols-2 gap-2 border-t border-line bg-bg px-3', keypadOpen ? 'py-2' : 'pt-2.5 pb-[max(10px,env(safe-area-inset-bottom))]')}
             aria-label="Exercises"
@@ -1103,7 +1160,7 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
           }
           const name = cur.exercise.name;
           void removeWorkoutExercise(cur.we.id).then((removed) => {
-            if (removed) toast({ message: `${name} removed`, actionLabel: 'Undo', onAction: () => void restoreWorkoutExercise(removed) });
+            if (removed) toast({ message: `${name} removed`, actionLabel: 'Undo', onAction: () => void restoreWorkoutExercise(removed), borderless: true });
           });
         }}
         superset={
@@ -1302,19 +1359,7 @@ function Clock({ since }: { since: number }) {
   return <span className="tabular-nums">{fmtClock(Math.max(0, now - since))}</span>;
 }
 
-/** + Set, + Drop, + Segment: text only, no fill, like every other add button in the app. 44 px tall. */
-function QuickButton({ children, onClick, tone }: { children: ReactNode; onClick: () => void; tone?: 'warn' }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cx('flex h-11 items-center justify-center rounded-[10px] text-[15px] font-semibold active:opacity-60', tone === 'warn' ? 'text-warn' : 'text-accent')}
-    >
-      {children}
-    </button>
-  );
-}
-
+/** Prev / Next exercise in the bottom bar; a blue "Finish workout" once nothing is left (SPEC §5). */
 function NavButton({
   children,
   small,
@@ -1378,7 +1423,7 @@ function WorkoutOptions({
 }) {
   const now = useNow(30_000);
   return (
-    <Sheet open={open} onClose={onClose} title={name} subtitle={`Started ${fmtTime(startedAt)} · ${fmtDuration(now - startedAt)}`}>
+    <Sheet open={open} onClose={onClose} title={name} tight subtitle={`Started ${fmtTime(startedAt)} · ${fmtDuration(now - startedAt)}`}>
       <SheetOption onClick={onPause} detail="resume from Home">
         Pause workout
       </SheetOption>

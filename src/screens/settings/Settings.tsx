@@ -3,12 +3,12 @@ import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { ChevronRight, LogoMark } from '../../components/icons';
 import { Alert, useToast } from '../../components/overlays';
-import { cx, LargeHeader, Screen, SectionLabel, TextField, Toggle } from '../../components/ui';
+import { LargeHeader, Screen, SectionLabel, TextField, Toggle } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { backUpNow, dataCounts, deleteAllData, exportCsv, shareOrDownload } from '../../data/backup';
 import { updateSettings } from '../../data/settings';
 import { TEST_MODE } from '../../db/testMode';
-import { DAY_MS, fmtAgo } from '../../lib/dates';
+import { fmtAgo } from '../../lib/dates';
 import { EFFORT_LABEL } from '../../lib/effort';
 import { formatNumber } from '../../lib/units';
 import { usePinned } from '../progress/Progress';
@@ -19,7 +19,7 @@ declare const __APP_VERSION__: string;
 
 export const THEME_LABEL = { dark: 'Dark', light: 'Light', auto: 'Match iPhone' } as const;
 
-/** 9.1: a plain list; rows open a picker (9.2). Data header turns orange after 7 days without a backup. */
+/** 9.1: a plain list; rows open a picker (9.2). */
 export function Settings() {
   const navigate = useNavigate();
   const toast = useToast();
@@ -33,7 +33,6 @@ export function Settings() {
   const [busy, setBusy] = useState(false);
   const [resetting, setResetting] = useState(false);
 
-  const overdue = !settings.lastBackupAt || Date.now() - settings.lastBackupAt > 7 * DAY_MS;
   const unit = settings.units;
 
   const backup = async () => {
@@ -78,7 +77,7 @@ export function Settings() {
       <Item label="Focus lifts" value={pinned.length} to="/progress/pinned" />
       <Item label="Exercise library" value={exercises.length} to="/exercises" />
 
-      <SectionLabel tone={overdue ? 'warn' : undefined}>Data · last backup {fmtAgo(settings.lastBackupAt)}</SectionLabel>
+      <SectionLabel>Data · last backup {fmtAgo(settings.lastBackupAt)}</SectionLabel>
       <button type="button" disabled={busy} onClick={() => void backup()} className="flex min-h-[52px] w-full items-center border-b border-line text-left text-[16px] font-semibold text-accent disabled:opacity-50">
         Back up now
       </button>
@@ -90,7 +89,6 @@ export function Settings() {
       </button>
       <p className="mt-2.5 text-[13px] leading-normal text-fg2">
         Everything lives on this phone. A backup is one file; save it to iCloud Drive with "Save to Files".
-        {overdue && <span className="font-semibold text-warn"> It's been a while. Back up now.</span>}
       </p>
 
       {import.meta.env.DEV && TEST_MODE && (
@@ -110,10 +108,10 @@ export function Settings() {
           OpenGym {typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : ''}
           <br />
           Free, no account, works offline.
-          {persisted !== undefined && (
+          {persisted === false && (
             <>
               <br />
-              <span className={cx(persisted ? 'text-fg2' : 'text-warn')}>{persisted ? 'Storage: protected from clean-up' : 'Storage: may be cleared by the browser. Install to Home Screen.'}</span>
+              <span className="text-warn">Storage: may be cleared by the browser. Install to Home Screen.</span>
             </>
           )}
         </div>

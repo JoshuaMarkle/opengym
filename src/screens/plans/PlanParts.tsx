@@ -6,7 +6,7 @@ import { cx, Note } from '../../components/ui';
 import { changeDays, resetDay, type PlanView } from '../../data/schedule';
 import type { Folder } from '../../db/types';
 import { fmtMonthDay, weekdayLetter, weekdayShort } from '../../lib/dates';
-import { addDayKey, moveDayPatch, parseDayKey, restTarget, setDayPatch, swapDaysPatch, swapTarget, versionOn, type PlanDay } from '../../lib/schedule';
+import { addDayKey, moveDayPatch, parseDayKey, restTarget, setDayPatch, swapDaysPatch, swapTarget, versionOn, weekOrder, type PlanDay } from '../../lib/schedule';
 
 /** "Today", "Fri 6" (or "Fri" when short). */
 export function dayLabel(day: { key: string }, today: string, withDate = true): string {
@@ -35,7 +35,8 @@ export function dayCode(day: PlanDay, codes: Map<string, string>, rest = 'R'): s
 export function boxClass(day: PlanDay, isToday: boolean): string {
   const s = day.state;
   if (s === 'done' || s === 'extra') return cx('bg-accent text-white', isToday && 'ring-2 ring-fg ring-offset-2 ring-offset-bg');
-  if (isToday) return 'text-fg ring-2 ring-inset ring-fg';
+  // Today keeps the planned-day shading under its ring; a rest day today is just the ring.
+  if (isToday) return cx('text-fg ring-2 ring-inset ring-fg', (s === 'today' || s === 'upcoming') && day.planned && 'bg-surface-2');
   if (s === 'missed') return 'text-warn ring-[1.5px] ring-inset ring-warn';
   if (s === 'today' || s === 'upcoming') return day.changed ? 'text-fg ring-[1.5px] ring-inset ring-fg2' : 'bg-surface-2 text-fg';
   if (s === 'paused') return 'bg-surface text-fg3';
@@ -109,6 +110,49 @@ function StripCell({
       className="no-select block min-h-11 min-w-0 active:opacity-70"
     >
       {body}
+    </button>
+  );
+}
+
+/** Weeks of planned vs done as a grid of day boxes, with its legend (2.1 top, 2.20). */
+export function PlanGrid({ days, codes, today, weekStart, onOpen }: { days: PlanDay[]; codes: Map<string, string>; today: string; weekStart: 0 | 1; onOpen: (d: PlanDay) => void }) {
+  return (
+    <>
+      <div className="mt-1 grid grid-cols-7 gap-1.5 text-center">
+        {weekOrder(weekStart).map((wd) => (
+          <small key={wd} className="text-[11px] font-bold text-fg2">
+            {weekdayLetter(wd)}
+          </small>
+        ))}
+        {days.map((d) => (
+          <CalCell key={d.key} day={d} code={dayCode(d, codes, '·')} isToday={d.key === today} onOpen={() => onOpen(d)} />
+        ))}
+      </div>
+      <Legend
+        items={[
+          { label: 'done', box: 'bg-accent' },
+          { label: 'missed', box: 'ring-[1.5px] ring-inset ring-warn' },
+          { label: 'today', box: 'bg-surface-2 ring-2 ring-inset ring-fg' },
+          { label: 'moved', box: 'ring-[1.5px] ring-inset ring-fg2' },
+        ]}
+      />
+    </>
+  );
+}
+
+function CalCell({ day, code, isToday, onOpen }: { day: PlanDay; code: string; isToday: boolean; onOpen: () => void }) {
+  const hold = useLongPress(onOpen);
+  const date = new Date(day.ts);
+  return (
+    <button
+      type="button"
+      {...hold}
+      onClick={onOpen}
+      aria-label={`${fmtMonthDay(day.ts)}: ${code || 'no plan'}`}
+      className={cx('no-select flex h-[52px] min-w-0 flex-col items-center justify-center rounded-[10px] tabular-nums active:opacity-70', boxClass(day, isToday))}
+    >
+      <span className={cx('text-[12px] leading-none font-semibold', day.state === 'done' || day.state === 'extra' ? 'text-white/80' : 'text-fg2')}>{date.getDate()}</span>
+      <span className="mt-1 text-[11.5px] leading-none font-bold">{code}</span>
     </button>
   );
 }

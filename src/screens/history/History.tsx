@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { CalendarIcon, ChevronRight, HistoryIcon, ListIcon } from '../../components/icons';
-import { Chips, cx, EmptyState, LargeHeader, Screen, SearchField, Segmented, StatRow } from '../../components/ui';
+import { Chips, cx, EmptyState, LargeHeader, Screen, SearchField, SectionLabel, Segmented, StatRow } from '../../components/ui';
 import { useActiveWorkout, useData } from '../../data/DataProvider';
 import { workoutLine, type HistoryWorkout } from '../../data/history';
 import { updateSettings } from '../../data/settings';
@@ -242,7 +242,16 @@ function MonthView({
           );
         })}
       </div>
-      <div className="mt-3 border-t border-line">
+      <StatRow
+        className="mt-3"
+        items={[
+          { label: 'Workouts', value: inMonth.length },
+          { label: 'Per week', value: formatNumber(Math.round(perWeek(inMonth.length, month, end) * 10) / 10, 1) },
+          { label: 'Streak', value: `${currentStreak(dates, weekStart, now)} wks` },
+        ]}
+      />
+      <SectionLabel>Workouts</SectionLabel>
+      <div>
         {selected.map((w) => (
           <button key={w.workout.id} type="button" onClick={() => navigate(`/history/${w.workout.id}`)} className="flex min-h-[56px] w-full items-center gap-3 border-b border-line text-left active:bg-surface/60">
             <span className="min-w-0 flex-1 py-2">
@@ -257,14 +266,6 @@ function MonthView({
         ))}
         {!selected.length && <p className="border-b border-line py-3.5 text-[13px] text-fg2">No workouts this month.</p>}
       </div>
-      <StatRow
-        className="mt-3"
-        items={[
-          { label: 'Workouts', value: inMonth.length },
-          { label: 'Per week', value: formatNumber(Math.round(perWeek(inMonth.length, month, end) * 10) / 10, 1) },
-          { label: 'Streak', value: `${currentStreak(dates, weekStart, now)} wks` },
-        ]}
-      />
     </div>
   );
 }

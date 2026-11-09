@@ -1,20 +1,108 @@
 import { describe, expect, it } from 'vitest';
 import {
+  applyEffortKey,
   asksEffort,
   canHalf,
+  canStep,
   effortBadge,
   effortReps,
   effortText,
   padFromRpe,
+  padDigit,
   padKeyLabel,
   PAD_KEYS,
   parseRpe,
+  pressEffortPad,
   rpeFromPad,
   sameWeightEasier,
 } from './effort';
 import type { LoggedSet } from './sets';
 
 const set = (id: string, kind: LoggedSet['kind'], extra: Partial<LoggedSet> = {}): LoggedSet => ({ id, order: 0, kind, completed: true, ...extra });
+
+describe('effort pad keys', () => {
+  const digit = (d: string) => ({ type: 'digit' as const, d });
+
+  it('RIR takes 0–5 and nothing above', () => {
+    expect(padDigit(0, 'rir')?.word).toBe('Failure');
+    expect(padDigit(5, 'rir')?.label).toBe('5+');
+    for (const d of [6, 7, 8, 9]) expect(padDigit(d, 'rir')).toBeUndefined();
+    expect(applyEffortKey(undefined, digit('2'), 'rir')).toBe(8);
+    expect(applyEffortKey(8, digit('7'), 'rir')).toBe(8);
+  });
+
+  it('RPE takes 5–9, and 0 is 10', () => {
+    expect(padDigit(0, 'rpe')?.value).toBe(10);
+    expect(padDigit(5, 'rpe')?.label).toBe('≤5');
+    for (const d of [1, 2, 3, 4]) expect(padDigit(d, 'rpe')).toBeUndefined();
+    expect(applyEffortKey(undefined, digit('0'), 'rpe')).toBe(10);
+  });
+
+  it('"." toggles ½, not on the top key', () => {
+    expect(applyEffortKey(9, { type: 'dot' }, 'rir')).toBe(8.5);
+    expect(applyEffortKey(8.5, { type: 'dot' }, 'rir')).toBe(9);
+    expect(applyEffortKey(8, { type: 'dot' }, 'rpe')).toBe(8.5);
+    expect(applyEffortKey(5, { type: 'dot' }, 'rir')).toBe(5);
+    expect(applyEffortKey(undefined, { type: 'dot' }, 'rir')).toBeUndefined();
+  });
+
+  it('+ / − step a whole unit and stay in range; backspace clears', () => {
+    expect(applyEffortKey(8, { type: 'inc' }, 'rir')).toBe(7); // 2 RIR → 3 RIR
+    expect(applyEffortKey(10, { type: 'dec' }, 'rir')).toBe(10);
+    expect(applyEffortKey(5, { type: 'inc' }, 'rir')).toBe(5);
+    expect(applyEffortKey(9.5, { type: 'inc' }, 'rpe')).toBe(10);
+    expect(applyEffortKey(5, { type: 'dec' }, 'rpe')).toBe(5);
+    expect(applyEffortKey(undefined, { type: 'inc' }, 'rpe')).toBeUndefined();
+    expect(applyEffortKey(8, { type: 'backspace' }, 'rpe')).toBeUndefined();
+  });
+
+  it('empty RIR steps from 0: + is 1 RIR, − is off', () => {
+    expect(applyEffortKey(undefined, { type: 'inc' }, 'rir')).toBe(9);
+    expect(applyEffortKey(undefined, { type: 'dec' }, 'rir')).toBeUndefined();
+    expect(canStep(undefined, 'inc', 'rir')).toBe(true);
+    expect(canStep(undefined, 'dec', 'rir')).toBe(false);
+    expect(canStep(undefined, 'inc', 'rpe')).toBe(false);
+  });
+
+  it('no + on 5+ RIR, no − on failure', () => {
+    expect(canStep(5, 'inc', 'rir')).toBe(false);
+    expect(canStep(5, 'dec', 'rir')).toBe(true);
+    expect(canStep(10, 'dec', 'rir')).toBe(false);
+    expect(canStep(9.5, 'dec', 'rir')).toBe(false); // 0.5 RIR sits on the 0 key
+    expect(canStep(10, 'inc', 'rir')).toBe(true);
+    expect(canStep(10, 'inc', 'rpe')).toBe(false);
+    expect(canStep(5, 'dec', 'rpe')).toBe(false);
+  });
+});
+
+describe('effort pad ½ toggle', () => {
+  const dot = { type: 'dot' as const };
+  const digit = (d: string) => ({ type: 'digit' as const, d });
+
+  it('turns on with nothing picked, and the next pick takes it', () => {
+    const on = pressEffortPad({ half: false }, dot, 'rir');
+    expect(on).toEqual({ rpe: undefined, half: true });
+    expect(pressEffortPad(on, digit('1'), 'rir')).toEqual({ rpe: 8.5, half: true });
+  });
+
+  it('stays on through 5+ without changing it, and comes back on the next key', () => {
+    const top = pressEffortPad({ rpe: 8.5, half: true }, digit('5'), 'rir');
+    expect(top).toEqual({ rpe: 5, half: true });
+    expect(pressEffortPad({ rpe: 5, half: false }, dot, 'rir')).toEqual({ rpe: 5, half: true });
+    expect(pressEffortPad(top, digit('2'), 'rir')).toEqual({ rpe: 7.5, half: true });
+    expect(pressEffortPad(top, { type: 'dec' }, 'rir')).toEqual({ rpe: 5.5, half: true }); // 5+ → 4.5
+  });
+
+  it('+ / − keep ½; empty starts at 0 (or 0.5)', () => {
+    expect(pressEffortPad({ rpe: 8.5, half: true }, { type: 'inc' }, 'rir').rpe).toBe(7.5);
+    expect(pressEffortPad({ half: true }, { type: 'inc' }, 'rir').rpe).toBe(8.5);
+    expect(pressEffortPad({ rpe: 6, half: true }, { type: 'inc' }, 'rir').rpe).toBe(5); // 4.5 → 5+
+  });
+
+  it('backspace clears the value and the toggle', () => {
+    expect(pressEffortPad({ rpe: 8.5, half: true }, { type: 'backspace' }, 'rir')).toEqual({ rpe: undefined, half: false });
+  });
+});
 
 describe('effort pad', () => {
   it('RPE: a key plus ½ is the half above', () => {

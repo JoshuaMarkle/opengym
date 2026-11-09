@@ -201,9 +201,10 @@ export function workoutTraining(m: TodayExercise, history: HistoryIndex, setting
   const phase = currentPhase(settings, at);
   const weighted = ex.type !== 'bodyweight';
 
-  // §11: a gap is always a question, unless you said you're coming back.
+  // §11: a gap is a question (when asking is on, see Settings.askAboutGaps), unless you said you're coming back.
+  // Asking off: a gap gets normal suggestions, as if you'd answered "I trained, just didn't log".
   const breakNow = m.we.gapAnswer === 'break' || (phase === 'return' && days >= BREAK_DAYS && m.we.gapAnswer !== 'notLogged');
-  if (days >= BREAK_DAYS && !m.we.gapAnswer && phase !== 'return') {
+  if (settings.askAboutGaps && days >= BREAK_DAYS && !m.we.gapAnswer && phase !== 'return') {
     const ramp = weighted ? comeback(lastSets[0].weight, days, step) : null;
     return { kind: 'gap', days: Math.round(days), lastDate: last.date, lastWeight: weighted ? lastSets[0].weight : undefined, start: ramp?.[0], pct: comebackPct(days) };
   }

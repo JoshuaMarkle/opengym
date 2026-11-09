@@ -40,7 +40,7 @@ function monthTicks(from: number, to: number, max = 6): number[] {
 }
 
 /**
- * Progress chart (7.2 / 7.3 / 4.9). `style="trend"`: blue trend line through
+ * Progress chart (7.2 / 7.3 / 4.8). `style="trend"`: blue trend line through
  * session dots, white dots = new all-time highs, last session ringed in blue.
  * `style="top"`: the real top sets joined by a quiet line, reps written above.
  */

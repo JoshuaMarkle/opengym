@@ -7,6 +7,12 @@ import type { CardioValues } from './cardio';
  * real body-composition trend: up through autumn 2024, a slow slide into
  * summer 2025, a second peak at the end of 2025, a dip to a low in July 2026,
  * then a fast climb back to today's numbers (the current plan).
+ *
+ * Seven weeks in Feb–Mar 2026 have nothing logged. Each session has a day form
+ * (flat days, great days), lifts follow the trend more or less closely, isolations
+ * wobble more and sometimes change dumbbell, and set counts and drops vary. Reps come
+ * from strength on the day against the weight picked, and the last ~5 months are rated
+ * as RIR from those same reps left in the tank.
  */
 
 // ───────────────────────────── trend
@@ -78,6 +84,12 @@ interface PlanExercise {
   step?: number;
   /** Superset letter (2.12): members sit next to each other. */
   superset?: string;
+  /** How noisy the lift is day to day (1 = a steady barbell lift; isolations 1.5–2.2). */
+  vary?: number;
+  /** How hard the lift follows the strength trend (1 = fully; 0.5 = stuck most of the time; 1.5 = swings more). */
+  curve?: number;
+  /** Now and then grabs the next dumbbell / pin up or down and lets the reps follow. */
+  swap?: boolean;
 }
 
 type CardioKind = 'treadmill' | 'bike' | 'rower';
@@ -119,38 +131,38 @@ const CURRENT: Plan[] = [
   {
     name: 'Push',
     exercises: [
-      { id: 'ex-bench-press', sets: 'w75x12 155x10 155x6 155x5' },
-      { id: 'ex-machine-chest-press', sets: 'w75x12 185x8 185x7' },
-      { id: 'ex-db-fly', sets: '25x5 20x7', step: 2.5 },
-      { id: 'ex-db-shoulder-press', sets: '40x8 40x6d30x6', step: 2.5 },
-      { id: 'ex-lateral-raise', sets: '10x12 10x10 10x6', step: 2.5 },
-      { id: 'ex-db-overhead-extension', sets: '35x10 35x5', step: 2.5, superset: 'A' },
-      { id: 'ex-rope-pushdown', sets: '42.5x8 42.5x6d35x4d27.5x3', step: 2.5, superset: 'A' },
-      { id: 'ex-pec-deck', sets: '130x5 110x7 110x6' },
+      { id: 'ex-bench-press', sets: 'w75x12 155x10 155x6 155x5', curve: 1.1 },
+      { id: 'ex-machine-chest-press', sets: 'w75x12 185x8 185x7', curve: 0.8, vary: 1.2 },
+      { id: 'ex-db-fly', sets: '25x5 20x7', step: 2.5, vary: 1.6, swap: true },
+      { id: 'ex-db-shoulder-press', sets: '40x8 40x6d30x6', step: 2.5, curve: 0.45, vary: 1.3 },
+      { id: 'ex-lateral-raise', sets: '10x12 10x10 10x6', step: 2.5, vary: 2, swap: true },
+      { id: 'ex-db-overhead-extension', sets: '35x10 35x5', step: 2.5, superset: 'A', vary: 1.5, swap: true },
+      { id: 'ex-rope-pushdown', sets: '42.5x8 42.5x6d35x4d27.5x3', step: 2.5, superset: 'A', vary: 1.5 },
+      { id: 'ex-pec-deck', sets: '130x5 110x7 110x6', vary: 1.8, swap: true },
     ],
     cardio: { id: 'ex-treadmill', kind: 'treadmill', segments: 2 },
   },
   {
     name: 'Pull',
     exercises: [
-      { id: 'ex-lat-pulldown', sets: 'w100x12 145x8 145x6 130x5' },
-      { id: 'ex-sample-wide-grip-lat-pulldown', sets: 'w100x12 130x9 130x5 115x8' },
-      { id: 'ex-seated-cable-row', sets: '120x10 120x7 120x6' },
-      { id: 'ex-machine-preacher-curl', sets: '105x8 105x4d85x4' },
-      { id: 'ex-hammer-curl', sets: '27.5x10 27.5x6', step: 2.5, superset: 'A' },
-      { id: 'ex-wrist-curl', sets: '30x12 35x10', step: 2.5, superset: 'A' },
-      { id: 'ex-machine-crunch', sets: '130x12 190x3d160x4' },
+      { id: 'ex-lat-pulldown', sets: 'w100x12 145x8 145x6 130x5', vary: 1.1 },
+      { id: 'ex-sample-wide-grip-lat-pulldown', sets: 'w100x12 130x9 130x5 115x8', curve: 1.2 },
+      { id: 'ex-seated-cable-row', sets: '120x10 120x7 120x6', curve: 0.6, vary: 1.3 },
+      { id: 'ex-machine-preacher-curl', sets: '105x8 105x4d85x4', vary: 1.4 },
+      { id: 'ex-hammer-curl', sets: '27.5x10 27.5x6', step: 2.5, superset: 'A', vary: 1.5, swap: true },
+      { id: 'ex-wrist-curl', sets: '30x12 35x10', step: 2.5, superset: 'A', vary: 2 },
+      { id: 'ex-machine-crunch', sets: '130x12 190x3d160x4', vary: 2.2, swap: true },
     ],
     cardio: { id: 'ex-rower', kind: 'rower', segments: 3 },
   },
   {
     name: 'Legs',
     exercises: [
-      { id: 'ex-leg-press', sets: '360x12 540x12 720x12 720x12', step: 10 },
-      { id: 'ex-leg-curl', sets: '130x13 145x8' },
-      { id: 'ex-leg-extension', sets: '210x12 210x8d160x2' },
-      { id: 'ex-calf-raise', sets: '160x13 160x13' },
-      { id: 'ex-sample-seated-leg-press', sets: 'w130x12 220x12 310x12 310x3', step: 10 },
+      { id: 'ex-leg-press', sets: '360x12 540x12 720x12 720x12', step: 10, curve: 1.6, vary: 1.3 },
+      { id: 'ex-leg-curl', sets: '130x13 145x8', vary: 1.3 },
+      { id: 'ex-leg-extension', sets: '210x12 210x8d160x2', vary: 1.4, swap: true },
+      { id: 'ex-calf-raise', sets: '160x13 160x13', vary: 2, swap: true },
+      { id: 'ex-sample-seated-leg-press', sets: 'w130x12 220x12 310x12 310x3', step: 10, curve: 1.3 },
     ],
     cardio: { id: 'ex-bike', kind: 'bike', segments: 1 },
   },
@@ -166,11 +178,11 @@ const OLD: Plan[] = [
     exercises: [
       { id: 'ex-bench-press', sets: 'w75x12 135x10 135x6 135x4' },
       { id: 'ex-machine-chest-press', sets: 'w75x12 185x7 185x7 185x6' },
-      { id: 'ex-cable-fly', sets: '130x5 130x4' },
-      { id: 'ex-db-shoulder-press', sets: '40x8 35x8 35x6', step: 2.5 },
-      { id: 'ex-lateral-raise', sets: '10x10 10x9 10x6', step: 2.5 },
-      { id: 'ex-reverse-pec-deck', sets: '75x9 75x8 75x5d55x4' },
-      { id: 'ex-triceps-pushdown', sets: '57.5x12 50x9 50x6', step: 2.5 },
+      { id: 'ex-cable-fly', sets: '130x5 130x4', vary: 1.6, swap: true },
+      { id: 'ex-db-shoulder-press', sets: '40x8 35x8 35x6', step: 2.5, curve: 0.45, vary: 1.3 },
+      { id: 'ex-lateral-raise', sets: '10x10 10x9 10x6', step: 2.5, vary: 2, swap: true },
+      { id: 'ex-reverse-pec-deck', sets: '75x9 75x8 75x5d55x4', vary: 1.6 },
+      { id: 'ex-triceps-pushdown', sets: '57.5x12 50x9 50x6', step: 2.5, vary: 1.5 },
       { id: 'ex-overhead-cable-extension', sets: '32.5x10 32.5x8', step: 2.5 },
     ],
   },
@@ -178,20 +190,20 @@ const OLD: Plan[] = [
     name: 'Pull',
     exercises: [
       { id: 'ex-lat-pulldown', sets: '140x12 140x6 130x5' },
-      { id: 'ex-seated-cable-row', sets: '120x12 120x11 120x5' },
+      { id: 'ex-seated-cable-row', sets: '120x12 120x11 120x5', curve: 0.6, vary: 1.3 },
       { id: 'ex-preacher-curl', sets: '75x8 70x8 70x8' },
-      { id: 'ex-hammer-curl', sets: '25x10 20x6 20x6', step: 2.5 },
+      { id: 'ex-hammer-curl', sets: '25x10 20x6 20x6', step: 2.5, vary: 1.5, swap: true },
       { id: 'ex-db-shrug', sets: '40x12 40x12', step: 2.5 },
-      { id: 'ex-machine-crunch', sets: '130x15 130x12 130x9' },
+      { id: 'ex-machine-crunch', sets: '130x15 130x12 130x9', vary: 2.2, swap: true },
     ],
   },
   {
     name: 'Legs',
     exercises: [
-      { id: 'ex-leg-press', sets: '180x12 360x12 540x12 720x8', step: 10 },
+      { id: 'ex-leg-press', sets: '180x12 360x12 540x12 720x8', step: 10, curve: 1.6, vary: 1.3 },
       { id: 'ex-leg-curl', sets: '115x12 115x8 100x6' },
-      { id: 'ex-leg-extension', sets: '190x12 190x12 190x8d70x10' },
-      { id: 'ex-seated-calf-raise', sets: '45x12 45x15 45x20' },
+      { id: 'ex-leg-extension', sets: '190x12 190x12 190x8d70x10', vary: 1.4, swap: true },
+      { id: 'ex-seated-calf-raise', sets: '45x12 45x15 45x20', vary: 2 },
     ],
   },
 ];
@@ -249,28 +261,44 @@ export interface SampleData {
 const DAY = 86_400_000;
 const START = new Date(2024, 6, 1).getTime();
 
-/** Breaks: holidays, a trip, a rough patch. [from, to] inclusive local dates. */
-const BREAKS: [number, number][] = [
+/**
+ * Breaks: holidays, a trip, a rough patch, and seven weeks in Feb–Mar 2026 with
+ * nothing logged at all (the body-comp slide in the trend). [from, to] inclusive local dates.
+ */
+export const BREAKS: [number, number][] = [
   [new Date(2024, 11, 22).getTime(), new Date(2025, 0, 2).getTime()],
   [new Date(2025, 5, 7).getTime(), new Date(2025, 5, 18).getTime()],
   [new Date(2025, 11, 23).getTime(), new Date(2025, 11, 30).getTime()],
+  [new Date(2026, 1, 9).getTime(), new Date(2026, 2, 29).getTime()],
   [new Date(2026, 5, 20).getTime(), new Date(2026, 6, 5).getTime()],
 ];
 
-/** Effort (SPEC §12) is rated on the last 12 weeks of sample sets, so it looks recently turned on. */
-const EFFORT_DAYS = 84;
+/**
+ * How much lighter the first sessions back from a break are: ~1% per week off
+ * (6% at most), fading out over four weeks. 0 outside a comeback.
+ */
+export function comebackAt(t: number): number {
+  for (const [a, b] of BREAKS) {
+    const since = t - b;
+    if (since <= 0 || since > 28 * DAY) continue;
+    const drop = Math.min(0.06, ((b - a) / (7 * DAY)) * 0.01);
+    return drop * (1 - since / (28 * DAY));
+  }
+  return 0;
+}
+
+/** Effort (SPEC §12) is logged as RIR for the last ~5 months, so it looks turned on in early summer. */
+const EFFORT_DAYS = 150;
 
 /**
- * A believable RPE without touching the random stream: the planned set leaves ~2 reps in
- * the tank at the day's strength; rounding the weight down or doing more reps changes that,
- * and later sets feel a little harder. The same weight gets easier as strength goes up.
+ * What someone logging RIR writes down for a set with `trueRir` reps left: whole
+ * numbers mostly, a half now and then; far from failure they underrate it, and
+ * 5+ is the top key. Returned as the stored RPE (RIR = 10 − RPE).
  */
-export function sampleRpe(plannedWeight: number, plannedReps: number, weight: number, reps: number, setIndex: number): number {
-  if (!(weight > 0)) return 8;
-  const e1rm = plannedWeight * (1 + (plannedReps + 2) / 30);
-  const maxReps = 30 * (e1rm / weight - 1);
-  const rpe = 10 - (maxReps - reps) + setIndex * 0.5;
-  return Math.min(10, Math.max(6, Math.round(rpe * 2) / 2));
+export function sampleRir(trueRir: number, rand: () => number): number {
+  const felt = Math.min(trueRir, 3 + (trueRir - 3) * 0.6) + (rand() - 0.5) * 1.5;
+  const rir = rand() < 0.2 ? Math.round(felt * 2) / 2 : Math.round(felt);
+  return 10 - Math.min(5, Math.max(0, rir));
 }
 
 /** Training days per week (0 = Sun): Mon, Tue, Thu, Fri, Sat. */
@@ -387,6 +415,10 @@ export function generateSampleData(opts: { now?: number; newId?: () => string; s
     const plans = midnight < SWITCH_AT ? OLD : CURRENT;
     const plan = plans[rotation++ % 3];
     const scale = midnight < SWITCH_AT ? strengthAt(midnight) / OLD_BASE : strengthAt(midnight);
+    const back = comebackAt(midnight);
+    // How the day feels: mostly ±2%, now and then a flat day or a great one.
+    const feel = rand();
+    const form = (feel < 0.08 ? 0.95 : feel > 0.94 ? 1.03 : 1) * (1 + (rand() - 0.5) * 0.04);
     const startedAt = midnight + (16.5 + rand() * 3) * 3_600_000;
     const workout: Workout = {
       id: newId(),
@@ -409,8 +441,14 @@ export function generateSampleData(opts: { now?: number; newId?: () => string; s
       const we: WorkoutExercise = { id: newId(), workoutId: workout.id, exerciseId: pe.id, order: i, supersetGroup: group, createdAt: workout.createdAt, updatedAt: workout.createdAt };
       workoutExercises.push(we);
       const step = pe.step ?? 5;
-      const dayScale = scale * (1 + (rand() - 0.5) * 0.03);
+      const vary = pe.vary ?? 1;
       const round = (w: number) => Math.max(step, Math.round(w / step) * step);
+      // The lift's own scale: how hard it follows the trend, then the comeback.
+      const liftScale = Math.pow(scale, pe.curve ?? 1) * (1 - back);
+      // Strength on the day vs. what the weights were picked for.
+      const strength = liftScale * form * (1 + (rand() - 0.5) * 0.02 * vary) * (1 + back * 0.2);
+      const pick = 1 + (rand() - 0.5) * 0.03 * vary;
+      const shift = pe.swap && rand() < 0.22 ? (rand() < 0.5 ? step : -step) : 0;
       let order = 0;
       const push = (s: Omit<WorkoutSet, 'id' | 'createdAt' | 'updatedAt' | 'order' | 'workoutExerciseId' | 'completed'>) => {
         clock += (s.kind === 'drop' ? 0.5 : 2 + rand() * 1.5) * 60_000;
@@ -419,20 +457,41 @@ export function generateSampleData(opts: { now?: number; newId?: () => string; s
         workoutSets.push(rec);
         return rec.id;
       };
-      let wi = 0;
-      for (const s of parsePlanSets(pe.sets)) {
-        if (s.kind === 'warmup') {
-          push({ kind: 'warmup', weight: s.weight, reps: s.reps });
-          continue;
-        }
-        const jitter = Math.round((rand() - 0.5) * 2.4); // −1…+1 reps
-        const weight = round(s.weight * dayScale);
-        const reps = Math.max(1, s.reps + jitter);
-        const parentId = push({ kind: 'working', weight, reps, ...(midnight >= end - EFFORT_DAYS * DAY ? { rpe: sampleRpe(s.weight * dayScale, s.reps, weight, reps, wi) } : {}) });
-        wi++;
-        let parent = parentId;
-        for (const d of s.drops) parent = push({ kind: 'drop', parentSetId: parent, weight: round(d.weight * dayScale), reps: Math.max(1, d.reps + Math.round((rand() - 0.5) * 2)) });
+
+      const all = parsePlanSets(pe.sets);
+      const warm = all.filter((s) => s.kind === 'warmup');
+      let work = all.filter((s) => s.kind === 'working');
+      // Now and then a set more or a set less; drops skipped, or one tacked on.
+      if (work.length >= 3 && rand() < 0.08) work = work.slice(0, -1);
+      else if (rand() < 0.07) {
+        const last = work[work.length - 1];
+        work = [...work, { ...last, reps: Math.max(3, last.reps - 2), drops: [] }];
       }
+      const skipDrops = rand() < 0.15;
+      const addDrop = vary >= 1.4 && !work.some((s) => s.drops.length) && rand() < 0.08;
+
+      if (rand() > 0.15) for (const s of warm) push({ kind: 'warmup', weight: s.weight, reps: s.reps });
+      // Capacity (est. 1RM) per set at today's plan, ~2 reps in reserve. Ramp-up sets
+      // before the heaviest one are fresh (the top set's capacity); back-offs are tired.
+      const top = Math.max(...work.map((s) => s.weight));
+      const topAt = work.findIndex((s) => s.weight === top);
+      const cap = (s: ParsedSet) => s.weight * (1 + (s.reps + 2) / 30);
+      work.forEach((s, wi) => {
+        const capacity = (wi < topAt ? cap(work[topAt]) : cap(s)) * strength;
+        // A light dumbbell where one step is a big jump (10 → 12.5) stays put; only the reps move.
+        const coarse = step / s.weight > 0.12;
+        const weight = coarse ? s.weight : Math.max(step, round(s.weight * liftScale * pick) + shift);
+        const most = Math.max(1, 30 * (capacity / weight - 1)); // reps to failure
+        const lastSet = wi === work.length - 1;
+        const rir = 2 - (lastSet && rand() < 0.4 ? 1 : 0) + (rand() - 0.5) * 0.8;
+        const target = wi < topAt ? Math.min(s.reps + Math.round((rand() - 0.5) * 2), most - 1) : most - rir + (rand() - 0.5) * 1.4 * vary;
+        // Epley is harsh on high-rep isolation work: never under half the planned reps.
+        const reps = Math.max(1, Math.round(s.reps / 2), Math.min(Math.floor(most), Math.round(target)));
+        const rated = midnight >= end - EFFORT_DAYS * DAY && rand() < 0.9;
+        let parent = push({ kind: 'working', weight, reps, ...(rated ? { rpe: sampleRir(Math.max(0, most - reps), rand) } : {}) });
+        const drops = skipDrops ? [] : addDrop && lastSet ? [{ weight: s.weight * 0.75, reps: Math.max(3, Math.round(s.reps * 0.6)) }] : s.drops;
+        for (const d of drops) parent = push({ kind: 'drop', parentSetId: parent, weight: round(d.weight * liftScale), reps: Math.max(1, d.reps + Math.round((rand() - 0.5) * 2 * vary)) });
+      });
       clock += 2 * 60_000;
     });
     if (plan.cardio && crand() < 0.65) clock = addCardio(workout, plan.cardio.id, done.length, cardioSegments(plan.cardio.kind, crand, strengthAt(midnight)), clock);

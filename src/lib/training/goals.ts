@@ -150,3 +150,16 @@ export function milestoneRows(
   const open = rows.filter((r, i) => r.state !== 'done' && (r.state !== 'ready' || i === lastReady));
   return [...done.slice(-2), ...open.slice(0, 3)];
 }
+
+/**
+ * The goal that is this milestone (same weight × reps; reps only for bodyweight), so the
+ * milestone row links to it instead of offering a duplicate. Open goals win over done ones.
+ * Weights compare within 0.5 lb: a kg goal goes through a unit conversion.
+ */
+export function goalForMilestone<G extends { weight: number; reps: number; doneAt?: number; deletedAt?: number }>(
+  m: Pick<Milestone, 'weight' | 'reps'>,
+  goals: G[],
+): G | undefined {
+  const same = goals.filter((g) => !g.deletedAt && g.reps === m.reps && (m.weight == null || Math.abs(g.weight - m.weight) < 0.5));
+  return same.find((g) => !g.doneAt) ?? same[0];
+}

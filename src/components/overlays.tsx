@@ -62,6 +62,8 @@ export function Sheet({
   action,
   children,
   tall = false,
+  short = false,
+  tight = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -70,6 +72,10 @@ export function Sheet({
   action?: ReactNode;
   children: ReactNode;
   tall?: boolean;
+  /** Fixed at two thirds of the screen plus a line, so switching tabs inside doesn't resize it (4.8). */
+  short?: boolean;
+  /** Subtitle hugs the title like a screen header's meta line (5.4). */
+  tight?: boolean;
 }) {
   useEscape(onClose, open);
   const { dy, handlers } = useDragDismiss(onClose);
@@ -83,19 +89,19 @@ export function Sheet({
           aria-modal="true"
           className={cx(
             'anim-sheet absolute inset-x-0 bottom-0 flex flex-col rounded-t-[18px] border-t border-line-strong bg-raised pb-safe',
-            tall ? 'top-[calc(env(safe-area-inset-top)+56px)]' : 'max-h-[86%]',
+            tall ? 'top-[calc(env(safe-area-inset-top)+56px)]' : short ? 'h-[calc(200%/3+24px)]' : 'max-h-[86%]',
           )}
           style={{ transform: dy ? `translateY(${dy}px)` : undefined, transition: dy ? 'none' : 'transform .2s' }}
         >
           <div className="flex-none touch-none pt-2 pb-1" {...handlers}>
             <div className="mx-auto h-[5px] w-9 rounded-full bg-line-strong" />
             {(title || action) && (
-              <div className="mt-2.5 flex min-h-8 items-center justify-between gap-3 px-4">
-                <h2 className="min-w-0 truncate text-[19px] font-bold">{title}</h2>
+              <div className={cx('mt-2.5 flex items-center justify-between gap-3 px-4', !tight && 'min-h-8')}>
+                <h2 className={cx('min-w-0 truncate text-[19px] font-bold', tight && 'leading-tight')}>{title}</h2>
                 {action}
               </div>
             )}
-            {subtitle && <p className="mt-1 px-4 text-[13px] leading-snug text-fg2">{subtitle}</p>}
+            {subtitle && <p className={cx('px-4 text-[13px] leading-snug text-fg2', tight ? 'mt-0.5' : 'mt-1')}>{subtitle}</p>}
           </div>
           <div className="scroll-y min-h-0 flex-1 px-4 pb-4">{children}</div>
         </div>
@@ -293,6 +299,8 @@ interface ToastData {
   message: ReactNode;
   actionLabel?: string;
   onAction?: () => void;
+  /** No outline: the workout's exercise view (4.4) floats its Undo toasts beside the borderless keyboard button. */
+  borderless?: boolean;
 }
 
 const ToastContext = createContext<(t: Omit<ToastData, 'id'> & { duration?: number }) => void>(() => {});
@@ -307,14 +315,32 @@ function dockedHeight(): number {
   return h;
 }
 
+/**
+ * A floating button marked `data-dock-side` (the workout's keyboard button) shares the
+ * toast's row: the toast lines up with it and stops short of it instead of moving up.
+ */
+function dockedSide(): DOMRect | undefined {
+  for (const el of document.querySelectorAll<HTMLElement>('[data-dock-side]')) {
+    const r = el.getBoundingClientRect();
+    if (r.height > 0) return r;
+  }
+  return undefined;
+}
+
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<ToastData | null>(null);
-  const [bottom, setBottom] = useState(0);
+  const [place, setPlace] = useState<{ bottom: number; right?: number }>({ bottom: 0 });
+  const box = useRef<HTMLDivElement>(null);
   const timer = useRef<number | undefined>(undefined);
   // Sit just above the tab bar / keypad / pinned buttons, and follow them if they change.
   useEffect(() => {
     if (!toast) return;
-    const measure = () => setBottom(dockedHeight());
+    const measure = () => {
+      const side = dockedSide();
+      const edge = box.current?.getBoundingClientRect().right;
+      const next = side && edge != null ? { bottom: window.innerHeight - side.bottom - 10, right: Math.max(12, edge - side.left + 10) } : { bottom: dockedHeight() };
+      setPlace((p) => (p.bottom === next.bottom && p.right === next.right ? p : next));
+    };
     measure();
     const t = window.setInterval(measure, 120);
     return () => window.clearInterval(t);
@@ -330,11 +356,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       {toast && (
         <Portal>
-          <div className="pointer-events-none fixed inset-x-0 z-[35] mx-auto max-w-[520px] px-3 transition-[bottom] duration-150" style={{ bottom: bottom > 0 ? bottom + 10 : 'calc(env(safe-area-inset-bottom) + 16px)' }}>
+          <div
+            ref={box}
+            className="pointer-events-none fixed inset-x-0 z-[35] mx-auto max-w-[520px] px-3 transition-[bottom] duration-150"
+            style={{ bottom: place.bottom > 0 ? place.bottom + 10 : 'calc(env(safe-area-inset-bottom) + 16px)', paddingRight: place.right }}
+          >
             <div
               key={toast.id}
               role="status"
-              className="anim-toast pointer-events-auto flex h-12 items-center justify-between rounded-[13px] border border-line-strong bg-surface-2 pr-1 pl-4 text-[15px]"
+              className={cx(
+                'anim-toast pointer-events-auto flex h-12 items-center justify-between rounded-[13px] bg-surface-2 pr-1 pl-4 text-[15px]',
+                !toast.borderless && 'border border-line-strong',
+              )}
             >
               <span className="truncate">{toast.message}</span>
               {toast.actionLabel && (

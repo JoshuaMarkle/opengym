@@ -19,8 +19,9 @@ A free lifting log that runs entirely on your phone. No account, no server, no a
 
 - **Plans.** Routines in folders. Give a folder a repeating cycle or weekly split and Home follows it; otherwise it suggests whatever you did longest ago.
 - **Logging.** Every set pre-fills from last time. A custom keypad with a plate calculator, one-tap ✓, drop sets, warm-ups, supersets and cardio segments, with swipes and hold menus as shortcuts. Optional RPE / RIR effort per set, as a badge on the reps box.
+- **Training.** Next-weight suggestions per set (Suggest or Auto, always with a Why), a status per lift (Climbing, Holding, Slipping…), goals with a projected date, milestones, a monthly review, and a ramp back after a break. All worked out on the phone from your own log.
 - **History.** Month, 6-month, year and all-time calendars plus a searchable list. Past workouts can be edited.
-- **Progress.** Est. 1RM, top-set and records charts for pinned lifts, linked variations (Flat / Incline / DB), weekly cardio totals and running records.
+- **Progress.** Est. 1RM, top-set and records charts for focus lifts, linked variations (Flat / Incline / DB), weekly cardio totals and running records.
 - **Your data.** Backups are one JSON file. Import from Strong or Hevy CSV, export your own CSV.
 
 Every screen is in [`design/storyboard.html`](design/storyboard.html), captured from the app.
@@ -61,9 +62,10 @@ Installed, it runs full screen and offline, and iOS is much less likely to clear
 
 | Path | What |
 | --- | --- |
-| `design/` | The spec (`SPEC.md`), the screen storyboard and brand assets |
+| `design/` | The spec (`SPEC.md`), the training rules (`training-logic.html`), the screen storyboard and brand assets |
 | `src/db/` | Data model, Dexie schema, built-in exercise library |
-| `src/lib/` | Pure logic with tests: 1RM, records, prefill, next-up, schedules, supersets, cardio, plates, import |
+| `src/lib/` | Pure logic with tests: 1RM, records, prefill, next-up, schedules, supersets, cardio, plates, effort, import |
+| `src/lib/training/` | Suggestions, lift trends, goals and milestones (ported from `design/training-logic-reference.py`) |
 | `src/data/` | Reads and writes, history index, backup / restore / import |
 | `src/components/` | Shared UI, overlays, keypad, plate pad, gestures, charts, icons |
 | `src/screens/` | One folder per area: onboarding, home, plans, workout, history, progress, exercises, settings |

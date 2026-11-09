@@ -10,7 +10,7 @@ import { goalView, type GoalView } from '../../data/goals';
 import { liftTraining, recentLifts, type LiftTraining } from '../../data/training';
 import type { Exercise, Goal, Units } from '../../db/types';
 import { fmtMonthDay, monthShort } from '../../lib/dates';
-import { STATUS_LABEL, WEEK, type MilestoneRow, type Status, type TrendResult, type Verdict, VERDICT_LABEL } from '../../lib/training';
+import { goalForMilestone, STATUS_LABEL, WEEK, type MilestoneRow, type Status, type TrendResult, type Verdict, VERDICT_LABEL } from '../../lib/training';
 import { formatNumber, formatWeight, toDisplay, unitLabel } from '../../lib/units';
 
 // ───────────────────────────── formatting
@@ -131,7 +131,7 @@ export function GoalRow({ v, units }: { v: GoalView; units: Units }) {
     sub = 'no date · your est. 1RM covers it';
     [tag, tone] = ['Ready', 'text-tip'];
   } else if (state.eta != null) {
-    sub = `no date · ${etaText(state.eta)} at current pace`;
+    sub = 'no date · at current pace';
     [tag, tone] = [`Est. ${etaText(state.eta).slice(1)}`, 'text-fg'];
   } else {
     sub = 'no date · not moving toward it yet';
@@ -150,8 +150,13 @@ export function GoalRow({ v, units }: { v: GoalView; units: Units }) {
   );
 }
 
-/** B2: the last 2 milestones reached and the next 3, with Ready and ETA. */
-export function MilestoneList({ rows, exercise, units, onGoal }: { rows: MilestoneRow[]; exercise: Exercise; units: Units; onGoal?: (m: MilestoneRow) => void }) {
+/**
+ * B2: the last 2 milestones reached and the next 3, with Ready and ETA. Milestones are
+ * only a ladder to look at; Goal turns one into a goal, and a milestone that already is one
+ * links to it instead.
+ */
+export function MilestoneList({ rows, exercise, units, goals = [], onGoal }: { rows: MilestoneRow[]; exercise: Exercise; units: Units; goals?: Goal[]; onGoal?: (m: MilestoneRow) => void }) {
+  const navigate = useNavigate();
   const label = (m: MilestoneRow) =>
     m.weight == null ? `${m.reps} reps` : exercise.type === 'assisted' ? (m.weight === 0 ? `Bodyweight × ${m.reps}` : `−${formatWeight(-m.weight, units)} × ${m.reps}`) : fmtGoal({ weight: m.weight, reps: m.reps }, exercise, units);
   return (
@@ -172,15 +177,26 @@ export function MilestoneList({ rows, exercise, units, onGoal }: { rows: Milesto
                     ? `${etaText(m.weeks!)} at your pace`
                     : exercise.type === 'bodyweight'
                       ? 'not moving toward it yet'
-                      : `needs est. ${fmtStrength(m.target, exercise, units)}`}
+                      : 'no estimate at your pace yet'}
             </span>
           </span>
           {m.state === 'ready' && <span className="text-[11px] font-bold tracking-[0.06em] text-warn uppercase">Ready</span>}
-          {m.state !== 'done' && m.state !== 'ready' && onGoal && m.weight != null && exercise.type !== 'assisted' && (
-            <button type="button" onClick={() => onGoal(m)} className="flex h-11 flex-none items-center px-1 text-[14px] font-semibold text-accent active:opacity-60">
-              Goal
-            </button>
-          )}
+          {(() => {
+            const g = goalForMilestone(m, goals);
+            if (g)
+              return (
+                <button type="button" onClick={() => navigate(`/progress/goal/${g.id}`)} className="flex h-11 flex-none items-center gap-1 px-1 text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase active:opacity-60">
+                  {g.doneAt ? 'Goal done' : 'Your goal'} <ChevronRight size={11} className="text-fg3" />
+                </button>
+              );
+            if (m.state !== 'done' && onGoal && m.weight != null && exercise.type !== 'assisted')
+              return (
+                <button type="button" onClick={() => onGoal(m)} className="flex h-11 flex-none items-center px-1 text-[14px] font-semibold text-accent active:opacity-60">
+                  Goal
+                </button>
+              );
+            return null;
+          })()}
         </div>
       ))}
     </div>

@@ -61,7 +61,7 @@ export function Change({ value, pct, ex, units, words, className = '' }: { value
   );
 }
 
-// ───────────────────────────── History (4.8)
+// ───────────────────────────── History (4.10)
 
 /** The "·" between sets in a history line, drawn in the gap before a block (see HistoryView). */
 const SEP = "before:absolute before:-left-[8px] before:text-fg3 before:content-['·']";
@@ -154,7 +154,7 @@ export function HistoryView({ exercise, onOpenWorkout }: { exercise: Exercise; o
   );
 }
 
-// ───────────────────────────── Charts (4.9, 7.2, 7.3)
+// ───────────────────────────── Charts (4.8, 7.2, 7.3)
 
 export function ChartsView({
   exercise,
@@ -295,7 +295,10 @@ export function ChartsView({
   );
 }
 
-// ───────────────────────────── Records (4.10, 7.4)
+// ───────────────────────────── Records (4.9, 7.4)
+
+/** Records dates keep the year to two digits: "Oct 29 '25". */
+const shortDate = (ts: number) => fmtMonthDay(ts, Date.now(), true);
 
 export function RecordsView({ exercise, exerciseIds, currentReps }: { exercise: Exercise; exerciseIds?: string[]; currentReps?: number }) {
   const { history, settings } = useData();
@@ -322,8 +325,8 @@ export function RecordsView({ exercise, exerciseIds, currentReps }: { exercise: 
     const bestTotal = totals.reduce((a, b) => (b.total > a.total ? b : a), totals[0]);
     return (
       <div className="mt-3 grid grid-cols-2 border-y border-line">
-        {pair('Most reps', `${rec.mostReps.reps} reps`, fmtMonthDay(rec.mostReps.date))}
-        {pair('Most in a session', `${bestTotal.total} reps`, fmtMonthDay(bestTotal.date))}
+        {pair('Most reps', `${rec.mostReps.reps} reps`, shortDate(rec.mostReps.date))}
+        {pair('Most in a session', `${bestTotal.total} reps`, shortDate(bestTotal.date))}
       </div>
     );
   }
@@ -339,15 +342,15 @@ export function RecordsView({ exercise, exerciseIds, currentReps }: { exercise: 
     <div>
       <div className="mt-3 grid grid-cols-2 border-y border-line">
         {exercise.type === 'weight' && rec.bestE1rm
-          ? pair('Best est. 1RM', `${formatNumber(Math.round(toDisplay(rec.bestE1rm.value, units)), 0)} ${unitLabel(units)}`, `${formatSet(rec.bestE1rm, exercise.type, units)} · ${fmtMonthDay(rec.bestE1rm.date)}`)
-          : pair('Most reps', `${rec.mostReps.reps} reps`, `${formatSet(rec.mostReps, exercise.type, units)} · ${fmtMonthDay(rec.mostReps.date)}`)}
-        {rec.heaviest && pair('Heaviest', `${fw(rec.heaviest.weight)} ${unitLabel(units)}`, `× ${rec.heaviest.reps} · ${fmtMonthDay(rec.heaviest.date)}`)}
+          ? pair('Best est. 1RM', `${formatNumber(Math.round(toDisplay(rec.bestE1rm.value, units)), 0)} ${unitLabel(units)}`, `${formatSet(rec.bestE1rm, exercise.type, units)} · ${shortDate(rec.bestE1rm.date)}`)
+          : pair('Most reps', `${rec.mostReps.reps} reps`, `${formatSet(rec.mostReps, exercise.type, units)} · ${shortDate(rec.mostReps.date)}`)}
+        {rec.heaviest && pair('Heaviest', `${fw(rec.heaviest.weight)} ${unitLabel(units)}`, `× ${rec.heaviest.reps} · ${shortDate(rec.heaviest.date)}`)}
       </div>
       <div className="mt-2 text-[14px]">
-        <div className="grid h-6 grid-cols-[46px_1fr_52px_60px] items-center gap-2.5 text-[10.5px] font-bold tracking-[0.05em] text-fg2">
+        <div className="grid h-6 grid-cols-[46px_44px_1fr_60px] items-center gap-2.5 text-[10.5px] font-bold tracking-[0.05em] text-fg2">
           <span>REPS</span>
-          <span />
           <span className="text-right">{unitLabel(units).toUpperCase()}</span>
+          <span>VS. HEAVIEST</span>
           <span className="text-right">DATE</span>
         </div>
         {rows.map(({ reps, entry }) => {
@@ -356,21 +359,21 @@ export function RecordsView({ exercise, exerciseIds, currentReps }: { exercise: 
             <div
               key={reps}
               className={cx(
-                'grid h-[30px] grid-cols-[46px_1fr_52px_60px] items-center gap-2.5 border-b border-line whitespace-nowrap',
+                'grid h-[30px] grid-cols-[46px_44px_1fr_60px] items-center gap-2.5 border-b border-line whitespace-nowrap',
                 currentReps === reps && '-mx-1.5 rounded-[7px] border-transparent bg-accent-soft px-1.5',
               )}
             >
               <span className="font-bold">{reps} RM</span>
+              <span className="text-right font-bold">{entry ? fw(entry.weight) : '—'}</span>
               <span className="relative h-[7px] rounded-full bg-surface-2">
                 {entry && <i className={cx('absolute inset-y-0 left-0 rounded-full', recent ? 'bg-accent' : 'bg-[var(--og-bar)]')} style={{ width: `${width(entry.weight)}%` }} />}
               </span>
-              <span className="text-right font-bold">{entry ? fw(entry.weight) : '—'}</span>
-              <span className={cx('text-right text-[12px]', recent ? 'font-bold text-accent' : 'text-fg2')}>{entry ? fmtMonthDay(entry.date) : ''}</span>
+              <span className={cx('text-right text-[12px]', recent ? 'font-bold text-accent' : 'text-fg2')}>{entry ? shortDate(entry.date) : ''}</span>
             </div>
           );
         })}
       </div>
-      <p className="mt-2.5 text-[12.5px] text-fg2">Best weight for 1–12 reps from working sets. Blue = set in the last 30 days.</p>
+      <p className="mt-2.5 text-[12.5px] text-fg2">Best weight for 1–12 reps from working sets.{rows.some((r) => r.entry && isRecent(r.entry.date)) ? ' Blue = set in the last 30 days.' : ''}</p>
     </div>
   );
 }

@@ -152,6 +152,27 @@ export function CheckGlyph({ size = 14, ...p }: P) {
   );
 }
 
+/** Pencil left of Finish in the workout header: opens the workout options (4.1, 5.4). */
+export function PencilGlyph({ size = 16, ...p }: P) {
+  return (
+    <svg viewBox="0 0 16 16" {...svg(size, p)}>
+      <path d="M10.6 2.4a1.6 1.6 0 0 1 2.3 0l.7.7a1.6 1.6 0 0 1 0 2.3L5.4 13.6l-3.4.8.8-3.4z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M9.2 3.8l3 3" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
+
+/** Orange warning triangle for "not enough data" notes (7.1). */
+export function WarnGlyph({ size = 14, ...p }: P) {
+  return (
+    <svg viewBox="0 0 16 16" {...svg(size, p)}>
+      <path d="M8 1.6 15 14H1L8 1.6z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M8 6.2v3.6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <circle cx="8" cy="11.9" r="0.95" fill="currentColor" />
+    </svg>
+  );
+}
+
 export function ShareGlyph({ size = 16, ...p }: P) {
   return (
     <svg viewBox="0 0 16 20" {...svg(size, { height: (size * 20) / 16, ...p })}>
@@ -161,11 +182,18 @@ export function ShareGlyph({ size = 16, ...p }: P) {
   );
 }
 
-/** → on the keypad's Next button */
-export function ArrowGlyph({ size = 14, ...p }: P) {
+/** Keyboard on the floating "open the keypad" button (4.1). */
+export function KeyboardGlyph({ size = 20, ...p }: P) {
   return (
-    <svg viewBox="0 0 14 14" {...svg(size, p)}>
-      <path d="M2 7h9.5M7.6 3 11.6 7l-4 4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <svg viewBox="0 0 20 14" {...svg(size, { height: (size * 14) / 20, ...p })}>
+      <rect x="1" y="1" width="18" height="12" rx="2.2" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <g fill="currentColor">
+        <rect x="4" y="4" width="2" height="2" rx="0.5" />
+        <rect x="7.33" y="4" width="2" height="2" rx="0.5" />
+        <rect x="10.67" y="4" width="2" height="2" rx="0.5" />
+        <rect x="14" y="4" width="2" height="2" rx="0.5" />
+        <rect x="6" y="9" width="8" height="1.8" rx="0.6" />
+      </g>
     </svg>
   );
 }

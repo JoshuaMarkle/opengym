@@ -204,7 +204,7 @@ export interface Settings {
   keepScreenOn: boolean;
   oneRmFormula: OneRmFormula;
   pinnedExerciseIds: string[];
-  /** false = Progress picks your 6 most frequent lifts automatically. */
+  /** false = focus lifts are picked automatically: the 4 most-logged compound lifts (SPEC §13). */
   pinnedCustomized: boolean;
   lastBackupAt?: number;
   historyView: 'calendar' | 'list';
@@ -234,6 +234,14 @@ export interface Settings {
   dismissedTips: string[];
   /** Lifts switched from Auto to Suggest ("Auto keeps missing here"). */
   suggestOnlyIds?: string[];
+  /**
+   * Ask "Back after N weeks?" when one lift hasn't been logged in 3+ weeks (4.32, §11).
+   * Off for now, no UI: it asked per lift with no regard for the rest of your training,
+   * so a variation you rotated back to after months of the sibling got the question.
+   */
+  askAboutGaps?: boolean;
+  /** The Previous column also shows today's target, "185 × 8 → 190 × 8" (4.27). Unset = on. */
+  showNext?: boolean;
   /** Home "Lately" lines already shown (so slipping shows once). */
   latelySeen?: string[];
   createdAt: number;

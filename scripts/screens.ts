@@ -59,14 +59,16 @@ export const CATALOG: Section[] = [
       ['2.11', 'Routine screen', 'Every set with Previous and what it will start at. A superset shows as one bracket. Start is pinned at the bottom.'],
       ['2.12', 'Superset in the builder', 'Linked exercises sit in a blue bracket, tagged A1 / A2. Drag in or out of the bracket to link or unlink.'],
       ['2.13', 'Superset with…', 'From an exercise\'s "•••". Up to 3 exercises per group. The same menu later offers "Unlink superset".'],
-      ['2.14', 'Plans, with a schedule', 'A scheduled folder shows this week as a strip under its header, and each routine says when it\'s due.'],
-      ['2.15', 'Plan screen', 'Tap a folder\'s name. Its schedule, this week with status and ▶, then the routines.'],
+      ['2.14', 'Plans, with a schedule', 'The active plan\'s four weeks of planned vs done sit on top, above its folder (tap a day from today on to change it). Other scheduled folders show this week as a strip under their header; each routine says when it\'s due.'],
+      ['2.15', 'Plan screen', 'Tap a folder\'s name. Its schedule with this week\'s strip, this week with status and ▶, then the routines.'],
       ['2.16', 'Schedule type', 'No schedule (the plain rotation), a repeating cycle or a weekly split.'],
       ['2.17', 'Repeating cycle', 'Days in order, each a routine or Rest. Pick which day today is and what happens on a miss: wait, or stick to dates.'],
       ['2.18', 'Weekly split', 'Seven rows in week order. A missed workout is skipped or moves to the next rest day.'],
       ['2.19', 'Assign a day', 'The same sheet for cycle days and weekdays: a routine, Rest, or a new routine made on the spot.'],
-      ['2.20', 'Plan calendar', 'Four weeks of planned vs done: blue = done, orange outline = missed. Tap a day from today on to change it.'],
+      ['2.20', 'Plan calendar', 'Four weeks of planned vs done: blue = done, orange outline = missed, ring = today. Tap a day from today on to change it.'],
       ['2.21', 'Change one day', 'One-off changes that leave the schedule alone: another routine, rest, move, swap, or back to plan.'],
+      ['2.23', 'Plans calendar (prototype)', 'Plan and history on one calendar. Past days: ✓ when trained, orange outline when missed. Today on: the planned routine\'s code. Tap a day for its workouts or plan; "Change day" edits just that day.'],
+      ['2.24', 'Plans calendar, week', 'The same days as rows: what you did, what you missed, what\'s planned. Tap a workout to open it, a day from today on to change it.'],
       ['2.22', 'Effort target', 'With effort on, a working set\'s reps box gets an rpe tab for an optional target, shown as an outlined badge on the rep range. It prefills as a placeholder badge only, never as a logged value.'],
     ],
   },
@@ -75,12 +77,12 @@ export const CATALOG: Section[] = [
     title: 'Starting',
     blurb: 'Opening the app at the gym.',
     screens: [
-      ['3.1', 'Home', 'This week as a strip (blue = trained, ring = today). Then the active folder, longest-ago first: ▶ starts a routine, tapping the name opens it.'],
+      ['3.1', 'Home', 'This week as a strip (blue = trained, ring = today); with a scheduled plan, the plan\'s week instead (3.4). Then the active folder, longest-ago first: ▶ starts a routine, tapping the name opens it.'],
       ['3.2', 'Home, workout running', 'An unfinished workout leads Home: timer, where you were, Resume.'],
       ['3.3', 'Resume bar', 'On every other tab while a workout runs, one tap back to your sets.'],
-      ['3.4', 'Home, scheduled', 'With a scheduled active folder, Home follows the plan: today, then the next few days, rest days collapsed.'],
+      ['3.4', 'Home, scheduled', 'With a scheduled active folder, Home follows the plan: the plan\'s week as routine letters (done, missed, today), then today and the next few days, rest days collapsed.'],
       ['3.5', 'Missed a day', 'A quiet note the day after a missed workout: do it today or skip it. Never shown for "Wait for me" cycles.'],
-      ['3.6', 'Home: Lately', 'At most one goal line and one trend line, only when something changed, each shown on one day. Priority: goal done, goal behind, a focus lift turning Climbing or Slipping, a milestone ready.'],
+      ['3.6', 'Home: Lately', 'At most one goal line and one trend line, only when something changed, each shown on one day. Priority: goal done, goal behind, a focus lift turning Climbing or Slipping. Milestones never show here.'],
     ],
   },
   {
@@ -88,21 +90,21 @@ export const CATALOG: Section[] = [
     title: 'During a workout',
     blurb: 'Logging sets. No tab bar; Prev / Next move between exercises.',
     screens: [
-      ['4.1', 'Logging', 'Previous = last time\'s set at the same position; D = you dropped after it. Variation chips appear when variations are linked. On the first exercise the left button becomes All exercises.'],
-      ['4.2', 'Keypad', '123 | Plates on the left, lbs | reps and one blue button on the right. → Next moves to the next box. ± steps by the weight step.'],
+      ['4.1', 'Logging', 'Previous = last time\'s set at the same position; D = you dropped after it. Variation chips appear when variations are linked. On the first exercise the left button becomes All exercises. The grey keyboard button floating bottom-right opens the keypad on the next open set.'],
+      ['4.2', 'Keypad', '123 | Plates on the left, lbs | reps and one blue ✓ on the right: it moves to the next box, and on the last box completes the set. No text cursor; the blue outline marks the box. ± steps by the weight step.'],
       ['4.3', 'Drop sets', '"+ Drop" adds a row under the last completed set, prefilled 25% lighter (Settings).'],
       ['4.4', 'Swipes', 'Swipe right → warm-up (moves to the top as W). Swipe left → delete with 5 s Undo.'],
       ['4.5', 'Set menu', 'Tap the set number or hold the row: warm-up, move to top, duplicate, delete.'],
       ['4.6', 'Exercise "•••"', 'Switch or link a variation, replace, superset, look back, open the exercise, or remove it from today.'],
       ['4.7', 'Bodyweight', 'The weight column follows the exercise type: BW, + added, or − assisted.'],
-      ['4.8', 'Look-back: History', 'The chart button beside "•••". Every past session of this lift, newest first, drops in orange.'],
-      ['4.9', 'Look-back: Charts', 'The Progress chart, shrunk: est. 1RM or top set.'],
-      ['4.10', 'Look-back: Records', 'Best weight for 1–12 reps; today\'s rep count highlighted, blue = last 30 days.'],
+      ['4.8', 'Look-back: Charts', 'The chart button beside "•••". A two-thirds-height sheet that opens on the Progress chart, shrunk: est. 1RM or top set.'],
+      ['4.9', 'Look-back: Records', 'Best weight for 1–12 reps; today\'s rep count highlighted, blue = last 30 days.'],
+      ['4.10', 'Look-back: History', 'Every past session of this lift, newest first, drops in orange.'],
       ['4.11', 'Last exercise', 'No next exercise, so the right button becomes All exercises. Ticked segments add the Σ row.'],
       ['4.12', 'All exercises', 'Replaces everything under the header; Finish stays. Progress rings, supersets as one bracket, tap to jump.'],
       ['4.13', 'All exercises, edit', '− and ▲▼. Removing one with logged sets asks first. Finish asks whether to save changes to the routine.'],
       ['4.14', 'Add mid-workout', 'The builder\'s picker; the first section is "In this workout".'],
-      ['4.15', 'Keypad, last box', 'On the last box of a set the button reads ✓ Done: it completes the set and jumps to the next one.'],
+      ['4.15', 'Keypad, last box', 'On the last box of a set the same ✓ completes the set and jumps to the next one.'],
       ['4.16', 'Plate pad', 'Tap a plate to add it to each side; tap one on the bar to take it off. Same height as the number keypad.'],
       ['4.17', 'Plate pad, full', 'When the stack doesn\'t fit it slides left so the outer plates stay in view. Ten plates a side at most.'],
       ['4.18', 'Bar picker', 'From "Bar 45 ▾". Remembered per exercise; "No bar" is for plate-loaded machines.'],
@@ -112,15 +114,16 @@ export const CATALOG: Section[] = [
       ['4.22', 'Cardio keypad', 'Field tabs follow the columns. In time the bottom-left key types ":" and ± steps a minute.'],
       ['4.23', 'Cardio: bike', 'Columns change per machine: Bike tracks level. One segment, so no Σ row.'],
       ['4.24', 'Cardio: rower', 'Split /500m is worked out from time and meters, never typed.'],
-      ['4.25', 'Effort pad: RPE', 'With effort on, a reps box\'s tabs read lbs · reps · rpe. The effort pad takes the number keys\' place: Easy to Max, ½ for half steps. With "Ask on every set", Next on reps comes here before ✓ Done. The outlined badge is the routine\'s target.'],
-      ['4.27', 'Suggestion bar', 'Suggest mode. Each set is judged on its own fit zone; set 1 leads, later sets share its weight when it still fits and are never heavier. Green ▲ for up or keep, orange ▼ for down. ✓ fills LBS; reps are never touched. Green "try" hints sit under Previous.'],
+      ['4.25', 'Effort pad: RPE', 'With effort on, a working set\'s tabs read lbs · reps · rpe on either box. The effort pad takes the number keys\' place, same height and layout: each digit is a value with its word (≤5 Easy to 0 = 10 Max), "." is a ½ toggle that stays on for the next pick, ± a whole step, ⌫ clears. With "Ask on every set", ✓ on reps comes here before ✓ Done. The outlined badge is the routine\'s target.'],
+      ['4.27', 'Suggestion bar', 'Suggest mode. Previous shows last time → today\'s target: a new weight is green going up, orange coming down; at the same weight the text is plain and only the reps go green when they rise; arrows lined up; tap the header to show Previous alone. Last time\'s drop keeps its orange D badge after the set. The bar only asks: ✓ fills LBS with the targets; reps are never touched. Set 1 leads; later sets share its weight when it still fits and are never heavier.'],
       ['4.28', 'Why: sets', 'Each set\'s zone (the weights that land it in the rep range at the effort target), its aim, and the last 3 sessions\' calls.'],
       ['4.29', 'Why: recent weeks', 'Est. 1RM for 6 weeks and set 1\'s reps against the range.'],
-      ['4.30', 'Suggestion accepted', 'The LBS boxes now hold the next weights, the hints turn into "aim" reps, and Undo puts the old values back.'],
+      ['4.30', 'Suggestion accepted', 'The LBS boxes now hold the suggested weights, in blue until you change one (type over it or use ±). Undo puts the old values back.'],
       ['4.31', 'Auto', 'Auto fills LBS when the exercise comes up, in blue until you change one. Ignore puts last time\'s weights back.'],
-      ['4.32', 'Back after a break?', 'After 3+ weeks without a lift: a break, or sessions that weren\'t logged? Nothing changes until you pick.'],
+      ['4.34', 'Previous → Next, tight', 'Last time had a drop after set 3. The D badge stays after that set even when the column is tight; the target truncates instead. Tap PREVIOUS → NEXT to show Previous alone.'],
+      ['4.32', 'Back after a break?', 'After 3+ weeks without a lift: a break, or sessions that weren\'t logged? Nothing changes until you pick. Off for now (Settings.askAboutGaps).'],
       ['4.33', 'Comeback ramp', '"I took a break": about 90% of last time (80% after 6 weeks), then back to the old weight over 3 sessions. Those sessions stay out of the trend.'],
-      ['4.26', 'Effort pad: RIR', 'The same pad in RIR. Badges get an R (2R), and Previous shows last time\'s effort under the set. Stored once as RPE, so switching modes never loses data.'],
+      ['4.26', 'Effort pad: RIR', 'The same pad in RIR: 0 Failure to 5+ Easy, with 6–9 off so a quick thumb can\'t log an RIR of 6 or more. ± work from empty (starting at 0); + is off on 5+ and − on 0 Failure. ½ greys out on 5+ but still toggles, for the next pick. Badges carry an R (2R): black in a grey ring until the set is done, then faded blue in a blue ring; the one being picked has a blue ring and glow. Stored once as RPE, so switching modes never loses data.'],
     ],
   },
   {
@@ -131,7 +134,7 @@ export const CATALOG: Section[] = [
       ['5.1', 'Unticked sets', 'Only when some sets with values weren\'t ticked. Empty sets are dropped silently.'],
       ['5.2', 'Update the routine?', 'Only when exercises, order or set counts changed. Weights and reps never count.'],
       ['5.3', 'Summary', 'Each lift\'s best set vs the last time you did this routine. Cardio gets its own section and a weekly total.'],
-      ['5.4', 'Workout options', 'Tap the workout name: rename, change start time, discard (confirms first).'],
+      ['5.4', 'Workout options', 'The pencil left of Finish: pause, rename, change start time, discard (confirms first).'],
       ['5.5', 'Goal reached', 'Shown once, on the summary of the workout that hit a goal, with a Likely and a Stretch next step. "Not now" leaves the lift without a goal.'],
     ],
   },
@@ -140,7 +143,7 @@ export const CATALOG: Section[] = [
     title: 'History',
     blurb: 'Looking back. The calendar / list choice is remembered.',
     screens: [
-      ['6.1', 'Month', 'Weeks start on the Settings day. Tap a day to see its workout below.'],
+      ['6.1', 'Month', 'Weeks start on the Settings day. The month\'s stats sit under the calendar; tap a day to see its workout under Workouts.'],
       ['6.2', '6 months', 'Appears once history spans 6 months. Tap a month to open it.'],
       ['6.3', 'Year', 'Appears after a year of history. ‹ › between years.'],
       ['6.4', 'All time', 'One row per year, a bar per month.'],
@@ -166,10 +169,10 @@ export const CATALOG: Section[] = [
       ['7.9', 'Distance records', 'Fastest mile, 5K, 10K, half and full marathon from run-type exercises.'],
       ['7.10', 'Effort-adjusted 1RM', 'With "Use effort in est. 1RM", 155 × 10 @8 counts as 12 reps to failure. "Same weight, easier" appears when a weight × reps you did in the last 8 weeks now rates lower.'],
       ['7.12', 'Goals', 'Each goal with its state. Without a date it shows an estimate, or "not moving toward it yet" rather than a date that keeps sliding.'],
-      ['7.13', 'Lift trend', 'From the trend row on a lift. The status, the 8-week line, pace, milestones (the round numbers lifters count in) and its goal.'],
+      ['7.13', 'Lift trend', 'From the trend row on a lift. The status, the 8-week line, pace, milestones (the round numbers lifters count in; Goal makes one a goal, and one that already is links to it) and its goal.'],
       ['7.14', 'Slipping', 'A real drop with most recent sessions under the trend. "What changed" lists facts from the log only: how often, how many sets, gaps.'],
       ['7.15', 'Month in review', 'Leads Progress for the first week of each month, then under Month in review. Counts, one best moment, every lift against the month before.'],
-      ['7.16', 'New goal', 'Weight × reps, converted to an est. 1RM so every set counts. Each date shows its verdict; the projection is a curve with a slow–fast band, and redraws as you pick.'],
+      ['7.16', 'New goal', 'Weight × reps; every set counts toward it, and the chart\'s goal line is labelled with the goal itself. Each date shows its verdict; the projection is a curve with a slow–fast band, and redraws as you pick.'],
       ['7.17', 'New goal, messy data', 'When recent sessions don\'t line up there\'s no projection. You pick a pace instead, read against this lift\'s own: slow, typical, focused or rare.'],
       ['7.18', 'Goal', 'The white tick is where steady gains would put you today. "This week" is a small number to beat; the plan points back to the workout suggestions.'],
       ['7.19', 'Goal behind', 'After 2 weeks behind and no longer Likely: a later date, a lighter target, or keep it. Plain, never scolding.'],
@@ -194,7 +197,7 @@ export const CATALOG: Section[] = [
     title: 'Settings & data',
     blurb: 'Preferences, backups, import.',
     screens: [
-      ['9.1', 'Settings', 'Rows open a picker. The Data header turns orange after 7 days without a backup.'],
+      ['9.1', 'Settings', 'Rows open a picker. The Data header shows when you last backed up; no nagging.'],
       ['9.2', 'Setting picker', 'One pattern for units, theme, steps, bar weight, drop amount and 1RM formula.'],
       ['9.3', 'Backed up', 'Back up now makes one JSON file and opens the share sheet; the date updates.'],
       ['9.4', 'Restore', 'After picking a backup: both workout counts, and a chance to back up first.'],
@@ -249,6 +252,7 @@ scene('empty', '1.1 1.2 1.3 1.5 1.6 1.4 6.8 7.6', async ({ p, go, shot }) => {
 
 scene('sample', '2.1 2.2 2.7 2.8 2.10 2.9', async ({ p, go, shot, dismiss }) => {
   await go('/plans');
+  await p.click({ sel: '[role=tab]', text: 'Routines' });
   await shot('2.1');
   await p.click('New');
   await shot('2.2');
@@ -267,6 +271,7 @@ scene('sample', '2.1 2.2 2.7 2.8 2.10 2.9', async ({ p, go, shot, dismiss }) => 
 
 scene('sample', '2.11 2.3 2.4 2.12 2.13 2.5 2.6', async ({ p, go, shot, dismiss, scrollTo }) => {
   await go('/plans');
+  await p.click({ sel: '[role=tab]', text: 'Routines' });
   await p.click({ sel: 'button', text: 'Push' });
   await shot('2.11');
   await p.click('Edit');
@@ -289,8 +294,9 @@ scene('sample', '2.11 2.3 2.4 2.12 2.13 2.5 2.6', async ({ p, go, shot, dismiss,
   await shot('2.6');
 });
 
-scene('sample', '2.16 2.17 2.18 2.19 3.4 2.15 2.14 2.20 2.21 3.5', async ({ p, go, shot, dismiss }) => {
+scene('sample', '2.16 2.17 2.18 2.19 3.4 2.15 2.14 2.20 2.21 2.23 2.24 3.5', async ({ p, go, shot, dismiss }) => {
   await go('/plans');
+  await p.click({ sel: '[role=tab]', text: 'Routines' });
   await p.click({ sel: 'button', text: 'PPL', nth: 0 });
   await p.click('Change ›');
   await p.click('Weekly split');
@@ -328,6 +334,12 @@ scene('sample', '2.16 2.17 2.18 2.19 3.4 2.15 2.14 2.20 2.21 3.5', async ({ p, g
   await shot('2.20');
   await p.click({ sel: 'button', text: 'Nov 6', start: false }).catch(() => p.click({ text: 'Fri', nth: 0 }));
   await shot('2.21');
+  await dismiss();
+  await go('/plans');
+  await p.click({ sel: '[role=tab]', text: 'Calendar' });
+  await shot('2.23');
+  await p.click({ sel: '[role=tab]', text: 'Week' });
+  await shot('2.24');
 });
 
 scene('sample', '4.1 4.2 4.15 4.16 4.17 4.18 4.3 4.5 4.4 4.6 4.8 4.9 4.10 4.12 4.13 4.19 4.20 4.21 4.22 4.11 4.14 4.7 5.4 3.2 3.3 5.1 5.2 5.3', async ({ p, go, shot, dismiss }) => {
@@ -339,7 +351,7 @@ scene('sample', '4.1 4.2 4.15 4.16 4.17 4.18 4.3 4.5 4.4 4.6 4.8 4.9 4.10 4.12 4
 
   await p.click('Set 2 weight');
   await shot('4.2');
-  await p.click('Next box');
+  await p.click('Done with this box');
   await shot('4.15');
 
   await p.click('Set 2 weight');
@@ -378,9 +390,9 @@ scene('sample', '4.1 4.2 4.15 4.16 4.17 4.18 4.3 4.5 4.4 4.6 4.8 4.9 4.10 4.12 4
 
   await p.click('History, charts and records');
   await shot('4.8');
-  await p.click('Charts');
-  await shot('4.9');
   await p.click('Records');
+  await shot('4.9');
+  await p.click('History');
   await shot('4.10');
   await dismiss();
 
@@ -553,6 +565,7 @@ scene('sample', '9.8 9.7 2.22 4.25 4.26 7.10 7.11', async ({ p, go, shot, dismis
   await shot('9.7');
 
   await go('/plans');
+  await p.click({ sel: '[role=tab]', text: 'Routines' });
   await p.click({ sel: 'button', text: 'Push' });
   await p.click('Edit');
   for (const [set, key] of [['Set 1 reps', '7 RPE'], ['Set 2 reps', '8 RPE'], ['Set 3 reps', '9 RPE']]) {
@@ -568,19 +581,19 @@ scene('sample', '9.8 9.7 2.22 4.25 4.26 7.10 7.11', async ({ p, go, shot, dismis
   await p.click('Start Push', 1500);
   await p.click('Complete set W');
   await p.click('Set 1 reps');
-  await p.click('Next box');
+  await p.click('Done with this box');
   await p.click('7 RPE');
   await p.click('Done: complete');
-  await p.click('Next box');
-  await p.click('Next box');
+  await p.click('Done with this box');
+  await p.click('Done with this box');
   await p.click('8 RPE');
   await p.click('Add a half');
   await shot('4.25');
 
   await p.eval(`__og.db.settings.update('settings', { effort: 'rir' })`);
   await p.click('Done: complete');
-  await p.click('Next box');
-  await p.click('Next box');
+  await p.click('Done with this box');
+  await p.click('Done with this box');
   await p.click('1 RIR');
   await p.click('Add a half');
   await shot('4.26');
@@ -651,8 +664,27 @@ scene('sample', '4.31', async ({ p, go, shot }) => {
   await shot('4.31');
 });
 
+/** Add a drop after working set `n` (1-based) of a lift's newest session. */
+const addLastDrop = (exerciseId: string, n: number, weight: number, reps: number) => `(async () => {
+  const wes = await __og.db.workoutExercises.where('exerciseId').equals(${JSON.stringify(exerciseId)}).toArray();
+  const ws = await __og.db.workouts.bulkGet(wes.map((w) => w.workoutId));
+  const i = ws.reduce((b, w, k) => (w && (!ws[b] || w.startedAt > ws[b].startedAt) ? k : b), 0);
+  const working = (await __og.db.workoutSets.where('workoutExerciseId').equals(wes[i].id).toArray()).filter((s) => s.kind === 'working').sort((a, b) => a.order - b.order);
+  const parent = working[${n - 1}];
+  await __og.db.workoutSets.add({ id: 'shot-drop', workoutExerciseId: wes[i].id, order: parent.order + 0.5, kind: 'drop', parentSetId: parent.id, weight: ${weight}, reps: ${reps}, completed: true, createdAt: ${NOW.getTime()}, updatedAt: ${NOW.getTime()} });
+})()`;
+
+scene('sample', '4.34', async ({ p, go, shot }) => {
+  await p.eval(setLastSession('ex-bench-press', [[155, 12, 8], [155, 10, 8.5], [155, 8, 9]]));
+  await p.eval(addLastDrop('ex-bench-press', 3, 115, 9));
+  await go('/');
+  await p.click('Start Push', 1500);
+  await shot('4.34');
+});
+
 scene('sample', '4.32 4.33', async ({ p, go, shot }) => {
   await p.eval(dropRecent('ex-bench-press', 26));
+  await p.eval(`__og.db.settings.update('settings', { askAboutGaps: true })`);
   await go('/');
   await p.click('Start Push', 1500);
   await shot('4.32');
@@ -784,6 +816,8 @@ async function main() {
         const base = `http://localhost:${ports[s.server]}/`;
         await p.goto(base);
         await p.find({ sel: 'nav, h1' }, 20000); // seeded and rendered
+        // Sample data turns effort on as RIR; captures show the default (off) unless a scene turns it on.
+        if (s.server === 'sample') await p.eval(`__og.db.settings.update('settings', { effort: 'off', effortExplained: false })`);
         const ctx: Ctx = {
           p,
           scratch,

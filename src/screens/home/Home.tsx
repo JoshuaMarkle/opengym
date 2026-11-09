@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useLongPress } from '../../components/gestures';
-import { Button, Check, cx, EmptyState, LabelAction, LargeHeader, PlayButton, Screen, SectionLabel } from '../../components/ui';
+import { Button, cx, DoneDisc, EmptyState, LabelAction, LargeHeader, PlayButton, Screen, SectionLabel } from '../../components/ui';
 import { useActiveWorkout, useData, type ActiveWorkoutData } from '../../data/DataProvider';
 import { changeDays, skipMissed, usePlanView, type PlanView } from '../../data/schedule';
 import { usePlans } from '../../data/usePlans';
@@ -10,12 +10,12 @@ import { useStartWorkout } from '../../hooks/StartWorkout';
 import { useNow } from '../../hooks/useNow';
 import { addDays, dayKey, fmtClock, fmtHomeDate, fmtRelativeDay, startOfDay, startOfWeek, weekdayLetter } from '../../lib/dates';
 import { pickNextUp } from '../../lib/nextUp';
-import { doItTodayPatch, missedYesterday, type PlanDay } from '../../lib/schedule';
+import { addDayKey, doItTodayPatch, missedYesterday, type PlanDay } from '../../lib/schedule';
 import { setLabels } from '../../lib/sets';
-import { DaySheet, dayLabel } from '../plans/PlanParts';
+import { DaySheet, dayLabel, PlanStrip } from '../plans/PlanParts';
 import { Lately } from './Lately';
 
-/** 3.1 / 3.2 / 1.4: this week, the running workout, and the active folder one tap from starting. */
+/** 3.1 / 3.2 / 1.4: this week (the plan's week when it has a schedule, 3.4), the running workout, and the active folder one tap from starting. */
 export function Home() {
   const navigate = useNavigate();
   const { history, settings, exerciseMap } = useData();
@@ -38,14 +38,21 @@ export function Home() {
 
   const planView = usePlanView(folder, -1, 13);
   const scheduled = !!planView?.scheduled;
+  const weekFrom = dayKey(startOfWeek(now, settings.weekStart));
+  const weekView = usePlanView(folder, weekFrom, addDayKey(weekFrom, 6));
 
   const trained = useMemo(() => new Set(history.workouts.map((w) => dayKey(w.workout.startedAt))), [history]);
 
   return (
-    <Screen header={<LargeHeader eyebrow={fmtHomeDate(now)} title="Home" />}>
+    <Screen header={<LargeHeader title="Home" subtitle={fmtHomeDate(now)} />}>
       {active && <LiveBlock data={active} />}
 
-      <WeekStrip now={now} weekStart={settings.weekStart} trained={trained} live={!!active} onOpen={() => navigate('/history')} />
+      {/* With a schedule, the plan's week (2.15): what's planned, done and missed. Otherwise the days you trained. */}
+      {scheduled && folder && weekView?.days.length ? (
+        <PlanStrip days={weekView.days} codes={weekView.codes} today={weekView.today} dense onTap={() => navigate(`/plan/${folder.id}`)} className="mt-3" />
+      ) : (
+        <WeekStrip now={now} weekStart={settings.weekStart} trained={trained} live={!!active} onOpen={() => navigate('/history')} />
+      )}
 
       {!plans ? null : !hasRoutines ? (
         <div className="pt-12">
@@ -152,8 +159,8 @@ function LiveBlock({ data }: { data: ActiveWorkoutData }) {
   return (
     <div className="mt-2 border-y border-line pt-2.5 pb-3">
       <div className="flex items-center justify-between">
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-[0.07em] text-tip">
-          <i className="anim-pulse h-[7px] w-[7px] rounded-full bg-tip" />
+        <span className="inline-flex items-center gap-1.5 text-[11px] leading-none font-bold tracking-[0.07em] text-tip">
+          <i className="anim-pulse -translate-y-px h-[7px] w-[7px] rounded-full bg-tip" />
           IN PROGRESS
         </span>
         <span className="text-[14px] font-bold tabular-nums">{fmtClock(now - workout.startedAt)}</span>
@@ -295,9 +302,7 @@ function HomeDayRow({
         </span>
       </button>
       {day.state === 'done' ? (
-        <span className="flex h-11 w-11 flex-none items-center justify-center" aria-label="done">
-          <Check on />
-        </span>
+        <DoneDisc />
       ) : (
         <PlayButton primary={primary} label={`Start ${name}`} onClick={onStart} />
       )}

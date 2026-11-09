@@ -4,7 +4,7 @@ import { SwipeRow } from '../../components/gestures';
 import { ChevronRight } from '../../components/icons';
 import { Keypad, type KeypadTab } from '../../components/Keypad';
 import { Alert, HoldMenu, Sheet, SheetOption, type MenuItem } from '../../components/overlays';
-import { BarButton, Button, cx, FieldLabel, Tag, TopBar } from '../../components/ui';
+import { AddButton, BarButton, Button, cx, FieldLabel, Tag, TopBar } from '../../components/ui';
 import { exerciseOrMissing, useData } from '../../data/DataProvider';
 import { stepLb } from '../../data/settings';
 import { saveWorkoutEdits, type EditedExercise, type EditedSet } from '../../data/workouts';
@@ -35,8 +35,8 @@ import { fromDisplay, unitColumn, unitLabel } from '../../lib/units';
 import { ExercisePicker } from '../exercises/ExercisePicker';
 import { weightCellText, weightEditDisplay, weightEditText, weightFromEdit } from '../workout/SetTable';
 import { TagPill } from '../workout/WorkoutScreen';
-import { EffortBadge, EffortPad, PadClose } from '../../components/Effort';
-import { EFFORT_LABEL, effortBadge, effortSpoken } from '../../lib/effort';
+import { EffortBadge, EffortPad } from '../../components/Effort';
+import { applyEffortKey, EFFORT_LABEL, effortBadge, effortSpoken } from '../../lib/effort';
 
 /** 'weight' | 'reps', 'effort' (the rpe / rir tab on a reps box), or a cardio field. */
 type Field = string;
@@ -187,7 +187,11 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
   const onKey = (k: KeypadKey) => {
     if (!editing || !editingSet || !editingExercise) return;
     if (editing.field === 'effort') {
-      if (k.type === 'backspace') updateSet(editing.exKey, editing.setKey, { rpe: undefined });
+      // Hardware keys reach the effort pad too: digits, "." for ½, ↑ ↓, backspace.
+      if (settings.effort !== 'off') {
+        const rpe = applyEffortKey(editingSet.rpe, k, settings.effort);
+        if (rpe !== editingSet.rpe) updateSet(editing.exKey, editing.setKey, { rpe });
+      }
       return;
     }
     const ex = editingExercise;
@@ -317,9 +321,9 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
             </SwipeRow>
           ))}
         </div>
-        <button type="button" onClick={() => addSet(e.key)} className="mt-1 ml-7 h-9 px-1 text-[14px] font-semibold text-accent">
+        <AddButton onClick={() => addSet(e.key)} className="mt-2 w-full">
           + Segment
-        </button>
+        </AddButton>
       </section>
     );
   };
@@ -403,7 +407,7 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
                     mode === 'off' || s.kind !== 'working' ? null : editE ? (
                       <EffortBadge inset tone="active" text={s.rpe != null ? effortBadge(s.rpe, mode) : '+'} label="Picking effort" />
                     ) : s.rpe != null ? (
-                      <EffortBadge inset tone="logged" text={effortBadge(s.rpe, mode)} label={`${effortSpoken(s.rpe, mode)}. Change effort`} onPress={() => startEdit(e.key, s, 'effort', ex)} />
+                      <EffortBadge inset done tone="logged" text={effortBadge(s.rpe, mode)} label={`${effortSpoken(s.rpe, mode)}. Change effort`} onPress={() => startEdit(e.key, s, 'effort', ex)} />
                     ) : null;
                   const wText = editW ? weightEditDisplay(editing!.text, ex) : weightCellText(s.weight, ex, units);
                   return (
@@ -430,14 +434,11 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
                   );
                 })}
               </div>
-              <div className="mt-1 ml-7 flex items-center gap-1 text-[14px] font-semibold">
-                <button type="button" onClick={() => addSet(e.key)} className="h-9 px-1 text-accent">
-                  + Set
-                </button>
-                <span className="text-fg3">·</span>
-                <button type="button" onClick={() => addDrop(e.key, ex)} disabled={!e.sets.some((s) => s.kind !== 'warmup')} className="h-9 px-1 text-warn disabled:opacity-40">
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <AddButton tone="warn" onClick={() => addDrop(e.key, ex)} disabled={!e.sets.some((s) => s.kind !== 'warmup')}>
                   + Drop
-                </button>
+                </AddButton>
+                <AddButton onClick={() => addSet(e.key)}>+ Set</AddButton>
               </div>
             </section>
           );
@@ -472,7 +473,7 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
         const cardio = ex.type === 'cardio';
         const fields = fieldsOf(ex);
         const fi = fields.indexOf(editing.field);
-        const effortTab = settings.effort !== 'off' && !cardio && editingSet.kind === 'working' && (editing.field === 'reps' || editing.field === 'effort');
+        const effortTab = settings.effort !== 'off' && !cardio && editingSet.kind === 'working';
         const tabs: KeypadTab[] = [...fields, ...(effortTab ? ['effort'] : [])].map((f) => ({
           id: f,
           label: f === 'effort' ? EFFORT_LABEL[settings.effort].toLowerCase() : cardio ? fieldTab(f as CardioField, ex, units) : f === 'weight' ? (units === 'lb' ? 'lbs' : 'kg') : 'reps',
@@ -485,7 +486,7 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
           const mode = settings.effort;
           return (
             <Keypad
-              left={<PadClose onPress={() => setEditing(null)}>{`${who} · ${EFFORT_LABEL[mode]}`}</PadClose>}
+              left={`${who} · ${EFFORT_LABEL[mode]}`}
               tabs={tabs}
               tab="effort"
               onTab={(f) => f !== 'effort' && startEdit(editing.exKey, editingSet, f, ex)}
@@ -494,7 +495,7 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
               stepLabel=""
               onKey={onKey}
               onClose={() => setEditing(null)}
-              panel={<EffortPad mode={mode} value={editingSet.rpe} onChange={(v) => updateSet(editing.exKey, editing.setKey, { rpe: v })} />}
+              panel={<EffortPad key={editing.setKey} mode={mode} value={editingSet.rpe} onChange={(v) => updateSet(editing.exKey, editing.setKey, { rpe: v })} onClose={() => setEditing(null)} />}
             />
           );
         }
@@ -631,7 +632,6 @@ function EditCell({ text, editing, onClick, label, badge }: { text: string; edit
     <button type="button" aria-label={label} onClick={onClick} className="flex h-10 w-full items-center">
       <span className={cx('flex h-[32px] w-full items-center justify-center rounded-[8px] text-[16px] font-semibold', editing ? 'border-2 border-accent bg-edit' : 'bg-surface-2')}>
         {text ? <span>{text}</span> : !editing && <span className="text-[14px] font-medium text-fg3">—</span>}
-        {editing && <span className="ml-[1px] h-[17px] w-[1.5px] animate-pulse bg-accent" />}
       </span>
     </button>
   );
@@ -639,7 +639,8 @@ function EditCell({ text, editing, onClick, label, badge }: { text: string; edit
   return (
     <div className="relative">
       {cell}
-      {badge}
+      {/* The box's outline (32 px in a 40 px row), for the badge to sit in. */}
+      <span className="pointer-events-none absolute inset-x-0 inset-y-[4px]">{badge}</span>
     </div>
   );
 }

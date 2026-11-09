@@ -22,6 +22,7 @@
   --og-chart-grid: #1c1c1c;
   --og-chart-dot: #4a4a4a;
   --og-bar: #3a3a3a;
+  --og-badge-shadow: rgba(0, 0, 0, 0.7);
   color-scheme: dark;
 }
 
@@ -45,6 +46,7 @@
   --og-chart-grid: #ececec;
   --og-chart-dot: #c4c4c4;
   --og-bar: #c8c8c8;
+  --og-badge-shadow: rgba(0, 0, 0, 0.18);
   color-scheme: light;
 }
 
@@ -67,6 +69,12 @@
   --color-warn: #ff8c1a;
   --color-danger: #ff3b3b;
   --color-done: color-mix(in srgb, #2e8bff 14%, var(--og-bg));
+  /* A logged effort badge on a done set: a faded blue fill inside a full blue ring (V2B). */
+  --color-effort: color-mix(in srgb, #2e8bff 45%, var(--og-bg));
+  /* The glow around the effort badge being picked. */
+  --color-effort-glow: color-mix(in srgb, #2e8bff 55%, transparent);
+  /* The soft shadow that floats the effort badge over the reps box. */
+  --color-badge-shadow: var(--og-badge-shadow);
   --color-accent-soft: color-mix(in srgb, #2e8bff 12%, transparent);
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }

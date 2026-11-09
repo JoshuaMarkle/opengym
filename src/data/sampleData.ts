@@ -28,6 +28,7 @@ async function writeSampleData(): Promise<void> {
     await db.workouts.bulkAdd(d.workouts);
     await db.workoutExercises.bulkAdd(d.workoutExercises);
     await db.workoutSets.bulkAdd(d.workoutSets);
-    await db.settings.update('settings', { onboarded: true, updatedAt: Date.now() });
+    // The sample history logs effort as RIR (SPEC §12), so show it that way.
+    await db.settings.update('settings', { onboarded: true, effort: 'rir', effortExplained: true, updatedAt: Date.now() });
   });
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { matchPrevious } from './previous';
+import { fitPrevNext, matchPrevious } from './previous';
 import { orderSets, setLabels } from './sets';
 import { s } from './testUtils';
 
@@ -54,5 +54,25 @@ describe('orderSets / setLabels', () => {
     const ordered = orderSets([a, b, d, w]);
     expect(ordered.map((x) => x.id)).toEqual(['w', 'a', 'd', 'b']);
     expect([...setLabels(ordered).values()]).toEqual(['W', '1', 'D', '2']);
+  });
+});
+
+describe('fitPrevNext', () => {
+  const rows = [
+    { prev: 50, next: 50, drop: false },
+    { prev: 56, next: 48, drop: true },
+  ];
+
+  it('keeps the D badge in the width', () => {
+    expect(fitPrevNext(rows, 200, 22, 18)).toEqual({ prevW: 78, headerAligned: false });
+  });
+
+  it('keeps the D badge even when the column is tight', () => {
+    expect(fitPrevNext(rows, 140, 22, 18)).toEqual({ prevW: 78, headerAligned: false });
+  });
+
+  it('widens to the header only when that still fits', () => {
+    expect(fitPrevNext(rows, 200, 22, 18, { prev: 90, next: 30 })).toEqual({ prevW: 90, headerAligned: true });
+    expect(fitPrevNext(rows, 150, 22, 18, { prev: 90, next: 30 })).toEqual({ prevW: 78, headerAligned: false });
   });
 });

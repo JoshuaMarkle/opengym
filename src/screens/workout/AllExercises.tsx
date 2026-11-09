@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { SwipeRow } from '../../components/gestures';
 import { ChevronRight } from '../../components/icons';
 import { Alert, useToast } from '../../components/overlays';
-import { BarButton, cx, Note, Tag } from '../../components/ui';
+import { BarButton, cx, Tag } from '../../components/ui';
 import { type ActiveExercise, useData } from '../../data/DataProvider';
 import { lastSession } from '../../data/history';
 import { moveWorkoutExercise, removeWorkoutExercise, restoreWorkoutExercise } from '../../data/workouts';
@@ -78,14 +78,18 @@ export function AllExercises({
 
   return (
     <div className="scroll-y anim-page min-h-0 flex-1 px-4 pb-safe">
-      <div className="mt-2.5 flex items-center justify-between gap-2">
-        <h1 className="text-[22px] leading-tight font-bold tracking-[-0.01em]">Exercises</h1>
-        <BarButton className="-mr-2" kind={editing ? 'muted' : 'plain'} disabled={editing} onClick={close}>
+      {/* Same title block as the exercise view (4.1), so switching between them doesn't jump.
+          Close centres on the title line (-mt-2: 44 px button, 27.5 px line). */}
+      <div className="mt-3.5 flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h1 className="text-[22px] leading-tight font-bold tracking-[-0.01em]">Exercises</h1>
+          <p className="mt-0.5 flex h-6 items-center text-[13px] text-fg2">{editing ? 'Remove or reorder for today.' : 'Plan order. Tap one to open it.'}</p>
+        </div>
+        <BarButton className="-mt-2 -mr-2" kind={editing ? 'muted' : 'plain'} disabled={editing} onClick={close}>
           Close
         </BarButton>
       </div>
-      <Note className="mt-1">{editing ? 'Remove or reorder for today. Finish asks whether to keep the changes in the routine.' : 'Plan order. Tap one to open it.'}</Note>
-      <div className="mt-1">
+      <div className="mt-1.5">
         {blocks.map((block, bi) => {
           const moves = (key: string) => (
             <span className="flex flex-none gap-1">

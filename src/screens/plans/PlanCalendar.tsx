@@ -7,9 +7,9 @@ import { useData } from '../../data/DataProvider';
 import { usePlanView } from '../../data/schedule';
 import { usePlans } from '../../data/usePlans';
 import { useGiveUp } from '../../hooks/useGiveUp';
-import { dayKey, fmtMonthDay, startOfWeek, weekdayLetter } from '../../lib/dates';
-import { addDayKey, onPlan, weekCounts, weekOrder, type PlanDay } from '../../lib/schedule';
-import { boxClass, DaySheet, dayCode, dayLabel, Legend } from './PlanParts';
+import { dayKey, fmtMonthDay, startOfWeek } from '../../lib/dates';
+import { addDayKey, onPlan, weekCounts, type PlanDay } from '../../lib/schedule';
+import { DaySheet, dayLabel, PlanGrid } from './PlanParts';
 
 const WEEKS = 4;
 
@@ -80,26 +80,7 @@ export function PlanCalendar() {
       </div>
 
       {mode === 'calendar' ? (
-        <>
-          <div className="mt-1 grid grid-cols-7 gap-1.5 text-center">
-            {weekOrder(settings.weekStart).map((wd) => (
-              <small key={wd} className="text-[11px] font-bold text-fg2">
-                {weekdayLetter(wd)}
-              </small>
-            ))}
-            {days.map((d) => (
-              <CalCell key={d.key} day={d} code={dayCode(d, codes, '·')} isToday={d.key === today} onOpen={() => open(d)} />
-            ))}
-          </div>
-          <Legend
-            items={[
-              { label: 'done', box: 'bg-accent' },
-              { label: 'missed', box: 'ring-[1.5px] ring-inset ring-warn' },
-              { label: 'today', box: 'ring-2 ring-inset ring-fg' },
-              { label: 'moved', box: 'ring-[1.5px] ring-inset ring-fg2' },
-            ]}
-          />
-        </>
+        <PlanGrid days={days} codes={codes} today={today} weekStart={settings.weekStart} onOpen={open} />
       ) : (
         <div className="mt-1">
           {days
@@ -122,23 +103,6 @@ export function PlanCalendar() {
 
       {sheetDay && <DaySheet folder={folder} day={sheetDay} view={view} onClose={() => setSheetDay(null)} />}
     </Screen>
-  );
-}
-
-function CalCell({ day, code, isToday, onOpen }: { day: PlanDay; code: string; isToday: boolean; onOpen: () => void }) {
-  const hold = useLongPress(onOpen);
-  const date = new Date(day.ts);
-  return (
-    <button
-      type="button"
-      {...hold}
-      onClick={onOpen}
-      aria-label={`${fmtMonthDay(day.ts)}: ${code || 'no plan'}`}
-      className={cx('no-select flex h-[52px] min-w-0 flex-col items-center justify-center rounded-[10px] tabular-nums active:opacity-70', boxClass(day, isToday))}
-    >
-      <span className={cx('text-[12px] leading-none font-semibold', day.state === 'done' || day.state === 'extra' ? 'text-white/80' : 'text-fg2')}>{date.getDate()}</span>
-      <span className="mt-1 text-[11.5px] leading-none font-bold">{code}</span>
-    </button>
   );
 }
 

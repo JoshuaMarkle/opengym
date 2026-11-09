@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { EffortBadge } from '../../components/Effort';
 import { SwipeRow } from '../../components/gestures';
 import { CheckGlyph } from '../../components/icons';
@@ -6,10 +6,10 @@ import { cx, DropBadge } from '../../components/ui';
 import type { Exercise, Units, WorkoutSet } from '../../db/types';
 import { carryOver } from '../../lib/carryOver';
 import { asksEffort, effortBadge, effortSpoken, effortText, takesEffort, type EffortAsk, type EffortMode } from '../../lib/effort';
-import { matchPrevious } from '../../lib/previous';
-import { formatRepRange, formatSet, hasWeightColumn, setLabels, weightColumnLabel } from '../../lib/sets';
+import { fitPrevNext, matchPrevious, type PrevNextFit } from '../../lib/previous';
+import { formatRepRange, formatSet, formatSetWeight, hasWeightColumn, setLabels, weightColumnLabel } from '../../lib/sets';
+import type { Move, NextSet } from '../../lib/training';
 import { formatWeight, unitColumn } from '../../lib/units';
-import type { SetHint } from './Training';
 
 /** 'effort' is the rpe / rir tab on a reps box (SPEC §12). */
 export type Field = 'weight' | 'reps' | 'effort';
@@ -65,7 +65,9 @@ export function SetTable({
   effort = 'off',
   effortAsk = 'every',
   narrow,
-  hints,
+  next,
+  showNext = true,
+  onToggleNext,
   autoIds,
   onEdit,
   onToggle,
@@ -84,8 +86,11 @@ export function SetTable({
   effortAsk?: EffortAsk;
   /** Superset rows: RIR halves drop the R. */
   narrow?: boolean;
-  /** Training (4.27): a green line under Previous per set, "try 205" / "aim 11". */
-  hints?: Map<string, SetHint>;
+  /** Training (4.27): today's target per working set, shown after Previous as "→ 190 × 8" in green. */
+  next?: Map<string, NextSet>;
+  /** Previous shows "→ next" (tap the header to switch). */
+  showNext?: boolean;
+  onToggleNext?: () => void;
   /** Training, Auto (4.31): weights the app filled in, blue until edited. */
   autoIds?: Set<string>;
   onEdit: (set: WorkoutSet, field: Field) => void;
@@ -101,17 +106,51 @@ export function SetTable({
   const carry = useMemo(() => carryOver(sets), [sets]);
   const currentId = sets.find((s) => !s.completed)?.id;
   const cols = showWeight ? 'grid-cols-[34px_minmax(0,1fr)_74px_58px_46px]' : 'grid-cols-[34px_minmax(0,1fr)_74px_46px]';
+  const hasNext = !!next && next.size > 0;
+  const withNext = hasNext && showNext;
+  const fit = usePrevNextFit(withNext);
+  const nextParts = (n: NextSet, prev?: { weight?: number; reps?: number }): NextParts => ({
+    weight: formatSetWeight(n.weight, exercise.type, units),
+    reps: n.reps,
+    same: !!prev && (n.weight == null || n.weight === prev.weight),
+    repsUp: !!prev && n.reps != null && prev.reps != null && n.reps > prev.reps,
+  });
 
   return (
     <div className="mt-3 text-[15px]" role="table" aria-label={`${exercise.name} sets`}>
       <div role="row" className={cx('grid h-6 items-center px-1 text-[11px] font-bold tracking-[0.06em] text-fg2', cols)}>
         <span className="text-center">SET</span>
-        <span className="pl-1">PREVIOUS</span>
+        {hasNext && onToggleNext ? (
+          // Tap to switch between last time alone and last time → today's target.
+          <button
+            type="button"
+            aria-pressed={showNext}
+            aria-label={showNext ? 'Previous and next. Show previous only' : 'Previous. Also show next'}
+            onClick={onToggleNext}
+            className="-my-2.5 flex h-11 min-w-0 items-center pl-1 text-left font-bold tracking-[0.06em] active:opacity-60"
+          >
+            <span className="flex-none" style={withNext && fit.state?.headerAligned ? { width: fit.state.prevW } : undefined}>
+              <span data-fit-prev className="inline-block w-max">
+                PREVIOUS
+              </span>
+            </span>
+            <span className={cx('flex flex-none items-center', !withNext && 'text-fg3')}>
+              <span className={cx('flex justify-center', withNext ? 'w-[18px]' : 'w-[14px]')} aria-hidden>
+                <Arrow />
+              </span>
+              <span data-fit-next className={cx(withNext && 'text-tip')}>
+                NEXT
+              </span>
+            </span>
+          </button>
+        ) : (
+          <span className="pl-1">PREVIOUS</span>
+        )}
         {showWeight && <span className="text-center">{weightColumnLabel(exercise.type, unitColumn(units))}</span>}
         <span className="text-center">REPS</span>
         <span className="text-center">✓</span>
       </div>
-      <div className="flex flex-col gap-[3px]">
+      <div ref={fit.ref} className="flex flex-col gap-[3px]">
         {sets.map((s) => {
           const label = labels.get(s.id)!;
           const p = prev.get(s.id);
@@ -132,7 +171,7 @@ export function SetTable({
                 ? formatWeight(barPlaceholderLb, units)
                 : '';
           const rPlaceholder = c?.reps != null ? String(c.reps) : formatRepRange(s.repsMin, s.repsMax);
-          const hint = s.completed ? undefined : hints?.get(s.id);
+          const n = next?.get(s.id);
           return (
             <SwipeRow
               key={s.id}
@@ -172,27 +211,30 @@ export function SetTable({
                 >
                   {label}
                 </button>
-                <span className="flex min-w-0 items-center gap-1.5 pl-1 text-[13.5px] whitespace-nowrap text-fg2">
-                  {hint ? (
-                    // Training hint under the set (4.27): "185 × 8 @9" over "try 190".
-                    <span className="flex min-w-0 flex-col leading-[1.15]">
-                      <span className="truncate">
-                        {p?.prev ? formatSet(p.prev, exercise.type, units) : '—'}
-                        {effort !== 'off' && p?.prev?.rpe != null && takesEffort(p.prev) && <small className="ml-1 text-[11px] text-fg3">{effortText(p.prev.rpe, effort)}</small>}
+                {withNext ? (
+                  <PrevNextCell
+                    prev={p?.prev ? formatSetWeight(p.prev.weight, exercise.type, units) : undefined}
+                    reps={p?.prev?.reps ?? 0}
+                    effort={effort !== 'off' && p?.prev?.rpe != null && takesEffort(p.prev) ? effortText(p.prev.rpe, effort) : undefined}
+                    drop={!!p?.prevHadDrop}
+                    next={n ? nextParts(n, p?.prev) : undefined}
+                    move={n?.move}
+                    fit={fit.state}
+                  />
+                ) : (
+                  <span className="flex min-w-0 items-center gap-1.5 pl-1 text-[13.5px] whitespace-nowrap text-fg2">
+                    {/* Last time's effort sits under the set, small (A2): "185 × 8" over "@7". */}
+                    {effort !== 'off' && p?.prev?.rpe != null && takesEffort(p.prev) ? (
+                      <span className="flex min-w-0 flex-col leading-[1.15]">
+                        <span className="truncate">{formatSet(p.prev, exercise.type, units)}</span>
+                        <small className="truncate text-[11px] text-fg3">{effortText(p.prev.rpe, effort)}</small>
                       </span>
-                      <small className={cx('truncate text-[11.5px] font-bold', hint.down ? 'text-warn' : 'text-tip')}>{hint.text}</small>
-                    </span>
-                  ) : /* Last time's effort sits under the set, small (A2): "185 × 8" over "@7". */
-                  effort !== 'off' && p?.prev?.rpe != null && takesEffort(p.prev) ? (
-                    <span className="flex min-w-0 flex-col leading-[1.15]">
-                      <span className="truncate">{formatSet(p.prev, exercise.type, units)}</span>
-                      <small className="truncate text-[11px] text-fg3">{effortText(p.prev.rpe, effort)}</small>
-                    </span>
-                  ) : (
-                    <span className="truncate">{p?.prev ? formatSet(p.prev, exercise.type, units) : '—'}</span>
-                  )}
-                  {p?.prevHadDrop && <DropBadge />}
-                </span>
+                    ) : (
+                      <span className="truncate">{p?.prev ? formatSet(p.prev, exercise.type, units) : '—'}</span>
+                    )}
+                    {p?.prevHadDrop && <DropBadge />}
+                  </span>
+                )}
                 {showWeight && (
                   <Cell
                     editing={editW}
@@ -239,9 +281,137 @@ export function SetTable({
   );
 }
 
+/** Width of the D badge and its gap, and of the → between previous and next (px). */
+const DROP_W = 16 + 6;
+const ARROW_W = 18;
+
 /**
- * The badge on a set's reps box (A2, A3): the logged rating; while picking, the same in
- * blue; otherwise the routine's target outlined, or a small + where effort is asked for.
+ * Lines up "previous → next" across the rows (4.27). Measures each row's last-time text
+ * and target at their natural width, then fitPrevNext picks one width for the previous
+ * part, or drops the D badges when the column is too narrow. Re-measures on resize.
+ */
+function usePrevNextFit(on: boolean) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [state, setState] = useState<PrevNextFit | null>(null);
+  const measure = useRef(() => {});
+  measure.current = () => {
+    const root = ref.current;
+    if (!on || !root) return;
+    const cells = [...root.querySelectorAll<HTMLElement>('[data-fit-cell]')];
+    if (!cells.length) return;
+    const avail = cells[0].clientWidth - 4; // pl-1
+    const rows = cells.map((c) => ({
+      prev: Math.ceil(c.querySelector<HTMLElement>('[data-fit-prev]')?.getBoundingClientRect().width ?? 0),
+      next: Math.ceil(c.querySelector<HTMLElement>('[data-fit-next]')?.scrollWidth ?? 0),
+      drop: c.dataset.drop === '1',
+    }));
+    const head = root.parentElement?.querySelector<HTMLElement>('[role=row] button[aria-pressed]');
+    const header = head
+      ? { prev: Math.ceil(head.querySelector<HTMLElement>('[data-fit-prev]')?.getBoundingClientRect().width ?? 0), next: Math.ceil(head.querySelector<HTMLElement>('[data-fit-next]')?.scrollWidth ?? 0) }
+      : undefined;
+    const f = fitPrevNext(rows, avail, DROP_W, ARROW_W, header);
+    setState((s) => (s && s.prevW === f.prevW && s.headerAligned === f.headerAligned ? s : f));
+  };
+  // Every render: the rows' text may have changed. setState bails out when nothing moved.
+  useLayoutEffect(() => measure.current());
+  useLayoutEffect(() => {
+    if (!on || !ref.current || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => measure.current());
+    ro.observe(ref.current);
+    return () => ro.disconnect();
+  }, [on]);
+  return { ref, state: on ? state : null };
+}
+
+/** The → between previous and next, drawn so it sits on the text's middle (a typed → sits low). */
+function Arrow() {
+  return (
+    <svg width="10" height="8" viewBox="0 0 10 8" aria-hidden>
+      <path d="M1 4h7.5M5.5 1l3 3-3 3" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** The target, split so the reps can be colored on their own. */
+interface NextParts {
+  weight: string;
+  reps?: number;
+  /** Same weight as last time (or reps-only): the weight stays plain. */
+  same: boolean;
+  /** More reps than last time: green when the weight stays. */
+  repsUp: boolean;
+}
+
+/**
+ * Previous → Next (4.27): "155 × 12 D  →  160 × 12". A new weight colors the whole
+ * target: green when it goes up, orange when it comes down. At the same weight the text
+ * stays plain and only the reps turn green when they go up. Last time's drop keeps its orange
+ * D badge after the set. Every row's previous gets the same width so arrows and
+ * targets line up.
+ */
+function PrevNextCell({
+  prev,
+  reps,
+  effort,
+  drop,
+  next,
+  move,
+  fit,
+}: {
+  /** Last time's weight, as shown ("185", "BW", "+25"); undefined = no set last time. */
+  prev?: string;
+  reps: number;
+  effort?: string;
+  drop: boolean;
+  next?: NextParts;
+  move?: Move;
+  fit: PrevNextFit | null;
+}) {
+  return (
+    <span data-fit-cell data-drop={drop ? '1' : undefined} className="flex min-w-0 items-center pl-1 text-[13.5px] whitespace-nowrap text-fg2">
+      <span className="flex flex-none items-center gap-1.5" style={fit ? { width: fit.prevW } : undefined}>
+        <span data-fit-prev className="flex w-max flex-col leading-[1.15]">
+          <span>
+            {prev == null ? (
+              '—'
+            ) : (
+              <>
+                {prev} × {reps}
+              </>
+            )}
+          </span>
+          {effort && <small className="text-[11px] text-fg3">{effort}</small>}
+        </span>
+        {drop && <DropBadge />}
+      </span>
+      {next && (
+        <>
+          <span className="flex flex-none justify-center text-fg3" style={{ width: ARROW_W }} aria-hidden>
+            <Arrow />
+          </span>
+          <span
+            data-fit-next
+            className={cx('min-w-0 truncate font-semibold', next.same ? 'text-fg' : move === 'up' ? 'text-tip' : move === 'down' ? 'text-warn' : 'text-fg')}
+          >
+            <span className="sr-only">next </span>
+            {next.weight}
+            {next.reps != null && (
+              <>
+                {' × '}
+                <span className={cx(next.same && next.repsUp && 'text-tip')}>{next.reps}</span>
+              </>
+            )}
+          </span>
+        </>
+      )}
+    </span>
+  );
+}
+
+/**
+ * The badge on a set's reps box (A2, A3): the logged rating (blue once the set is done);
+ * while picking, a blue ring; otherwise the routine's target in grey, or a blue + where
+ * effort is asked for.
  * Warm-ups, drops and effort Off get nothing.
  */
 export function effortBadgeFor(
@@ -254,8 +424,8 @@ export function effortBadgeFor(
   onPress: () => void,
 ): ReactNode {
   if (mode === 'off' || !takesEffort(s)) return null;
-  if (picking) return <EffortBadge tone="active" text={s.rpe != null ? effortBadge(s.rpe, mode, narrow) : '+'} label="Picking effort" />;
-  if (s.rpe != null) return <EffortBadge tone="logged" text={effortBadge(s.rpe, mode, narrow)} label={`${effortSpoken(s.rpe, mode)}. Change effort`} onPress={onPress} />;
+  if (picking) return <EffortBadge tone="active" done={s.completed} text={s.rpe != null ? effortBadge(s.rpe, mode, narrow) : '+'} label="Picking effort" />;
+  if (s.rpe != null) return <EffortBadge tone="logged" done={s.completed} text={effortBadge(s.rpe, mode, narrow)} label={`${effortSpoken(s.rpe, mode)}. Change effort`} onPress={onPress} />;
   if (s.completed) return null;
   if (s.rpeTarget != null) return <EffortBadge tone="target" text={effortBadge(s.rpeTarget, mode, narrow)} label={`Target ${effortSpoken(s.rpeTarget, mode)}. Add effort`} onPress={onPress} />;
   if (ask === 'tap' || asksEffort(ask, s, sets)) return <EffortBadge tone="add" label="Add effort" onPress={onPress} />;
@@ -300,7 +470,6 @@ export function Cell({
           // Still shown while editing an empty cell: Next / ✓ logs this value unless you type over it.
           <span className="truncate text-[13px] font-medium text-fg2">{placeholder}</span>
         )}
-        {editing && <span className="ml-[1px] h-[17px] w-[1.5px] animate-pulse bg-accent" />}
       </span>
     </button>
   );
@@ -308,7 +477,8 @@ export function Cell({
   return (
     <div className="relative">
       {cell}
-      {badge}
+      {/* The box's outline (the button pads it 3 px in and 6 px down), for the badge to hang off. */}
+      <span className="pointer-events-none absolute inset-x-[3px] inset-y-[6px]">{badge}</span>
     </div>
   );
 }

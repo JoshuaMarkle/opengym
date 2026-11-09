@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { KeypadKey } from '../lib/keypad';
-import { ArrowGlyph, BackspaceIcon, CheckGlyph, ChevronDown } from './icons';
+import { BackspaceIcon, CheckGlyph, ChevronDown } from './icons';
 import { cx } from './ui';
 
 export interface KeypadTab {
@@ -15,9 +15,9 @@ export interface KeypadTab {
  *
  * Header: on the left either the 123 | Plates mode tabs (with the bar picker beside
  * them on Plates) or a label ("Set 3 · Reps"); on the right the field tabs (lbs |
- * reps, or the cardio columns) and one blue icon button, the size of a field tab:
- * → Next on any box but the last in the row, ✓ Done on the last one.
- * Same spot, so the thumb never moves. `panel` swaps the grid for the plate pad.
+ * reps, or the cardio columns) and one blue ✓ button, the size of a field tab. It is
+ * always a ✓: on any box but the last it moves to the next box, on the last it ticks
+ * the set. Same spot, same glyph, so the thumb never moves. `panel` swaps the grid for the plate pad.
  */
 export function Keypad({
   left,
@@ -60,7 +60,7 @@ export function Keypad({
           {next && (
             <button
               type="button"
-              aria-label={next.done ? 'Done: complete the set and go to the next one' : 'Next box'}
+              aria-label={next.done ? 'Done: complete the set and go to the next one' : 'Done with this box: go to the next one'}
               onPointerDown={(e) => {
                 e.preventDefault();
                 next.onPress();
@@ -75,7 +75,7 @@ export function Keypad({
             >
               {/* Drawn the size of a selected field tab; the button around it keeps the 44 px target. */}
               <span className="flex h-[28px] items-center rounded-[7px] bg-accent px-2.5 text-white">
-                {next.done ? <CheckGlyph size={14} /> : <ArrowGlyph size={14} />}
+                <CheckGlyph size={14} />
               </span>
             </button>
           )}
@@ -215,6 +215,7 @@ export function Key({
   disabled,
   label,
   outlined,
+  pressed,
   className = '',
 }: {
   children: ReactNode;
@@ -223,12 +224,15 @@ export function Key({
   disabled?: boolean;
   label?: string;
   outlined?: boolean;
+  /** A toggle key (the effort pad's ½): announced as pressed / not pressed. */
+  pressed?: boolean;
   className?: string;
 }) {
   return (
     <button
       type="button"
       aria-label={label}
+      aria-pressed={pressed}
       disabled={disabled}
       // pointerdown keeps typing snappy and avoids the 300 ms click delay on older iOS.
       onPointerDown={(e) => {

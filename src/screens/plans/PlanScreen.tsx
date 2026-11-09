@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useLongPress } from '../../components/gestures';
 import { ChevronRight } from '../../components/icons';
-import { BackButton, BarButton, Check, cx, LabelAction, PlayButton, Screen, SectionLabel, TopBar } from '../../components/ui';
+import { BackButton, BarButton, cx, DoneDisc, LabelAction, PlayButton, Screen, SectionLabel, TopBar } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { setActiveFolder } from '../../data/routines';
 import { usePlanView } from '../../data/schedule';
@@ -14,7 +14,7 @@ import { addDayKey, currentVersion, describeSchedule, parseDayKey, planSince, we
 import { DaySheet, dayLabel, PlanStrip } from './PlanParts';
 import { FolderSheet } from './RoutineActions';
 
-/** 2.15: a folder as a plan. Its schedule, this week's workouts, then its routines. */
+/** 2.15: a folder as a plan. Its schedule with this week's strip, this week's workouts, then its routines. The 4-week calendar lives on Plans (2.1). */
 export function PlanScreen() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -186,9 +186,7 @@ function WeekRow({
         </span>
       </button>
       {done ? (
-        <span className="flex h-11 w-11 flex-none items-center justify-center" aria-label="done">
-          <Check on />
-        </span>
+        <DoneDisc />
       ) : onStart ? (
         <PlayButton primary={primary} label={`Start ${name}`} onClick={onStart} />
       ) : null}

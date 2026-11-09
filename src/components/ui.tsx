@@ -80,10 +80,9 @@ export function BackButton({ label, onClick }: { label: string; onClick: () => v
 }
 
 /** Large title header (bh). */
-export function LargeHeader({ title, subtitle, eyebrow, right }: { title: ReactNode; subtitle?: ReactNode; eyebrow?: ReactNode; right?: ReactNode }) {
+export function LargeHeader({ title, subtitle, right }: { title: ReactNode; subtitle?: ReactNode; right?: ReactNode }) {
   return (
     <header className="flex-none px-4 pt-2 pb-2">
-      {eyebrow && <div className="text-[13px] font-semibold tracking-[0.02em] text-fg2 uppercase">{eyebrow}</div>}
       <div className="flex min-h-11 items-center justify-between gap-3">
         <h1 className="min-w-0 truncate text-[34px] leading-[1.1] font-bold tracking-[-0.02em]">{title}</h1>
         {right && <div className="-mr-1.5 flex flex-none items-center gap-1">{right}</div>}
@@ -152,6 +151,27 @@ export function Button({
   );
 }
 
+/**
+ * "+ Set", "+ Drop", "+ Segment": a text button with a dashed outline in its own
+ * tone, so it reads as a placeholder for the row it adds (4.1, 4.3, 2.3, 6.7).
+ */
+export function AddButton({ children, tone = 'accent', className = '', ...rest }: ButtonHTMLAttributes<HTMLButtonElement> & { tone?: 'accent' | 'warn' }) {
+  return (
+    <button
+      type="button"
+      className={cx(
+        // Grey dashed edge, like "+ Add exercise"; the label keeps the colour.
+        'flex h-11 items-center justify-center rounded-[10px] border border-dashed border-line-strong text-[15px] font-semibold active:opacity-60 disabled:opacity-40',
+        tone === 'warn' ? 'text-warn' : 'text-accent',
+        className,
+      )}
+      {...rest}
+    >
+      {children}
+    </button>
+  );
+}
+
 /** Round ▶ start button (blue for Next, grey otherwise). */
 export function PlayButton({ primary, onClick, label }: { primary?: boolean; onClick: () => void; label: string }) {
   return (
@@ -168,6 +188,17 @@ export function PlayButton({ primary, onClick, label }: { primary?: boolean; onC
         <PlayGlyph size={12} className="ml-[2px]" />
       </span>
     </button>
+  );
+}
+
+/** A done day in a list (3.4, 2.15): the same 34 px disc and spot as PlayButton, so rows line up. */
+export function DoneDisc() {
+  return (
+    <span aria-label="done" className="-mr-2 flex h-11 w-11 flex-none items-center justify-center">
+      <span className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-accent text-white">
+        <CheckGlyph size={15} />
+      </span>
+    </span>
   );
 }
 

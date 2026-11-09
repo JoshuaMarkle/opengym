@@ -162,7 +162,7 @@ export function LiftTrend() {
         <>
           <SectionLabel>Milestones</SectionLabel>
           {milestones.length ? (
-            <MilestoneList rows={milestones} exercise={ex} units={units} onGoal={canHaveGoal(ex) ? (m) => navigate(`/progress/goal/new?ex=${ex.id}&w=${m.weight}&r=${m.reps}`) : undefined} />
+            <MilestoneList rows={milestones} exercise={ex} units={units} goals={goals?.filter((g) => g.exerciseId === ex.id)} onGoal={canHaveGoal(ex) ? (m) => navigate(`/progress/goal/new?ex=${ex.id}&w=${m.weight}&r=${m.reps}`) : undefined} />
           ) : (
             <p className="py-2 text-[13px] text-fg2">No milestones for this lift.</p>
           )}

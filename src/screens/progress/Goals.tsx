@@ -75,7 +75,6 @@ export function GoalsList({ views, loading, units }: { views: GoalView[]; loadin
       {views.map((v) => (
         <GoalRow key={v.goal.id} v={v} units={units} />
       ))}
-      <Note className="mt-4">Goals without a date show an estimate at your current pace. If a lift is flat or going backwards, there's no estimate rather than a date that keeps sliding.</Note>
     </div>
   );
 }
@@ -266,7 +265,7 @@ export function NewGoal() {
               curve={fc.curve}
               band={messy ? undefined : fc.band}
               target={target != null ? strengthNumber(target, ex, units) : undefined}
-              targetLabel={target != null ? formatNumber(strengthNumber(target, ex, units), 0) : undefined}
+              targetLabel={target != null && valid ? (ex.type === 'bodyweight' ? formatNumber(target, 0) : fmtGoal({ weight, reps }, ex, units)) : undefined}
               marker={by ?? undefined}
               markerTone={by && verdictAt(by) ? (verdictAt(by) === 'unlikely' ? 'warn' : 'tip') : 'fg2'}
               label="Goal projection"
@@ -276,7 +275,7 @@ export function NewGoal() {
           <Note className="mt-3">
             {ex?.type === 'bodyweight'
               ? 'Progress is counted in reps, so every set counts.'
-              : `${valid && target != null && ex ? `${fmtGoal({ weight, reps }, ex, units)} is an est. 1RM of ${fmtStrength(target, ex, units)}, so every set counts toward it, not only attempts at the goal weight.` : 'The goal converts to an est. 1RM, so every set counts toward it.'}`}{' '}
+              : `Every set counts toward ${valid && ex ? fmtGoal({ weight, reps }, ex, units) : 'the goal'}, not only attempts at the goal weight: each set's weight and reps feed one strength trend.`}{' '}
             Gains slow down over time, so the projection is a curve, with a band for good and bad stretches.
           </Note>
         </>
@@ -386,8 +385,9 @@ export function GoalDetail() {
   const { state, lift } = view;
   const t = goalTrend(goal, lift.now);
   const now = Date.now();
-  const unitWord = ex.type === 'bodyweight' ? 'reps' : unitLabel(units);
   const num = (v: number) => formatNumber(Math.round(strengthNumber(v, ex, units)), 0);
+  // The goal as you'd lift it (225 × 1), not its internal trend number, which reads like a different weight.
+  const goalLabel = ex.type === 'bodyweight' ? `${goal.reps} reps` : fmtGoal(goal, ex, units);
   const step = defaultStep(ex.equipment, ex.type, settings.weightStep, units);
 
   let status: string;
@@ -452,7 +452,7 @@ export function GoalDetail() {
               Start {num(goal.startE1rm)} · {fmtMonthDay(goal.startedAt)}
             </span>
             <span className="text-center font-semibold text-fg">Now {num(t.E0)}</span>
-            <span className="text-right">{num(target)}</span>
+            <span className="text-right">{goalLabel}</span>
           </div>
         </div>
       )}
@@ -473,7 +473,7 @@ export function GoalDetail() {
         curve={state.done ? undefined : fc.curve}
         band={state.done ? undefined : fc.band}
         target={strengthNumber(target, ex, units)}
-        targetLabel={num(target)}
+        targetLabel={goalLabel}
         marker={view.by}
         markerTone={state.behind ? 'warn' : 'tip'}
         label="Goal projection"
@@ -506,7 +506,7 @@ export function GoalDetail() {
             </p>
             {testAt && (
               <p className="border-b border-line py-2.5 text-[14px] leading-snug tabular-nums">
-                Test {fmtGoal(goal, ex, units)} around <b>{fmtMonthDay(testAt)}</b>, when the trend says {num(target)} {unitWord}.
+                Test {fmtGoal(goal, ex, units)} around <b>{fmtMonthDay(testAt)}</b>, when your trend says you can lift it.
               </p>
             )}
             {state.verdict === 'ready' && <p className="border-b border-line py-2.5 text-[14px] leading-snug">Your est. 1RM already covers it. Try it at your next session.</p>}

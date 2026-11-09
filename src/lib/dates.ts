@@ -74,11 +74,12 @@ export function fmtDay(ts: number, now = Date.now()): string {
   return d.getFullYear() === new Date(now).getFullYear() ? base : `${base}, ${d.getFullYear()}`;
 }
 
-/** "Oct 29" (adds the year when it isn't the current one). */
-export function fmtMonthDay(ts: number, now = Date.now()): string {
+/** "Oct 29" (adds the year when it isn't the current one: "Oct 29, 2025", or "Oct 29 '25" with `shortYear`). */
+export function fmtMonthDay(ts: number, now = Date.now(), shortYear = false): string {
   const d = new Date(ts);
   const base = `${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}`;
-  return d.getFullYear() === new Date(now).getFullYear() ? base : `${base}, ${d.getFullYear()}`;
+  if (d.getFullYear() === new Date(now).getFullYear()) return base;
+  return shortYear ? `${base} '${String(d.getFullYear() % 100).padStart(2, '0')}` : `${base}, ${d.getFullYear()}`;
 }
 
 /** Relative within a week: "Today", "Yesterday", "Mon"; otherwise "Thu, Oct 29". */
@@ -90,10 +91,10 @@ export function fmtRelativeDay(ts: number, now = Date.now()): string {
   return fmtDay(ts, now);
 }
 
-/** "THURSDAY, NOV 5" */
+/** "Thursday, Nov 5" */
 export function fmtHomeDate(ts: number): string {
   const d = new Date(ts);
-  return `${WEEKDAYS_LONG[d.getDay()]}, ${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}`.toUpperCase();
+  return `${WEEKDAYS_LONG[d.getDay()]}, ${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}`;
 }
 
 /** "6:10 pm" */
