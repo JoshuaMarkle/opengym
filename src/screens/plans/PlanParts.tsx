@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router';
 import { useState, type ReactNode } from 'react';
 import { useLongPress } from '../../components/gestures';
 import { CheckGlyph } from '../../components/icons';
@@ -53,6 +54,7 @@ export function PlanStrip({
   onTap,
   onHold,
   className = '',
+  dateClassName = '',
   dense = false,
 }: {
   days: PlanDay[];
@@ -61,13 +63,15 @@ export function PlanStrip({
   onTap?: (d: PlanDay) => void;
   onHold?: (d: PlanDay) => void;
   className?: string;
+  /** Home keeps date numbers bright while weekday letters retain their muted color (PH3.1). */
+  dateClassName?: string;
   /** Header shows "S1" instead of "S 1". */
   dense?: boolean;
 }) {
   return (
     <div className={cx('grid grid-cols-7 gap-1.5 text-center', className)}>
       {days.map((d) => (
-        <StripCell key={d.key} day={d} code={dayCode(d, codes)} isToday={d.key === today} dense={dense} onTap={onTap} onHold={onHold} />
+        <StripCell key={d.key} day={d} code={dayCode(d, codes)} isToday={d.key === today} dense={dense} dateClassName={dateClassName} onTap={onTap} onHold={onHold} />
       ))}
     </div>
   );
@@ -78,6 +82,7 @@ function StripCell({
   code,
   isToday,
   dense,
+  dateClassName,
   onTap,
   onHold,
 }: {
@@ -85,6 +90,7 @@ function StripCell({
   code: string;
   isToday: boolean;
   dense: boolean;
+  dateClassName: string;
   onTap?: (d: PlanDay) => void;
   onHold?: (d: PlanDay) => void;
 }) {
@@ -95,7 +101,7 @@ function StripCell({
       <small className={cx('block text-[11px] font-bold tabular-nums', isToday ? 'text-fg' : 'text-fg2')}>
         {weekdayLetter(date.getDay())}
         {dense ? '' : ' '}
-        {date.getDate()}
+        <span className={dateClassName}>{date.getDate()}</span>
       </small>
       <i className={cx('mt-1 flex h-[34px] items-center justify-center rounded-[9px] text-[12.5px] font-bold not-italic tabular-nums', boxClass(day, isToday))}>{code}</i>
     </>
@@ -179,6 +185,7 @@ export function Legend({ items }: { items: { label: string; box: string }[] }) {
  * itself never changes here.
  */
 export function DaySheet({ folder, day, view, onClose }: { folder: Folder; day: PlanDay | null; view: PlanView; onClose: () => void }) {
+  const navigate = useNavigate();
   const [step, setStep] = useState<'main' | 'routine' | 'move'>('main');
   const [lastKey, setLastKey] = useState(day?.key);
   if (day?.key !== lastKey) {
@@ -280,6 +287,7 @@ export function DaySheet({ folder, day, view, onClose }: { folder: Folder; day: 
             Back to plan
           </SheetOption>
         )}
+        {day.planned && <SheetOption tone="accent" onClick={() => { onClose(); navigate(`/routine/${day.planned}/edit`); }}>Edit {name}</SheetOption>}
         <Note>Long-press a day on Home, the plan screen or the calendar. To change every week, edit the schedule instead.</Note>
       </>
     );

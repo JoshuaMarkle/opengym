@@ -172,6 +172,18 @@ export function AddButton({ children, tone = 'accent', className = '', ...rest }
   );
 }
 
+/** 3.4 / PH3.1 / PH3.6: today's compact Start pill, with a 44 px tap target and optically centered label. */
+export function StartPill({ onClick, label }: { onClick: () => void; label: string }) {
+  return (
+    <button type="button" aria-label={label} onClick={onClick} className="-mr-2 flex h-11 flex-none items-center px-[5px] active:scale-95">
+      <span className="flex h-[34px] items-center gap-2 rounded-full bg-accent px-3 text-[14px] font-bold text-white">
+        <PlayGlyph size={12} />
+        <span className="translate-y-px leading-none">Start</span>
+      </span>
+    </button>
+  );
+}
+
 /** Round ▶ start button (blue for Next, grey otherwise). */
 export function PlayButton({ primary, onClick, label }: { primary?: boolean; onClick: () => void; label: string }) {
   return (

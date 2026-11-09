@@ -76,11 +76,11 @@ function setRecords(weId: string, drafts: SetDraft[]): WorkoutSet[] {
   }));
 }
 
-async function createWorkout(name: string, exercises: NewExercise[], routineId?: string): Promise<string> {
+async function createWorkout(name: string, exercises: NewExercise[], routineId?: string, loggedFor?: string): Promise<string> {
   return db.transaction('rw', db.workouts, db.workoutExercises, db.workoutSets, async () => {
     const active = await getActiveWorkout();
     if (active) throw new ActiveWorkoutExistsError(active);
-    const workout: Workout = { ...stamp(), name, routineId, startedAt: Date.now(), status: 'active' };
+    const workout: Workout = { ...stamp(), name, routineId, loggedFor, startedAt: Date.now(), status: 'active' };
     const grouped = normalizeSupersets(exercises.map((e, i) => ({ key: String(i), supersetGroup: e.supersetGroup })));
     const wes: WorkoutExercise[] = exercises.map((e, i) => ({
       ...stamp(),
@@ -98,7 +98,7 @@ async function createWorkout(name: string, exercises: NewExercise[], routineId?:
 }
 
 /** Start a workout from a routine with every set prefilled (SPEC §4 Prefill). */
-export async function startFromRoutine(routineId: string): Promise<string> {
+export async function startFromRoutine(routineId: string, loggedFor?: string): Promise<string> {
   const routine = await db.routines.get(routineId);
   if (!routine) throw new Error('Routine not found');
   const res = (await db.routineExercises.where('routineId').equals(routineId).toArray()).sort((a, b) => a.order - b.order);
@@ -112,7 +112,7 @@ export async function startFromRoutine(routineId: string): Promise<string> {
       : prefillFromRoutine(rsets, last);
     exercises.push({ exerciseId: re.exerciseId, sets, supersetGroup: re.supersetGroup });
   }
-  return createWorkout(routine.name, exercises, routine.id);
+  return createWorkout(routine.name, exercises, routine.id, loggedFor);
 }
 
 export async function startBlankWorkout(): Promise<string> {
@@ -536,7 +536,8 @@ export async function finishWorkout(workoutId: string, opts: { countUnticked: bo
       else await writeOrder(orderSets(kept));
     }
     await writeGrouping(await workoutExercises(workoutId));
-    await db.workouts.update(workoutId, { status: 'done', endedAt: Math.max(t, w.startedAt), currentExerciseId: undefined, updatedAt: t });
+    const datedStart = w.loggedFor ? new Date(`${w.loggedFor}T${new Date(w.startedAt).toTimeString().slice(0, 8)}`).getTime() : w.startedAt;
+    await db.workouts.update(workoutId, { status: 'done', startedAt: datedStart, endedAt: datedStart + Math.max(0, t - w.startedAt), loggedFor: undefined, currentExerciseId: undefined, updatedAt: t });
     if (opts.updateRoutine && w.routineId) await applyWorkoutToRoutine(workoutId, w.routineId);
     await markGoalsDone(workoutId, t);
   });

@@ -625,6 +625,8 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
         <span className="block truncate text-[17px] font-bold">{workout.name}</span>
         <span className="block text-[12.5px] text-fg2">
           <Clock since={workout.startedAt} /> · {doneCount} of {list.length} done
+          {/* 4.35 / PH3.7: the timer stays live while the finished session uses this date. */}
+          {workout.loggedFor && <span> · Logging {fmtMonthDay(new Date(workout.loggedFor + 'T12:00').getTime())}</span>}
         </span>
       </div>
       {/* 5.4: pause, rename, start time, discard. */}

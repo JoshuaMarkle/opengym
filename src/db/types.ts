@@ -125,6 +125,8 @@ export interface RoutineSet extends BaseRecord {
 }
 
 export interface Workout extends BaseRecord {
+  /** PH3.7: backdate on finish while the active workout clock runs normally. */
+  loggedFor?: string;
   routineId?: ID;
   name: string;
   startedAt: number;

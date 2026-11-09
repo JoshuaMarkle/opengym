@@ -7,7 +7,7 @@ import { ActiveWorkoutExistsError, discardWorkout, repeatWorkout, startBlankWork
 type Starter = () => Promise<string>;
 
 interface StartApi {
-  startRoutine: (routineId: string, name?: string) => void;
+  startRoutine: (routineId: string, name?: string, loggedFor?: string) => void;
   startBlank: () => void;
   repeat: (workoutId: string, name?: string) => void;
 }
@@ -38,7 +38,7 @@ export function StartWorkoutProvider({ children }: { children: ReactNode }) {
   );
 
   const api: StartApi = {
-    startRoutine: (id, name = 'this routine') => void go(() => startFromRoutine(id), name),
+    startRoutine: (id, name = 'this routine', loggedFor) => void go(() => startFromRoutine(id, loggedFor), name),
     startBlank: () => void go(startBlankWorkout, 'a blank workout'),
     repeat: (id, name = 'this workout') => void go(() => repeatWorkout(id), name),
   };

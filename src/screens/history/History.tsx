@@ -1,85 +1,33 @@
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router';
-import { CalendarIcon, ChevronRight, HistoryIcon, ListIcon } from '../../components/icons';
-import { Chips, cx, EmptyState, LargeHeader, Screen, SearchField, SectionLabel, Segmented, StatRow } from '../../components/ui';
-import { useActiveWorkout, useData } from '../../data/DataProvider';
+import { useMemo, useState, type ReactNode } from 'react';
+import { useNavigate, useSearchParams } from 'react-router';
+import { ChevronRight } from '../../components/icons';
+import { Chips, cx, SearchField, Segmented, StatRow } from '../../components/ui';
+import { useData } from '../../data/DataProvider';
 import { workoutLine, type HistoryWorkout } from '../../data/history';
-import { updateSettings } from '../../data/settings';
 import { useNow } from '../../hooks/useNow';
-import {
-  addMonths,
-  dayKey,
-  daysInMonth,
-  fmtDay,
-  fmtDuration,
-  fmtMonthShortYear,
-  fmtMonthYear,
-  fmtWeekRange,
-  monthLetter,
-  monthShort,
-  startOfDay,
-  startOfMonth,
-  startOfWeek,
-  weekdayLetter,
-  weekdayShort,
-} from '../../lib/dates';
-import { availableRanges, currentStreak, longestStreak, missedWeeks, monthCounts, perWeek, type HistoryRange } from '../../lib/historyStats';
+import { addMonths, dayKey, daysInMonth, fmtDuration, fmtMonthYear, fmtWeekRange, monthLetter, monthShort, startOfDay, startOfMonth, startOfWeek, weekdayShort } from '../../lib/dates';
+import { availableRanges, longestStreak, missedWeeks, monthCounts, perWeek, type HistoryRange } from '../../lib/historyStats';
 import { formatNumber } from '../../lib/units';
 
 const RANGE_LABEL: Record<HistoryRange, string> = { month: 'Month', '6m': '6M', year: 'Year', all: 'All' };
 
 // Where you were, kept across visits to a workout and back (this session only).
-const memory: { range: HistoryRange; month?: number; year?: number; day?: string; query: string; routine: string } = {
+const memory: { range: HistoryRange; month?: number; year?: number; query: string; routine: string } = {
   range: 'month',
   query: '',
   routine: 'all',
 };
 
-/** 6.1–6.5, 6.8: calendar first (month / 6M / year / all), a flat list one toggle away. */
-export function History() {
+// 6.1–6.4 / PH3.2: retain the existing longer-range history views.
+export function CalendarView({ monthContent }: { monthContent: (month: number, setMonth: (month: number) => void) => ReactNode }) {
   const { history, settings } = useData();
-  const view = settings.historyView;
-  const empty = history.workouts.length === 0;
-
-  return (
-    <Screen
-      header={
-        <LargeHeader
-          title="History"
-          subtitle={history.firstDate ? `Since ${fmtMonthShortYear(history.firstDate)}` : undefined}
-          right={
-            <div className="flex rounded-[10px] bg-surface p-[2px]" role="tablist" aria-label="View">
-              {(['calendar', 'list'] as const).map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  role="tab"
-                  aria-selected={view === v}
-                  aria-label={v === 'calendar' ? 'Calendar' : 'List'}
-                  onClick={() => void updateSettings({ historyView: v })}
-                  className={cx('flex h-9 w-11 items-center justify-center rounded-[8px] transition-colors', view === v ? 'bg-key-fn text-fg' : 'text-fg2')}
-                >
-                  {v === 'calendar' ? <CalendarIcon size={16} /> : <ListIcon size={16} />}
-                </button>
-              ))}
-            </div>
-          }
-        />
-      }
-    >
-      {view === 'list' && !empty ? <ListView /> : <CalendarView empty={empty} />}
-    </Screen>
-  );
-}
-
-// ───────────────────────────── calendar
-
-function CalendarView({ empty }: { empty: boolean }) {
-  const { history, settings } = useData();
+  const [params] = useSearchParams();
+  const requested = params.get('day');
+  const requestedTs = requested && /^\d{4}-\d{2}-\d{2}$/.test(requested) ? new Date(requested + 'T12:00').getTime() : undefined;
   const now = useNow(60_000);
   const ranges = availableRanges(history.firstDate, now);
-  const [range, setRangeState] = useState<HistoryRange>(ranges.includes(memory.range) ? memory.range : 'month');
-  const [month, setMonthState] = useState<number>(memory.month ?? startOfMonth(now));
+  const [range, setRangeState] = useState<HistoryRange>(requestedTs ? 'month' : ranges.includes(memory.range) ? memory.range : 'month');
+  const [month, setMonthState] = useState<number>(requestedTs ? startOfMonth(requestedTs) : (memory.month ?? startOfMonth(now)));
   const [year, setYearState] = useState<number>(memory.year ?? new Date(now).getFullYear());
   const setRange = (r: HistoryRange) => {
     memory.range = r;
@@ -87,7 +35,6 @@ function CalendarView({ empty }: { empty: boolean }) {
   };
   const setMonth = (m: number) => {
     memory.month = m;
-    memory.day = undefined;
     setMonthState(m);
   };
   const setYear = (y: number) => {
@@ -108,12 +55,8 @@ function CalendarView({ empty }: { empty: boolean }) {
   return (
     <div>
       {ranges.length > 1 && <Segmented className="mt-1" options={ranges.map((r) => ({ value: r, label: RANGE_LABEL[r] }))} value={range} onChange={setRange} />}
-      {empty ? (
-        <EmptyState icon={<HistoryIcon size={24} />} title="Nothing logged yet" className="pt-16">
-          Finished workouts show up here on a calendar.
-        </EmptyState>
-      ) : range === 'month' ? (
-        <MonthView month={month} setMonth={setMonth} byDay={byDay} dates={dates} weekStart={settings.weekStart} now={now} />
+      {range === 'month' ? (
+        monthContent(month, setMonth)
       ) : range === '6m' ? (
         <SixMonths
           now={now}
@@ -158,139 +101,19 @@ function CalendarView({ empty }: { empty: boolean }) {
   );
 }
 
-function weekdayOrder(weekStart: 0 | 1) {
-  return Array.from({ length: 7 }, (_, i) => (i + weekStart) % 7);
-}
-
-function MonthView({
-  month,
-  setMonth,
-  byDay,
-  dates,
-  weekStart,
-  now,
-}: {
-  month: number;
-  setMonth: (m: number) => void;
-  byDay: Map<string, HistoryWorkout[]>;
-  dates: number[];
-  weekStart: 0 | 1;
-  now: number;
-}) {
-  const navigate = useNavigate();
-  const { history, exerciseMap } = useData();
-  const typeOf = (id: string) => exerciseMap.get(id)?.type;
-  const d = new Date(month);
-  const days = daysInMonth(d.getFullYear(), d.getMonth());
-  const lead = (d.getDay() - weekStart + 7) % 7;
-  const today = startOfDay(now);
-  const thisMonth = startOfMonth(now);
-  const firstMonth = history.firstDate ? startOfMonth(history.firstDate) : thisMonth;
-  const inMonth = history.workouts.filter((w) => startOfMonth(w.workout.startedAt) === month);
-  const defaultDay = inMonth[0] ? dayKey(inMonth[0].workout.startedAt) : undefined;
-  const [selRaw, setSel] = useState<string | undefined>(memory.day);
-  const sel = selRaw && byDay.has(selRaw) && startOfMonth(new Date(selRaw + 'T12:00').getTime()) === month ? selRaw : defaultDay;
-  const selected = sel ? (byDay.get(sel) ?? []) : [];
-
-  const end = Math.min(now, addMonths(month, 1));
-
-  return (
-    <div>
-      <div className="mt-3 mb-2 flex items-center justify-between">
-        <button type="button" aria-label="Previous month" disabled={month <= firstMonth} onClick={() => setMonth(addMonths(month, -1))} className="-ml-2 flex h-11 w-11 items-center justify-center text-[22px] text-accent disabled:text-fg3">
-          ‹
-        </button>
-        <b className="text-[17px]">{fmtMonthYear(month)}</b>
-        <button type="button" aria-label="Next month" disabled={month >= thisMonth} onClick={() => setMonth(addMonths(month, 1))} className="-mr-2 flex h-11 w-11 items-center justify-center text-[22px] text-accent disabled:text-fg3">
-          ›
-        </button>
-      </div>
-      <div className="grid grid-cols-7 gap-1 text-center">
-        {weekdayOrder(weekStart).map((wd, i) => (
-          <div key={i} className="pb-1 text-[11px] font-bold text-fg2">
-            {weekdayLetter(wd)}
-          </div>
-        ))}
-        {Array.from({ length: lead }, (_, i) => (
-          <div key={`e${i}`} />
-        ))}
-        {Array.from({ length: days }, (_, i) => {
-          const ts = new Date(d.getFullYear(), d.getMonth(), i + 1).getTime();
-          const k = dayKey(ts);
-          const has = byDay.has(k);
-          const isSel = k === sel;
-          const isToday = ts === today;
-          return (
-            <button
-              key={k}
-              type="button"
-              disabled={!has}
-              onClick={() => {
-                memory.day = k;
-                setSel(k);
-              }}
-              aria-label={`${fmtDay(ts)}${has ? `, ${byDay.get(k)!.length} workout` : ''}`}
-              className={cx(
-                'relative flex h-10 items-center justify-center rounded-[9px] text-[14px] font-semibold',
-                isSel ? 'bg-accent text-white' : has ? 'bg-surface-2 text-fg' : ts > today ? 'text-fg3' : 'text-fg2',
-                isToday && !isSel && 'shadow-[inset_0_0_0_1.5px_var(--og-fg2)]',
-              )}
-            >
-              {i + 1}
-              {has && <i className={cx('absolute bottom-[5px] h-1 w-1 rounded-full', isSel ? 'bg-white' : 'bg-accent')} />}
-            </button>
-          );
-        })}
-      </div>
-      <StatRow
-        className="mt-3"
-        items={[
-          { label: 'Workouts', value: inMonth.length },
-          { label: 'Per week', value: formatNumber(Math.round(perWeek(inMonth.length, month, end) * 10) / 10, 1) },
-          { label: 'Streak', value: `${currentStreak(dates, weekStart, now)} wks` },
-        ]}
-      />
-      <SectionLabel>Workouts</SectionLabel>
-      <div>
-        {selected.map((w) => (
-          <button key={w.workout.id} type="button" onClick={() => navigate(`/history/${w.workout.id}`)} className="flex min-h-[56px] w-full items-center gap-3 border-b border-line text-left active:bg-surface/60">
-            <span className="min-w-0 flex-1 py-2">
-              <b className="block truncate text-[16px] font-semibold">{w.workout.name}</b>
-              <span className="block truncate text-[13px] text-fg2">
-                {fmtDay(w.workout.startedAt)}
-                {w.workout.endedAt ? ` · ${fmtDuration(w.workout.endedAt - w.workout.startedAt)}` : ''} · {workoutLine(w, typeOf, false)}
-              </span>
-            </span>
-            <ChevronRight size={13} className="flex-none text-fg3" />
-          </button>
-        ))}
-        {!selected.length && <p className="border-b border-line py-3.5 text-[13px] text-fg2">No workouts this month.</p>}
-      </div>
-    </div>
-  );
-}
-
-function MiniMonth({
-  month,
-  byDay,
-  count,
-  weekStart,
-  today,
-  onOpen,
-}: {
-  month: number;
-  byDay: Map<string, HistoryWorkout[]>;
-  count: number;
-  weekStart: 0 | 1;
-  today: number;
-  onOpen?: () => void;
-}) {
+function MiniMonth({ month, byDay, count, weekStart, today, onOpen }: { month: number; byDay: Map<string, HistoryWorkout[]>; count: number; weekStart: 0 | 1; today: number; onOpen?: () => void }) {
   const d = new Date(month);
   const days = daysInMonth(d.getFullYear(), d.getMonth());
   const lead = (d.getDay() - weekStart + 7) % 7;
   const future = month > today;
   return (
-    <button type="button" onClick={onOpen} disabled={future || !onOpen} className={cx('block w-full self-start text-left', future && 'opacity-50')} aria-label={`${fmtMonthYear(month)}: ${count} workouts`}>
+    <button
+      type="button"
+      onClick={onOpen}
+      disabled={future || !onOpen}
+      className={cx('block w-full self-start text-left', future && 'opacity-50')}
+      aria-label={`${fmtMonthYear(month)}: ${count} workouts`}
+    >
       <span className="mb-1 flex justify-between text-[11.5px] font-bold text-fg/80">
         {monthShort(d.getMonth())}
         <span className="font-semibold text-fg2">{count}</span>
@@ -383,11 +206,23 @@ function YearView({
   return (
     <div>
       <div className="mt-3 mb-1 flex items-center justify-between">
-        <button type="button" aria-label="Previous year" disabled={year <= firstYear} onClick={() => setYear(year - 1)} className="-ml-2 flex h-11 w-11 items-center justify-center text-[22px] text-accent disabled:text-fg3">
+        <button
+          type="button"
+          aria-label="Previous year"
+          disabled={year <= firstYear}
+          onClick={() => setYear(year - 1)}
+          className="-ml-2 flex h-11 w-11 items-center justify-center text-[22px] text-accent disabled:text-fg3"
+        >
           ‹
         </button>
         <b className="text-[17px]">{year}</b>
-        <button type="button" aria-label="Next year" disabled={year >= thisYear} onClick={() => setYear(year + 1)} className="-mr-2 flex h-11 w-11 items-center justify-center text-[22px] text-accent disabled:text-fg3">
+        <button
+          type="button"
+          aria-label="Next year"
+          disabled={year >= thisYear}
+          onClick={() => setYear(year + 1)}
+          className="-mr-2 flex h-11 w-11 items-center justify-center text-[22px] text-accent disabled:text-fg3"
+        >
           ›
         </button>
       </div>
@@ -476,11 +311,9 @@ function AllView({
 
 const PAGE = 60;
 
-function ListView() {
+export function ListView() {
   const { history, exerciseMap, settings } = useData();
-  const active = useActiveWorkout();
   const navigate = useNavigate();
-  const now = useNow(60_000);
   const [query, setQueryState] = useState(memory.query);
   const [routine, setRoutineState] = useState(memory.routine);
   const [limit, setLimit] = useState(PAGE);
@@ -536,22 +369,12 @@ function ListView() {
     return m;
   }, [filtered, settings.weekStart]);
 
-  const showActive = active && routine === 'all' && (!q || active.workout.name.toLowerCase().includes(q));
-  const thisWeek = startOfWeek(now, settings.weekStart);
-
   return (
     <div>
       <SearchField value={query} onChange={setQuery} placeholder="Search exercise or routine" />
-      {chips.length > 0 && (
-        <Chips className="mt-2.5" options={[{ value: 'all', label: 'All' }, ...chips.map(([id, c]) => ({ value: id, label: c.name }))]} value={routine} onChange={setRoutine} />
-      )}
+      {chips.length > 0 && <Chips className="mt-2.5" options={[{ value: 'all', label: 'All' }, ...chips.map(([id, c]) => ({ value: id, label: c.name }))]} value={routine} onChange={setRoutine} />}
 
-      {showActive && (!weeks.length || weeks[0].start !== thisWeek) && (
-        <div className="mt-4 flex justify-between text-[11px] font-bold tracking-[0.05em] text-fg2">
-          <span>{fmtWeekRange(thisWeek)}</span>
-        </div>
-      )}
-      {weeks.map((wk, wi) => (
+      {weeks.map((wk) => (
         <div key={wk.start}>
           <div className="mt-4 flex justify-between pb-1 text-[11px] font-bold tracking-[0.05em] text-fg2">
             <span>{fmtWeekRange(wk.start)}</span>
@@ -559,14 +382,12 @@ function ListView() {
               {weekTotals.get(wk.start)} {weekTotals.get(wk.start) === 1 ? 'workout' : 'workouts'}
             </span>
           </div>
-          {wi === 0 && showActive && wk.start === thisWeek && <ActiveRow />}
           {wk.items.map((w) => (
             <ListRow key={w.workout.id} w={w} onClick={() => navigate(`/history/${w.workout.id}`)} />
           ))}
         </div>
       ))}
-      {showActive && (!weeks.length || weeks[0].start !== thisWeek) && <ActiveRow />}
-      {!filtered.length && <p className="py-10 text-center text-[14px] text-fg2">{q ? `No workouts with "${query.trim()}".` : 'No workouts for this routine yet.'}</p>}
+      {!filtered.length && <p className="py-10 text-center text-[14px] text-fg2">{q ? `No workouts with "${query.trim()}".` : history.workouts.length ? 'No workouts for this routine yet.' : 'Nothing logged yet. Finished workouts appear here.'}</p>}
       {filtered.length > limit && (
         <button type="button" onClick={() => setLimit((l) => l + PAGE)} className="mt-2 flex h-11 w-full items-center justify-center text-[15px] font-semibold text-accent">
           Show more ({filtered.length - limit})
@@ -593,32 +414,9 @@ function ListRow({ w, onClick }: { w: HistoryWorkout; onClick: () => void }) {
       <DateBlock ts={w.workout.startedAt} />
       <span className="min-w-0 flex-1">
         <b className="block truncate text-[16px] font-semibold">{w.workout.name}</b>
-        <span className="block truncate text-[13px] text-fg2">
-          {workoutLine(w, (id) => exerciseMap.get(id)?.type)}
-        </span>
+        <span className="block truncate text-[13px] text-fg2">{workoutLine(w, (id) => exerciseMap.get(id)?.type)}</span>
       </span>
       <span className="flex-none text-[13px] text-fg2">{w.workout.endedAt ? fmtDuration(w.workout.endedAt - w.workout.startedAt) : ''}</span>
-      <ChevronRight size={13} className="flex-none text-fg3" />
-    </button>
-  );
-}
-
-function ActiveRow() {
-  const active = useActiveWorkout();
-  const navigate = useNavigate();
-  const now = useNow(30_000);
-  if (!active) return null;
-  return (
-    <button type="button" onClick={() => navigate('/workout')} className="flex min-h-[56px] w-full items-center gap-3 border-b border-line text-left active:bg-surface/60">
-      <DateBlock ts={active.workout.startedAt} />
-      <span className="min-w-0 flex-1">
-        <b className="block truncate text-[16px] font-semibold">{active.workout.name}</b>
-        <span className="flex items-center gap-1.5 text-[13px] font-semibold text-tip">
-          <i className="anim-pulse h-1.5 w-1.5 rounded-full bg-tip" />
-          In progress
-        </span>
-      </span>
-      <span className="flex-none text-[13px] text-fg2">{fmtDuration(now - active.workout.startedAt)}</span>
       <ChevronRight size={13} className="flex-none text-fg3" />
     </button>
   );

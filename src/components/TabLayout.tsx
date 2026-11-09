@@ -2,13 +2,12 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { useActiveWorkout } from '../data/DataProvider';
 import { useNow } from '../hooks/useNow';
 import { fmtClock } from '../lib/dates';
-import { HistoryIcon, HomeIcon, PlansIcon, ProgressIcon, SettingsIcon } from './icons';
+import { HistoryIcon, HomeIcon, ProgressIcon, SettingsIcon } from './icons';
 import { cx } from './ui';
 
 const TABS = [
   { to: '/', label: 'Home', Icon: HomeIcon, end: true },
-  { to: '/plans', label: 'Plans', Icon: PlansIcon },
-  { to: '/history', label: 'History', Icon: HistoryIcon },
+  { to: '/calendar', label: 'Calendar', Icon: HistoryIcon },
   { to: '/progress', label: 'Progress', Icon: ProgressIcon },
   { to: '/settings', label: 'Settings', Icon: SettingsIcon },
 ];

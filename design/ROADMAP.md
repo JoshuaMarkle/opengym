@@ -7,7 +7,6 @@ State at the time of writing: typecheck clean, 295 tests passing, every screen i
 ## 1. Bugs (small, do first)
 
 - **Sample data repeats a Sunday every November.** `generateSampleData` steps `day += DAY` (24 h), so on the fall-back Sunday the same date comes round twice (two "Run" workouts on Sun Nov 1 2026, which is why 6.1 says "Workouts 4" over three dotted days), and the spring-forward Sunday is skipped. Step by calendar date instead (`new Date(y, m, d + 1)`). Only the cardio stream changes. `src/lib/sampleData.ts`.
-- **A day with two workouts looks like one.** The month calendar draws a single dot whatever the count, and the day's label reads "2 workout". Draw two dots, pluralise. `src/screens/history/History.tsx` (MonthView).
 
 ## 2. Friction at the gym
 

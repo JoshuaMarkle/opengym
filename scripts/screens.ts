@@ -46,20 +46,20 @@ export const CATALOG: Section[] = [
     title: 'Planning',
     blurb: 'Routines in folders; a folder with a schedule is a plan. Usually done at home.',
     screens: [
-      ['2.1', 'Plans', 'Routines grouped in folders. The active folder (what Home shows) is on top; archived folders sit collapsed at the bottom.'],
+      ['2.1', 'Routines', 'Routines grouped in folders. The active folder (what Home shows) is on top; archived folders sit collapsed at the bottom.'],
       ['2.2', '"+" menu', 'New routine (into the active folder), new folder, or a blank workout.'],
       ['2.3', 'Routine builder', 'Each exercise with its set rows. LBS "last" reuses last session\'s weight; REPS is a number, a range or empty. Drag ≡ to reorder; swipe a set to delete it.'],
       ['2.4', 'Keypad, reps', 'The logging keypad. On reps the bottom-left key is the range dash (6 – 8) and the decimal is off.'],
       ['2.5', 'Exercise picker', 'In this routine (untick to remove), Added (in the order ticked), then A–Z. Muscle and Cardio chips filter.'],
       ['2.6', 'Picker, searching', 'While searching, "In this routine" folds away.'],
-      ['2.7', 'Plans, edit mode', 'Drag routines within or between folders, drag folder headers to reorder. Red − deletes a routine; its history is kept.'],
+      ['2.7', 'Routines, edit mode', 'Drag routines within or between folders, drag folder headers to reorder. Red − deletes a routine; its history is kept.'],
       ['2.8', 'Hold a routine', 'Long-press shortcuts: start, edit, duplicate, move, delete.'],
       ['2.9', 'Folder options', 'Rename, make active, archive or delete. Deleting a folder never deletes its routines.'],
       ['2.10', 'Move to folder', 'The tap alternative to dragging. "+ New folder…" creates one and moves the routine in one go.'],
       ['2.11', 'Routine screen', 'Every set with Previous and what it will start at. A superset shows as one bracket. Start is pinned at the bottom.'],
       ['2.12', 'Superset in the builder', 'Linked exercises sit in a blue bracket, tagged A1 / A2. Drag in or out of the bracket to link or unlink.'],
       ['2.13', 'Superset with…', 'From an exercise\'s "•••". Up to 3 exercises per group. The same menu later offers "Unlink superset".'],
-      ['2.14', 'Plans, with a schedule', 'The active plan\'s four weeks of planned vs done sit on top, above its folder (tap a day from today on to change it). Other scheduled folders show this week as a strip under their header; each routine says when it\'s due.'],
+      ['2.14', 'Routines, with a schedule', 'Every scheduled folder shows a code-only week strip. Rest is R, today has a ring, and each routine says when it is due.'],
       ['2.15', 'Plan screen', 'Tap a folder\'s name. Its schedule with this week\'s strip, this week with status and ▶, then the routines.'],
       ['2.16', 'Schedule type', 'No schedule (the plain rotation), a repeating cycle or a weekly split.'],
       ['2.17', 'Repeating cycle', 'Days in order, each a routine or Rest. Pick which day today is and what happens on a miss: wait, or stick to dates.'],
@@ -67,8 +67,18 @@ export const CATALOG: Section[] = [
       ['2.19', 'Assign a day', 'The same sheet for cycle days and weekdays: a routine, Rest, or a new routine made on the spot.'],
       ['2.20', 'Plan calendar', 'Four weeks of planned vs done: blue = done, orange outline = missed, ring = today. Tap a day from today on to change it.'],
       ['2.21', 'Change one day', 'One-off changes that leave the schedule alone: another routine, rest, move, swap, or back to plan.'],
-      ['2.23', 'Plans calendar (prototype)', 'Plan and history on one calendar. Past days: ✓ when trained, orange outline when missed. Today on: the planned routine\'s code. Tap a day for its workouts or plan; "Change day" edits just that day.'],
-      ['2.24', 'Plans calendar, week', 'The same days as rows: what you did, what you missed, what\'s planned. Tap a workout to open it, a day from today on to change it.'],
+      ['2.23', 'Calendar, dates', 'Planned and missed outlines alongside one dot per logged workout. Tap a day for its completed sessions or planned routine.'],
+      ['2.24', 'Calendar, codes', 'Planned routine codes replace dates; rest days retain their dates and dots count logged workouts.'],
+      ['PH3.1', 'Home, scheduled', 'White week-strip date numbers, a blue Today label, a compact Start pill with its label aligned to the play glyph and extra space between them, and Blank workout at the bottom of the list.'],
+      ['PH3.2', 'Calendar, dates', 'Tabs run Calendar, Routines, History. Outlines mark planned and missed days; today has a white outline when unselected. One dot per logged workout.'],
+      ['PH3.3', 'Calendar, codes', 'Codes always mean the planned routine; rest days retain dates. Today keeps its white outline when unselected.'],
+      ['PH3.4', 'History', 'The third view tab: search completed workouts within the merged Calendar tab.'],
+      ['PH3.5', 'Routines', 'The second view tab: reusable templates, code-only schedule strips, and library actions.'],
+      ['PH3.6', 'Calendar, today', 'Today\'s planned workout uses the same compact blue Start pill as Home, including its play glyph, spacing, and label alignment.'],
+      ['4.35', 'Logging a missed workout', 'The header shows the chosen past date while the active timer runs normally.'],
+      ['PH3.7', 'Missed day', 'Log a missed routine late, or keep it skipped.'],
+      ['PH3.8', 'Future day', 'View a planned routine or change one day; no retrospective stats.'],
+      ['PH3.9', 'Change this day', 'Different routine, rest, move, swap, and edit routine.'],
       ['2.22', 'Effort target', 'With effort on, a working set\'s reps box gets an rpe tab for an optional target, shown as an outlined badge on the rep range. It prefills as a placeholder badge only, never as a logged value.'],
     ],
   },
@@ -80,8 +90,9 @@ export const CATALOG: Section[] = [
       ['3.1', 'Home', 'This week as a strip (blue = trained, ring = today); with a scheduled plan, the plan\'s week instead (3.4). Then the active folder, longest-ago first: ▶ starts a routine, tapping the name opens it.'],
       ['3.2', 'Home, workout running', 'An unfinished workout leads Home: timer, where you were, Resume.'],
       ['3.3', 'Resume bar', 'On every other tab while a workout runs, one tap back to your sets.'],
-      ['3.4', 'Home, scheduled', 'With a scheduled active folder, Home follows the plan: the plan\'s week as routine letters (done, missed, today), then today and the next few days, rest days collapsed.'],
+      ['3.4', 'Home, scheduled', 'With a scheduled active folder, Home follows the plan: a blue Today label and compact Start pill, upcoming workouts without rest rows, and Blank workout at the bottom.'],
       ['3.5', 'Missed a day', 'A quiet note the day after a missed workout: do it today or skip it. Never shown for "Wait for me" cycles.'],
+      ['3.7', 'Home, rest today', 'Rest today always has its own row, even beside a missed-workout note; future rest rows are omitted.'],
       ['3.6', 'Home: Lately', 'At most one goal line and one trend line, only when something changed, each shown on one day. Priority: goal done, goal behind, a focus lift turning Climbing or Slipping. Milestones never show here.'],
     ],
   },
@@ -143,14 +154,14 @@ export const CATALOG: Section[] = [
     title: 'History',
     blurb: 'Looking back. The calendar / list choice is remembered.',
     screens: [
-      ['6.1', 'Month', 'Weeks start on the Settings day. The month\'s stats sit under the calendar; tap a day to see its workout under Workouts.'],
+      ['6.1', 'Calendar, month', 'Weeks follow Settings. The selected date shows its workouts or plan below the monthly stats.'],
       ['6.2', '6 months', 'Appears once history spans 6 months. Tap a month to open it.'],
       ['6.3', 'Year', 'Appears after a year of history. ‹ › between years.'],
       ['6.4', 'All time', 'One row per year, a bar per month.'],
       ['6.5', 'List', 'Weeks, search and routine filters.'],
       ['6.6', 'Workout detail', 'Every set, drops included; cardio as a mini table. Repeat, Edit, or Delete in "•••".'],
       ['6.7', 'Edit past workout', 'Fix typos and the date. Records and charts update on Save.'],
-      ['6.8', 'History, empty', 'Only Month shows until history builds up.'],
+      ['6.8', 'History, empty', 'Completed sessions appear here once a workout is finished. Calendar and Routines remain one tap away.'],
     ],
   },
   {
@@ -250,6 +261,84 @@ scene('empty', '1.1 1.2 1.3 1.5 1.6 1.4 6.8 7.6', async ({ p, go, shot }) => {
   await shot('7.6');
 });
 
+scene('sample', 'PH3.1 PH3.2 PH3.3 PH3.4 PH3.5 PH3.6 PH3.7 PH3.8 PH3.9 4.35', async ({ p, go, shot }) => {
+  await go('/calendar');
+  if (await p.eval(`[...document.querySelectorAll('[role="tablist"][aria-label="Calendar views"] [role="tab"]')].map(e => e.getAttribute('aria-label')).join(',')`) !== 'Calendar,Routines,History') throw new Error('Calendar view tabs are out of order');
+  await p.eval(`(async () => {
+    const f = (await __og.db.folders.toArray()).find(f => f.active);
+    const routines = (await __og.db.routines.toArray()).filter(r => r.folderId === f.id && !r.deletedAt).sort((a,b) => a.order-b.order);
+    const ids = routines.map(r => r.id);
+    await __og.db.folders.update(f.id, { schedule: { versions: [{ from: '2026-10-01', kind: 'weekly', days: [null,ids[0],ids[1],ids[0],ids[0],ids[2],null], onMiss: 'skip' }], overrides: {} } });
+  })()`);
+  await go('/');
+  await shot('PH3.1');
+  if (!(await p.eval(`(() => {
+    const today = [...document.querySelectorAll('small')].find(e => e.textContent === 'Today');
+    const start = [...document.querySelectorAll('button')].find(e => e.textContent.trim() === 'Start');
+    const blank = [...document.querySelectorAll('button')].find(e => e.textContent.trim() === '+ Blank workout');
+    return today?.parentElement.classList.contains('text-accent') && start && blank && !!(start.compareDocumentPosition(blank) & Node.DOCUMENT_POSITION_FOLLOWING);
+  })()`))) throw new Error('Home must label today in blue and place Blank workout below the scheduled workouts');
+  await go('/calendar?day=2026-11-05');
+  await shot('PH3.6');
+  await go('/');
+  await go('/calendar?day=2026-11-01');
+  if (!(await p.eval(`(() => {
+    const today = document.querySelector('button[aria-current="date"]');
+    return today?.getAttribute('aria-pressed') === 'false' && getComputedStyle(today).boxShadow.includes('rgb(255, 255, 255)');
+  })()`))) throw new Error('Unselected today must have a white calendar outline');
+  await shot('PH3.2');
+  await p.click('Codes');
+  if (!(await p.eval(`getComputedStyle(document.querySelector('button[aria-current="date"]')).boxShadow.includes('rgb(255, 255, 255)')`))) throw new Error('Today outline must remain visible with routine codes');
+  await shot('PH3.3');
+  await p.click('6M');
+  await p.click({ sel: 'button[aria-label^="October 2026:"]' });
+  if (!(await p.eval(`document.querySelector('[aria-label="Back to today"]')?.textContent?.includes('October 2026')`))) throw new Error('Month overview opened the wrong month');
+  await p.click({ sel: '[role=tab]', text: 'History' });
+  await shot('PH3.4');
+  await p.click({ sel: '[role=tab]', text: 'Routines' });
+  await shot('PH3.5');
+  await go('/');
+  await go('/calendar?day=2026-11-04');
+  await shot('PH3.7');
+  await p.click('Log it late');
+  await shot('4.35');
+  await p.eval(`(async () => { const w = (await __og.db.workouts.toArray()).find(w => w.status === 'active'); if (w) { const es = await __og.db.workoutExercises.where('workoutId').equals(w.id).toArray(); for (const e of es) await __og.db.workoutSets.where('workoutExerciseId').equals(e.id).delete(); await __og.db.workoutExercises.where('workoutId').equals(w.id).delete(); await __og.db.workouts.delete(w.id); } })()`);
+  await go('/');
+  await go('/calendar?day=2026-12-17');
+  await shot('PH3.8');
+  await p.click('Change this day ›');
+  await shot('PH3.9');
+  await go('/');
+  await go('/calendar?day=2026-12-31');
+  await p.click('Change this day ›');
+  await p.click('Move Push to…');
+  await p.find({ sel: 'button', text: 'Jan 1' });
+});
+
+scene('sample', '3.7', async ({ p, go, shot }) => {
+  await go('/');
+  await p.eval(`(async () => {
+    const f = (await __og.db.folders.toArray()).find(f => f.active);
+    const routines = (await __og.db.routines.toArray()).filter(r => r.folderId === f.id && !r.deletedAt).sort((a,b) => a.order-b.order);
+    const ids = routines.map(r => r.id);
+    await __og.db.folders.update(f.id, { schedule: { versions: [{ from: '2026-10-01', kind: 'weekly', days: [null,ids[0],ids[1],ids[0],null,null,ids[2]], onMiss: 'skip' }], overrides: {} } });
+  })()`);
+  await go('/calendar');
+  await go('/');
+  await p.find({ sel: 'span', text: 'Rest today' });
+  await p.find({ sel: 'p', text: 'You missed Push yesterday. Today is a rest day.' });
+  await shot('3.7');
+  // Today stays visible without the missed note and even when every upcoming day is rest.
+  await p.eval(`(async () => {
+    const f = (await __og.db.folders.toArray()).find(f => f.active);
+    await __og.db.folders.update(f.id, { schedule: { versions: [{ from: '2026-11-05', kind: 'weekly', days: [null,null,null,null,null,null,null], onMiss: 'skip' }], overrides: {} } });
+  })()`);
+  await go('/calendar');
+  await go('/');
+  await p.find({ sel: 'span', text: 'Rest today' });
+  if (await p.eval(`document.body.textContent.includes('You missed')`)) throw new Error('Unexpected missed-workout note');
+});
+
 scene('sample', '2.1 2.2 2.7 2.8 2.10 2.9', async ({ p, go, shot, dismiss }) => {
   await go('/plans');
   await p.click({ sel: '[role=tab]', text: 'Routines' });
@@ -338,7 +427,7 @@ scene('sample', '2.16 2.17 2.18 2.19 3.4 2.15 2.14 2.20 2.21 2.23 2.24 3.5', asy
   await go('/plans');
   await p.click({ sel: '[role=tab]', text: 'Calendar' });
   await shot('2.23');
-  await p.click({ sel: '[role=tab]', text: 'Week' });
+  await p.click('Codes');
   await shot('2.24');
 });
 
@@ -471,7 +560,7 @@ scene('sample', '4.23', async ({ p, go, shot }) => {
 });
 
 scene('sample', '6.1 6.2 6.3 6.4 6.5 6.6 6.7', async ({ p, go, shot }) => {
-  await go('/history');
+  await go('/calendar');
   await p.click({ sel: 'button', text: '3', start: true, nth: 0 }).catch(() => {});
   await shot('6.1');
   await p.click('6M');
@@ -481,7 +570,7 @@ scene('sample', '6.1 6.2 6.3 6.4 6.5 6.6 6.7', async ({ p, go, shot }) => {
   await p.click('All');
   await shot('6.4');
   await p.click('Month');
-  await p.click('List');
+  await p.click({ sel: '[role=tab]', text: 'History' });
   await shot('6.5');
   await p.click({ sel: 'button', text: 'min cardio', nth: 0 });
   await shot('6.6');

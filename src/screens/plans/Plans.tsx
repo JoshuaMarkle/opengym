@@ -1,22 +1,12 @@
-import {
-  closestCenter,
-  DndContext,
-  DragOverlay,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragStartEvent,
-} from '@dnd-kit/core';
+import { closestCenter, DndContext, DragOverlay, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { useLongPress } from '../../components/gestures';
-import { ChevronRight, Handle } from '../../components/icons';
+import { CalendarIcon, ListIcon, ChevronRight, Handle } from '../../components/icons';
 import { Alert, Sheet, SheetOption, useToast } from '../../components/overlays';
-import { BarButton, cx, EmptyState, LabelAction, LargeHeader, Pill, Screen, Segmented } from '../../components/ui';
+import { BarButton, cx, EmptyState, LargeHeader, Pill, Screen } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { importRoutinesFromBackup, readBackup } from '../../data/backup';
 import { deleteRoutine, saveLayout } from '../../data/routines';
@@ -25,24 +15,12 @@ import { usePlans, type PlansData } from '../../data/usePlans';
 import type { Folder, Routine } from '../../db/types';
 import { useStartWorkout } from '../../hooks/StartWorkout';
 import { dayKey, startOfWeek } from '../../lib/dates';
-import { addDayKey, currentVersion, describeWhen, type PlanDay } from '../../lib/schedule';
-import { DaySheet, PlanGrid, PlanStrip } from './PlanParts';
+import { addDayKey, currentVersion, describeWhen } from '../../lib/schedule';
+import { CalendarView, ListView } from '../history/History';
 import { PlanHistoryCalendar } from './PlanHistoryCalendar';
 import { FolderSheet, NewFolderSheet, useRoutineActions } from './RoutineActions';
 
 const COLLAPSE_KEY = 'og-collapsed-folders';
-const VIEW_KEY = 'og-plans-view';
-
-type PlansTab = 'calendar' | 'routines';
-
-function loadTab(): PlansTab {
-  try {
-    return localStorage.getItem(VIEW_KEY) === 'routines' ? 'routines' : 'calendar';
-  } catch {
-    return 'calendar';
-  }
-}
-
 function loadCollapsed(): Set<string> {
   try {
     return new Set(JSON.parse(localStorage.getItem(COLLAPSE_KEY) ?? '[]'));
@@ -63,14 +41,11 @@ export function Plans() {
   const [newFolder, setNewFolder] = useState(false);
   const [folderSheet, setFolderSheet] = useState<Folder | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(loadCollapsed);
-  const [tab, setTabState] = useState<PlansTab>(loadTab);
-  const setTab = (t: PlansTab) => {
-    setTabState(t);
-    try {
-      localStorage.setItem(VIEW_KEY, t);
-    } catch {
-      /* ignore */
-    }
+  const [params, setParams] = useSearchParams();
+  const tab = params.get('view') === 'routines' ? 'routines' : params.get('view') === 'history' ? 'history' : 'calendar';
+  const setTab = (view: string) => {
+    setEditing(false);
+    setParams(view === 'calendar' ? {} : { view }, { replace: true });
   };
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -104,7 +79,22 @@ export function Plans() {
     <Screen
       header={
         <LargeHeader
-          title="Plans"
+          title={tab === 'calendar' ? 'Calendar' : tab === 'history' ? 'History' : 'Routines'}
+          subtitle={
+            activeFolder && (
+              <>
+                {activeFolder.name} ·{' '}
+                {currentVersion(activeFolder.schedule, dayKey(Date.now()))?.kind === 'weekly'
+                  ? 'Weekly split'
+                  : currentVersion(activeFolder.schedule, dayKey(Date.now()))?.kind === 'cycle'
+                    ? 'Repeating cycle'
+                    : 'Rotation'}{' '}
+                <button type="button" onClick={() => navigate(`/plan/${activeFolder.id}`)} className="-my-3 inline-flex min-h-11 items-center text-accent">
+                  · Plan ›
+                </button>
+              </>
+            )
+          }
           right={
             editing ? (
               <BarButton kind="bold" onClick={() => setEditing(false)}>
@@ -112,17 +102,38 @@ export function Plans() {
               </BarButton>
             ) : (
               <>
-                {!empty && tab === 'routines' && <BarButton onClick={() => setEditing(true)}>Edit</BarButton>}
-                <BarButton aria-label="New" className="text-[30px] leading-none font-normal" onClick={() => setPlusOpen(true)}>
-                  +
-                </BarButton>
+                <div className="-my-0.5 flex rounded-[10px] bg-surface p-[2px]" role="tablist" aria-label="Calendar views">
+                  {/* PH3.2–PH3.5: Calendar, Routines, History in that order. */}
+                  {(['calendar', 'routines', 'history'] as const).map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      role="tab"
+                      aria-selected={tab === v}
+                      aria-label={v === 'calendar' ? 'Calendar' : v === 'history' ? 'History' : 'Routines'}
+                      onClick={() => setTab(v)}
+                      className={cx('flex h-11 w-11 items-center justify-center rounded-[8px]', tab === v ? 'bg-key-fn text-fg' : 'text-fg2')}
+                    >
+                      {v === 'calendar' ? (
+                        <CalendarIcon size={16} />
+                      ) : v === 'history' ? (
+                        <ListIcon size={16} />
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+                          <path d="M8 5H5v16h14V5h-3M8 11h8M8 15h8" />
+                          <rect x="8" y="3" width="8" height="4" rx="1" />
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </>
             )
           }
         />
       }
     >
-      {!plans ? null : empty ? (
+      {!plans ? null : empty && tab === 'routines' ? (
         <div className="pt-16">
           <EmptyState icon="+" title="No routines yet">
             A routine is a list of exercises with their sets. Build one once, start it in one tap.
@@ -137,18 +148,22 @@ export function Plans() {
         <EditLayout plans={plans} onFolderMenu={setFolderSheet} onNewFolder={() => setNewFolder(true)} />
       ) : (
         <>
-          {/* 2.23 (prototype): plan + history on one calendar. */}
-          <Segmented
-            className="mt-1"
-            options={[
-              { value: 'calendar' as const, label: 'Calendar' },
-              { value: 'routines' as const, label: 'Routines' },
-            ]}
-            value={tab}
-            onChange={setTab}
-          />
+          {tab === 'routines' && (
+            <div className="flex min-h-11 items-center justify-between">
+              <span className="text-[12px] font-bold text-fg2 uppercase">Your library</span>
+              <div className="flex">
+                <BarButton onClick={() => setEditing(true)}>Edit</BarButton>
+                <BarButton aria-label="New" className="text-[30px] font-normal" onClick={() => setPlusOpen(true)}>
+                  +
+                </BarButton>
+              </div>
+            </div>
+          )}
+          {/* PH3.2–PH3.5: one destination, preserving LargeHeader spacing. */}
           {tab === 'calendar' ? (
-            <PlanHistoryCalendar folder={activeFolder} />
+            <CalendarView monthContent={(month, setMonth) => <PlanHistoryCalendar folder={activeFolder} month={month} onMonthChange={setMonth} />} />
+          ) : tab === 'history' ? (
+            <ListView />
           ) : (
             <ViewLayout plans={plans} collapsed={collapsed} onToggle={toggle} onHold={actions.openMenu} onFolderMenu={setFolderSheet} />
           )}
@@ -205,7 +220,11 @@ export function Plans() {
         }}
       />
       <NewFolderSheet open={newFolder} onClose={() => setNewFolder(false)} />
-      <FolderSheet folder={folderSheet ? (plans?.folders.find((f) => f.id === folderSheet.id) ?? null) : null} count={folderSheet ? (plans?.byFolder.get(folderSheet.id)?.length ?? 0) : 0} onClose={() => setFolderSheet(null)} />
+      <FolderSheet
+        folder={folderSheet ? (plans?.folders.find((f) => f.id === folderSheet.id) ?? null) : null}
+        count={folderSheet ? (plans?.byFolder.get(folderSheet.id)?.length ?? 0) : 0}
+        onClose={() => setFolderSheet(null)}
+      />
       {actions.element}
     </Screen>
   );
@@ -231,10 +250,8 @@ function ViewLayout({
   const archived = plans.folders.filter((f) => f.archived);
   const unfiled = plans.byFolder.get('') ?? [];
 
-  const active = ordered.find((f) => f.active);
   return (
     <div>
-      {active && <ActiveCalendar folder={active} />}
       {ordered.map((f) => (
         <FolderGroup key={f.id} plans={plans} folder={f} collapsed={collapsed.has(f.id)} onToggle={() => onToggle(f.id)} onHold={onHold} onFolderMenu={() => onFolderMenu(f)} />
       ))}
@@ -269,24 +286,6 @@ function ViewLayout({
   );
 }
 
-/**
- * 2.1: the active plan's last week, this week and two ahead, with status, above its folder.
- * Tap a day from today on to change just that day (2.21); the folder name opens the plan.
- */
-function ActiveCalendar({ folder }: { folder: Folder }) {
-  const { settings } = useData();
-  const weekFrom = dayKey(startOfWeek(Date.now(), settings.weekStart));
-  const view = usePlanView(folder, addDayKey(weekFrom, -7), addDayKey(weekFrom, 20));
-  const [sheetDay, setSheetDay] = useState<PlanDay | null>(null);
-  if (!view?.scheduled) return null;
-  return (
-    <div className="mt-3">
-      <PlanGrid days={view.days} codes={view.codes} today={view.today} weekStart={settings.weekStart} onOpen={(d) => d.key >= view.today && d.state !== 'off' && setSheetDay(d)} />
-      {sheetDay && <DaySheet folder={folder} day={sheetDay} view={view} onClose={() => setSheetDay(null)} />}
-    </div>
-  );
-}
-
 function FolderGroup({
   plans,
   folder,
@@ -313,19 +312,27 @@ function FolderGroup({
   return (
     <div>
       <FolderHeader title={folder.name} count={list.length} active={folder.active} collapsed={collapsed} onToggle={onToggle} onOpen={openPlan} onHold={onFolderMenu} />
-      {!collapsed && scheduled && view && !folder.active && (
-        <div className="border-b border-line pt-3 pb-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold tracking-[0.07em] text-fg2 uppercase">Schedule · {version?.kind === 'cycle' ? 'Cycle' : 'Weekly'}</span>
-            <LabelAction onClick={openPlan}>Edit plan ›</LabelAction>
-          </div>
-          <PlanStrip days={view.days} codes={view.codes} today={view.today} dense onTap={openPlan} />
+      {/* PH3.5: code-only strip for every scheduled group; codes always mean the plan. */}
+      {!collapsed && scheduled && view && (
+        <div className="grid grid-cols-7 gap-1 border-b border-line py-3 text-center">
+          {view.days.map((d) => (
+            <button key={d.key} type="button" onClick={openPlan} aria-label={`${view.routineName(d.planned)} · Edit plan`} className="min-h-11">
+              <small className="mb-2 block text-[11px] font-bold text-fg2">{new Date(d.ts).toLocaleDateString('en', { weekday: 'narrow' })}</small>
+              <span
+                className={cx(
+                  'flex h-11 items-center justify-center rounded-[9px] text-[12px] font-bold',
+                  d.planned ? 'border border-line-strong text-fg2' : 'text-fg3',
+                  d.key === view.today && 'ring-1 ring-inset ring-fg',
+                )}
+              >
+                {d.planned ? view.codes.get(d.planned) : 'R'}
+              </span>
+            </button>
+          ))}
         </div>
       )}
       {!collapsed &&
-        list.map((r) => (
-          <RoutineRow key={r.id} plans={plans} routine={r} onHold={onHold} when={scheduled ? (describeWhen(version, r.id, settings.weekStart) ?? 'Not scheduled') : undefined} />
-        ))}
+        list.map((r) => <RoutineRow key={r.id} plans={plans} routine={r} onHold={onHold} when={scheduled ? (describeWhen(version, r.id, settings.weekStart) ?? 'Not scheduled') : undefined} />)}
       {!collapsed && !list.length && <p className="border-b border-line py-3 text-[13px] text-fg2">Empty folder.</p>}
     </div>
   );
@@ -351,7 +358,14 @@ function FolderHeader({
 }) {
   const hold = useLongPress(() => onHold?.(), !!onHold);
   // Centered on the name's caps (measured in 2.14). A down chevron's ink sits low in its box, so lift it.
-  const chevron = <span className={cx('inline-block h-[7px] w-[7px] flex-none border-r-2 border-b-2 border-fg2 transition-transform', collapsed ? '-translate-x-[1px] -translate-y-[1px] -rotate-45' : '-translate-y-[3px] rotate-45')} />;
+  const chevron = (
+    <span
+      className={cx(
+        'inline-block h-[7px] w-[7px] flex-none border-r-2 border-b-2 border-fg2 transition-transform',
+        collapsed ? '-translate-x-[1px] -translate-y-[1px] -rotate-45' : '-translate-y-[3px] rotate-45',
+      )}
+    />
+  );
   const label = (
     <span className="flex min-w-0 items-center gap-2 text-[12.5px] font-bold tracking-[0.05em] text-fg/80 uppercase">
       <span className="truncate">{title}</span>
@@ -387,7 +401,12 @@ function RoutineRow({ plans, routine, onHold, when }: { plans: PlansData; routin
   const names = (plans.exercisesByRoutine.get(routine.id) ?? []).map((id) => exerciseMap.get(id)?.name ?? 'Unknown');
   const hold = useLongPress((rect) => onHold(routine, rect));
   return (
-    <button type="button" {...hold} onClick={() => navigate(`/routine/${routine.id}`)} className="no-select flex min-h-[58px] w-full items-center gap-3 border-b border-line text-left active:bg-surface/60">
+    <button
+      type="button"
+      {...hold}
+      onClick={() => navigate(`/routine/${routine.id}`)}
+      className="no-select flex min-h-[58px] w-full items-center gap-3 border-b border-line text-left active:bg-surface/60"
+    >
       <span className="min-w-0 flex-1 py-2">
         <b className="block truncate text-[16px] font-semibold">{routine.name}</b>
         <span className="block truncate text-[13px] text-fg2">
@@ -434,15 +453,18 @@ function EditLayout({ plans, onFolderMenu, onNewFolder }: { plans: PlansData; on
   const toast = useToast();
 
   // Pick up outside changes (new folder, rename, delete) when not dragging.
-  const signature = useMemo(() => buildItems(plans).map((i) => i.id + (i.kind === 'folder' ? i.folder.name + i.folder.archived : '')).join('|'), [plans]);
+  const signature = useMemo(
+    () =>
+      buildItems(plans)
+        .map((i) => i.id + (i.kind === 'folder' ? i.folder.name + i.folder.archived : ''))
+        .join('|'),
+    [plans],
+  );
   useEffect(() => {
     if (!dragging) setItems(buildItems(plans));
   }, [signature]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
   const persist = (next: Item[]) => {
     const g = groups(next);
@@ -500,7 +522,9 @@ function EditLayout({ plans, onFolderMenu, onNewFolder }: { plans: PlansData; on
         <span className="flex h-[24px] w-[24px] items-center justify-center rounded-full bg-accent text-[17px] text-white">+</span>
         New folder
       </button>
-      <p className="mt-4 text-[12.5px] leading-normal text-fg2">Drag ≡ to reorder routines or move them between folders. Drag a folder to reorder folders. − deletes a routine; its workouts stay in History.</p>
+      <p className="mt-4 text-[12.5px] leading-normal text-fg2">
+        Drag ≡ to reorder routines or move them between folders. Drag a folder to reorder folders. − deletes a routine; its workouts stay in History.
+      </p>
       <Alert
         open={!!deleting}
         title={`Delete ${deleting?.name ?? 'routine'}?`}
@@ -555,22 +579,28 @@ function ItemView({
       <Handle />
     </button>
   );
-  if (item.kind === 'none')
-    return (
-      <div className="mt-4 flex h-10 items-end border-b border-line pb-2 text-[12.5px] font-bold tracking-[0.05em] text-fg2 uppercase">
-        No folder
-      </div>
-    );
+  if (item.kind === 'none') return <div className="mt-4 flex h-10 items-end border-b border-line pb-2 text-[12.5px] font-bold tracking-[0.05em] text-fg2 uppercase">No folder</div>;
   if (item.kind === 'folder')
     return (
-      <div className={cx('mt-4 flex h-11 items-center gap-2 border-b border-line', overlay && 'rounded-[10px] bg-surface px-3 outline-[1.5px] outline-accent', item.folder.archived && !overlay && 'opacity-60')}>
+      <div
+        className={cx(
+          'mt-4 flex h-11 items-center gap-2 border-b border-line',
+          overlay && 'rounded-[10px] bg-surface px-3 outline-[1.5px] outline-accent',
+          item.folder.archived && !overlay && 'opacity-60',
+        )}
+      >
         {handle(`Reorder ${item.folder.name}`)}
         <span className="min-w-0 flex-1 truncate text-[12.5px] font-bold tracking-[0.05em] text-fg/80 uppercase">
           {item.folder.name}
           {item.folder.archived && <small className="ml-1.5 font-semibold tracking-normal text-fg2 normal-case">archived</small>}
         </span>
         {onFolderMenu && (
-          <button type="button" onClick={() => onFolderMenu(item.folder)} aria-label={`${item.folder.name} options`} className="-mr-2 flex h-11 w-11 items-center justify-center text-[14px] font-bold tracking-[1px] text-accent">
+          <button
+            type="button"
+            onClick={() => onFolderMenu(item.folder)}
+            aria-label={`${item.folder.name} options`}
+            className="-mr-2 flex h-11 w-11 items-center justify-center text-[14px] font-bold tracking-[1px] text-accent"
+          >
             •••
           </button>
         )}

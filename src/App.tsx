@@ -8,7 +8,6 @@ import { ExerciseForm } from './screens/exercises/ExerciseForm';
 import { ExerciseScreen } from './screens/exercises/ExerciseScreen';
 import { Library } from './screens/exercises/Library';
 import { EditWorkout } from './screens/history/EditWorkout';
-import { History } from './screens/history/History';
 import { WorkoutDetail } from './screens/history/WorkoutDetail';
 import { Home } from './screens/home/Home';
 import { InstallGuide } from './screens/onboarding/InstallGuide';
@@ -55,8 +54,9 @@ function AppRoutes() {
     <Routes>
       <Route element={<TabLayout />}>
         <Route index element={<Home />} />
-        <Route path="plans" element={<Plans />} />
-        <Route path="history" element={<History />} />
+        <Route path="calendar" element={<Plans />} />
+        <Route path="plans" element={<Navigate to="/calendar?view=routines" replace />} />
+        <Route path="history" element={<Navigate to="/calendar?view=history" replace />} />
         <Route path="progress" element={<Progress />} />
         <Route path="progress/lift/:id" element={<LiftDetail />} />
         <Route path="progress/lift/:id/trend" element={<LiftTrend />} />

@@ -57,7 +57,7 @@ export function RoutineScreen() {
   if (draft === undefined || !plans) return null;
   if (!draft || !routine)
     return (
-      <Screen header={<TopBar left={<BackButton label="Plans" onClick={() => navigate('/plans')} />} />}>
+      <Screen header={<TopBar left={<BackButton label="Routines" onClick={() => navigate('/plans')} />} />}>
         <EmptyState icon="?" title="Routine not found" className="pt-20">
           It may have been deleted. Its workouts are still in History.
         </EmptyState>
@@ -85,7 +85,7 @@ export function RoutineScreen() {
       header={
         <TopBar
           border={false}
-          left={<BackButton label="Plans" onClick={back} />}
+          left={<BackButton label="Routines" onClick={back} />}
           right={
             <>
               <BarButton onClick={() => navigate(`/routine/${id}/edit`)}>Edit</BarButton>
