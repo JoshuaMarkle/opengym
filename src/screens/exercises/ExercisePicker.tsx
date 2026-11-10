@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { FullScreen } from '../../components/overlays';
-import { BarButton, Check, Chips, cx, Screen, SearchField, Segmented, Tag, TopBar } from '../../components/ui';
+import { AddRow, BarButton, Check, Chips, cx, Screen, SearchField, Segmented, Tag, TopBar } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { areaLabel, equipmentLabel, MUSCLES, muscleLabel, type Exercise, type Muscle } from '../../db/types';
 import { columnsLabel } from '../../lib/cardio';
@@ -315,10 +315,9 @@ function PickerBody({
       )}
       {!searching && <HiddenFooter count={ranked?.hiddenCount ?? az?.hiddenCount ?? 0} shown={showHidden} onToggle={() => setShowHidden((v) => !v)} />}
 
-      <button type="button" onClick={() => setCreating(true)} className="flex h-[52px] w-full items-center gap-2.5 text-[16px] font-semibold text-accent">
-        <span className="flex h-[24px] w-[24px] items-center justify-center rounded-full bg-accent text-[17px] leading-none text-white">+</span>
+      <AddRow onClick={() => setCreating(true)} className="border-b-0">
         New exercise{searching ? ` "${query.trim()}"` : ''}
-      </button>
+      </AddRow>
     </Screen>
   );
 }

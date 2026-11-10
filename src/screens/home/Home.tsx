@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useLongPress } from '../../components/gestures';
-import { Button, cx, DoneDisc, EmptyState, LabelAction, LargeHeader, PlayButton, Screen, SectionLabel, StartPill } from '../../components/ui';
+import { PlusGlyph } from '../../components/icons';
+import { AttentionNote, Badge, Button, cx, DayDisc, DoneDisc, EmptyState, LabelAction, LargeHeader, LiveStatus, PlayButton, RowText, Screen, SectionLabel, StartPill, TextButton, Weekday } from '../../components/ui';
 import { useActiveWorkout, useData, type ActiveWorkoutData } from '../../data/DataProvider';
 import { changeDays, skipMissed, usePlanView, type PlanView } from '../../data/schedule';
 import { usePlans } from '../../data/usePlans';
@@ -49,14 +50,14 @@ export function Home() {
 
       {/* With a schedule, the plan's week (2.15): what's planned, done and missed. Otherwise the days you trained. */}
       {scheduled && folder && weekView?.days.length ? (
-        <PlanStrip days={weekView.days} codes={weekView.codes} today={weekView.today} dense hideDates unfilled labelClassName="text-fg2" onTap={(d) => navigate(`/calendar?day=${d.key}`)} className="mt-3" />
+        <PlanStrip days={weekView.days} codes={weekView.codes} today={weekView.today} live={!!active} onTap={(d) => navigate(`/calendar?day=${d.key}`)} className="mt-3" />
       ) : (
         <WeekStrip now={now} weekStart={settings.weekStart} trained={trained} live={!!active} onOpen={() => navigate('/calendar')} />
       )}
 
       {!plans ? null : !hasRoutines ? (
         <div className="pt-12">
-          <EmptyState icon="+" title="No routines yet">
+          <EmptyState icon={<PlusGlyph size={20} />} title="No routines yet">
             Build a routine once, then start it in one tap every time.
           </EmptyState>
           <div className="mx-auto mt-6 flex max-w-[300px] flex-col gap-2">
@@ -72,38 +73,36 @@ export function Home() {
             <ScheduledList folder={folder} view={planView} runningId={runningId} />
           ) : (
             <>
-              <SectionLabel action={<LabelAction onClick={() => navigate('/plans')}>Routines ›</LabelAction>}>{folder?.name ?? 'Routines'}</SectionLabel>
+              <SectionLabel action={<LabelAction chevron onClick={() => navigate('/plans')}>Routines</LabelAction>}>{folder?.name ?? 'Routines'}</SectionLabel>
               {shown.map((r) => {
                 const last = history.lastDoneByRoutine.get(r.id);
                 const isNext = r.id === nextId;
                 const names = (plans.exercisesByRoutine.get(r.id) ?? []).map((id) => exerciseMap.get(id)?.name).filter(Boolean);
                 return (
-                  <div key={r.id} className="flex min-h-[58px] items-center gap-3 border-b border-line">
-                    <button type="button" onClick={() => navigate(`/routine/${r.id}`)} className="min-w-0 flex-1 py-2 text-left active:opacity-70">
-                      <b className="flex items-center text-[16px] font-semibold">
-                        <span className="truncate">{r.name}</span>
-                        {isNext && <span className="ml-2 flex-none rounded-[4px] bg-accent px-[5px] py-[1px] text-[10px] font-bold text-white">NEXT</span>}
-                      </b>
-                      <span className="block truncate text-[13px] text-fg2">
-                        {last ? `Last done ${fmtRelativeDay(last, now)}` : names.length ? `Never done · ${names.length} exercises` : 'Never done'}
-                      </span>
+                  <div key={r.id} className="flex min-h-15 items-center gap-3 border-b border-line">
+                    <button type="button" onClick={() => navigate(`/routine/${r.id}`)} className="flex min-w-0 flex-1 py-2 text-left active:opacity-70">
+                      <RowText
+                        title={r.name}
+                        badge={isNext && <Badge variant="next">NEXT</Badge>}
+                        subtitle={last ? `Last done ${fmtRelativeDay(last, now)}` : names.length ? `Never done · ${names.length} exercises` : 'Never done'}
+                      />
                     </button>
                     <PlayButton primary={isNext} label={`Start ${r.name}`} onClick={() => start.startRoutine(r.id, r.name)} />
                   </div>
                 );
               })}
-              {!shown.length && folderRoutines.length > 0 && <p className="border-b border-line py-3 text-[13px] text-fg2">Every routine in this folder is running.</p>}
+              {!shown.length && folderRoutines.length > 0 && <p className="border-b border-line py-3 text-footnote text-fg2">Every routine in this folder is running.</p>}
               {!folderRoutines.length && (
-                <button type="button" onClick={() => navigate('/plans')} className="block w-full border-b border-line py-3 text-left text-[13px] text-fg2">
+                <button type="button" onClick={() => navigate('/plans')} className="block w-full border-b border-line py-3 text-left text-footnote text-fg2">
                   {folder ? `${folder.name} is empty. Add routines in Routines.` : 'No active folder. Pick one in Routines.'}
                 </button>
               )}
             </>
           )}
           {!scheduled && (
-            <button type="button" onClick={start.startBlank} className="flex h-[54px] w-full items-center text-[16px] font-semibold text-accent active:opacity-70">
+            <TextButton onClick={start.startBlank} className="h-13 w-full text-body-lg">
               + Blank workout
-            </button>
+            </TextButton>
           )}
           <Lately now={now} />
         </>
@@ -112,6 +111,7 @@ export function Home() {
   );
 }
 
+/** design §12 Week strip (3.1): Caps weekday letters over day discs. Done blue, today a white ring (green while live). */
 function WeekStrip({ now, weekStart, trained, live, onOpen }: { now: number; weekStart: 0 | 1; trained: Set<string>; live: boolean; onOpen: () => void }) {
   const first = startOfWeek(now, weekStart);
   const today = startOfDay(now);
@@ -121,21 +121,12 @@ function WeekStrip({ now, weekStart, trained, live, onOpen }: { now: number; wee
       {days.map((d) => {
         const date = new Date(d);
         const isToday = d === today;
-        const done = trained.has(dayKey(d));
-        const future = d > today;
         return (
           <span key={d}>
-            <small className={cx('block text-[11px] font-bold', isToday ? 'text-fg' : 'text-fg2')}>{weekdayLetter(date.getDay())}</small>
-            <i
-              className={cx(
-                'mx-auto mt-1.5 flex h-[34px] w-[34px] items-center justify-center rounded-full text-[13.5px] font-bold not-italic',
-                done ? 'bg-accent text-white' : future ? 'text-fg' : 'bg-surface text-fg',
-                isToday && !done && 'bg-transparent text-fg',
-                isToday && (live ? 'shadow-[inset_0_0_0_2px_var(--og-tip)]' : done ? 'shadow-[0_0_0_2px_var(--og-bg),0_0_0_4px_var(--og-accent)]' : 'shadow-[inset_0_0_0_2px_var(--og-fg)]'),
-              )}
-            >
+            <Weekday today={isToday}>{weekdayLetter(date.getDay())}</Weekday>
+            <DayDisc className="mt-1.5" state={trained.has(dayKey(d)) ? 'done' : d > today ? 'planned' : 'past'} today={isToday} live={live}>
               {date.getDate()}
-            </i>
+            </DayDisc>
           </span>
         );
       })}
@@ -159,32 +150,14 @@ function LiveBlock({ data }: { data: ActiveWorkoutData }) {
   }
   const [name, rest] = where.split(' · ');
   return (
-    <div className="mt-2 border-y border-line pt-2.5 pb-3">
-      <div className="flex items-center justify-between">
-        <span className="inline-flex items-center gap-1.5 text-[11px] leading-none font-bold tracking-[0.07em] text-tip">
-          <i className="anim-pulse -translate-y-px h-[7px] w-[7px] rounded-full bg-tip" />
-          IN PROGRESS
-        </span>
-        <span className="text-[14px] font-bold tabular-nums">{fmtClock(now - workout.startedAt)}</span>
-      </div>
-      <b className="mt-0.5 block truncate text-[22px] font-bold">{workout.name}</b>
-      <div className="mt-0.5 truncate text-[14px] text-fg/80">
-        {cur ? 'On: ' : ''}
-        {name}
-        {rest && <span className="text-fg2"> · {rest}</span>}
-      </div>
-      {exercises.length > 0 && (
-        <div className="mt-2.5 flex gap-1" aria-hidden>
-          {exercises.map((e) => {
-            const done = e.sets.length > 0 && e.sets.every((s) => s.completed);
-            return <i key={e.we.id} className={cx('h-[5px] flex-1 rounded-full', done ? 'bg-accent' : e.we.id === cur?.we.id ? 'bg-fg' : 'bg-surface-2')} />;
-          })}
-        </div>
-      )}
-      <Button size="md" className="mt-3" onClick={() => navigate('/workout')}>
-        Resume
-      </Button>
-    </div>
+    <LiveStatus
+      title={workout.name}
+      timer={fmtClock(now - workout.startedAt)}
+      where={`${cur ? 'On: ' : ''}${name}`}
+      detail={rest}
+      steps={exercises.map((e) => (e.sets.length > 0 && e.sets.every((s) => s.completed) ? 'done' : e.we.id === cur?.we.id ? 'current' : 'todo'))}
+      onResume={() => navigate('/workout')}
+    />
   );
 }
 
@@ -224,22 +197,21 @@ function ScheduledList({ folder, view, runningId }: { folder: Folder; view: Plan
   return (
     <>
       {missed && (
-        <div className="mt-4 border-l-2 border-warn py-0.5 pl-3">
-          <p className="text-[14px] leading-snug">
-            <b className="font-semibold text-warn">You missed {view.routineName(missed.planned)} yesterday.</b>{' '}
-            <span className="text-fg2">{todayDay?.planned ? `Today is ${view.routineName(todayDay.planned)}.` : 'Today is a rest day.'}</span>
-          </p>
-          <div className="mt-1 flex gap-4">
-            <button type="button" onClick={() => void changeDays(folder.id, doItTodayPatch(missed, today))} className="flex h-11 items-center text-[15px] font-semibold text-accent active:opacity-60">
-              Do it today
-            </button>
-            <button type="button" onClick={() => void skipMissed(folder.id, missed.key)} className="flex h-11 items-center text-[15px] text-fg2 active:opacity-60">
-              Skip it
-            </button>
-          </div>
-        </div>
+        <AttentionNote
+          lead={`You missed ${view.routineName(missed.planned)} yesterday.`}
+          actions={
+            <>
+              <TextButton onClick={() => void changeDays(folder.id, doItTodayPatch(missed, today))}>Do it today</TextButton>
+              <TextButton tone="muted" onClick={() => void skipMissed(folder.id, missed.key)}>
+                Skip it
+              </TextButton>
+            </>
+          }
+        >
+          {todayDay?.planned ? `Today is ${view.routineName(todayDay.planned)}.` : 'Today is a rest day.'}
+        </AttentionNote>
       )}
-      <SectionLabel action={<LabelAction onClick={() => navigate('/calendar')}>Calendar ›</LabelAction>}>{`${folder.name} · This week`}</SectionLabel>
+      <SectionLabel action={<LabelAction chevron onClick={() => navigate('/calendar')}>Calendar</LabelAction>}>{`${folder.name} · This week`}</SectionLabel>
       {items.map((it) =>
         it.kind === 'rest' ? (
           <HomeRestRow key={it.days[0].key} label={restLabel(it.days)} isToday={it.days[0].key === today} onHold={() => setSheetDay(it.days[0])} />
@@ -268,10 +240,10 @@ function ScheduledList({ folder, view, runningId }: { folder: Folder; view: Plan
           />
         ),
       )}
-      {!items.length && <p className="border-b border-line py-3 text-[13px] text-fg2">Nothing planned in the next two weeks.</p>}
-      <button type="button" onClick={start.startBlank} className="flex h-[54px] w-full items-center text-[16px] font-semibold text-accent active:opacity-70">
+      {!items.length && <p className="border-b border-line py-3 text-footnote text-fg2">Nothing planned in the next two weeks.</p>}
+      <TextButton onClick={start.startBlank} className="h-13 w-full text-body-lg">
         + Blank workout
-      </button>
+      </TextButton>
       {sheetDay && <DaySheet folder={folder} day={sheetDay} view={view} onClose={() => setSheetDay(null)} />}
     </>
   );

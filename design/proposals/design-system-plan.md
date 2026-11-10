@@ -43,6 +43,16 @@ S1–S12, file by file, with `npm run lint:design` as the to-do list. Most of S1
 - **Lint scope for `h-[…]`:** the change list only covers arbitrary heights. Spacing-scale heights such as `h-14` (56) aren't linted; rows at 56 are fixed by hand in Phase 3.
 - **Typed `→` in `lib/routineDiff.ts`** builds sentences for the "Update the routine?" alert (5.2). It's prose inside a string, and an alert message can't hold a glyph without changing the alert API. Allowlisted as prose.
 - **Typed `→` in ImportScreen's "Settings → Export"** is a menu path in prose, same treatment.
+- **ExerciseFormView has no tablist.** The audit line about a tablist there is stale; its tick discs were the only copies.
+- **Back chevrons** that passed `iconSize={14}` now use the one size, 17.
+- **PlanStrip code boxes** (2.14, 2.15, PH3.1, 3.4) are now `DayDisc`s, the same as Home's week strip.
+- **Keypad key shadow** is gone (no shadows outside the effort badge and the lifted row).
+- **Home routine rows** are two-line rows: Headline 17/700 title, Callout subtitle, 60 tall.
+- **The "active" folder badge** keeps its lowercase copy; the Badge styles it.
+- **Close buttons** in the look-back and RPE sheets were 30 px `key-fn` circles; they are now Disc L grey (34, `surface-2`).
+- **Tip line:** its bare ✕ is now a grey Disc L, like the suggestion bar's dismiss. The "Back after a break?" dismiss grew from 22 to Disc L.
+- **Goal value boxes:** `ValueBox` is itself a `<label>`, so the wrapping `<label>` became a `<div>` (same focus behaviour: tapping the field label no longer focuses the box, tapping the box does).
+- **Effort.tsx** text sizes outside the badge are screen copy and wait for Phase 3.
 
 ## Not done
 

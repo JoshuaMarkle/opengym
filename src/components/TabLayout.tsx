@@ -2,8 +2,8 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { useActiveWorkout } from '../data/DataProvider';
 import { useNow } from '../hooks/useNow';
 import { fmtClock } from '../lib/dates';
-import { HistoryIcon, HomeIcon, ProgressIcon, SettingsIcon } from './icons';
-import { cx } from './ui';
+import { ChevronRight, HistoryIcon, HomeIcon, ProgressIcon, SettingsIcon } from './icons';
+import { cx, LiveDot } from './ui';
 
 const TABS = [
   { to: '/', label: 'Home', Icon: HomeIcon, end: true },
@@ -36,7 +36,7 @@ export function TabBar() {
           to={to}
           end={end}
           className={({ isActive }) =>
-            cx('flex h-[52px] flex-1 flex-col items-center justify-center gap-[3px] text-[10.5px] font-semibold transition-colors', isActive ? 'text-accent' : 'text-fg2')
+            cx('flex h-[52px] flex-1 flex-col items-center justify-center gap-0.75 text-micro font-semibold transition-colors', isActive ? 'text-accent' : 'text-fg2')
           }
         >
           <Icon size={23} />
@@ -57,14 +57,17 @@ function ResumeBar() {
     <button
       type="button"
       onClick={() => navigate('/workout')}
-      className="anim-fade mx-2.5 mb-1.5 flex h-12 flex-none items-center justify-between rounded-[13px] border border-accent/50 bg-done px-3.5 text-left active:opacity-80"
+      className="anim-fade mx-2.5 mb-1.5 flex h-12 flex-none items-center justify-between rounded-lg border border-accent/50 bg-done px-3.5 text-left active:opacity-80"
     >
       <span className="flex min-w-0 items-center gap-2">
-        <i className="anim-pulse h-[7px] w-[7px] flex-none rounded-full bg-tip" />
-        <b className="truncate text-[15px]">{active.workout.name}</b>
-        <span className="flex-none text-[13px] text-fg2">{fmtClock(now - active.workout.startedAt)} · in progress</span>
+        <LiveDot />
+        <b className="truncate text-body">{active.workout.name}</b>
+        <span className="flex-none text-footnote text-fg2">{fmtClock(now - active.workout.startedAt)} · in progress</span>
       </span>
-      <em className="flex-none text-[15px] font-bold text-accent not-italic">Resume ›</em>
+      <em className="flex flex-none items-center gap-1 text-body font-bold text-accent not-italic">
+        Resume
+        <ChevronRight size={11} />
+      </em>
     </button>
   );
 }

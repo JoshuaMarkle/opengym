@@ -317,16 +317,15 @@ function Builder({ initial: initialProp, folderParam, slotParam }: { initial?: R
           </SortableContext>
         </DndContext>
 
-        <button
-          type="button"
+        <AddButton
+          className="mt-4 w-full"
           onClick={() => {
             setEditing(null);
             setOverlay('add');
           }}
-          className="mt-4 flex h-12 w-full items-center justify-center rounded-[12px] border border-dashed border-line-strong text-[16px] font-semibold text-accent active:opacity-70"
         >
           + Add exercises
-        </button>
+        </AddButton>
 
         <div className="mt-6 text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase">Notes</div>
         <textarea

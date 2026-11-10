@@ -160,19 +160,19 @@ export function SwipeRow({
   const moving = dx !== 0 || animating;
 
   return (
-    <div ref={elRef} className={cx('relative', moving && 'overflow-hidden', rounded && 'rounded-[9px]', className)}>
+    <div ref={elRef} className={cx('relative', moving && 'overflow-hidden', rounded && 'rounded-md', className)}>
       {dx > 0 && right && (
-        <div className={cx('absolute inset-0 flex items-center pl-4 text-[14px] font-bold text-white transition-colors', armed ? 'bg-swipe-armed' : 'bg-swipe')}>
+        <div className={cx('absolute inset-0 flex items-center pl-4 text-callout font-bold text-white transition-colors', armed ? 'bg-swipe-armed' : 'bg-swipe')}>
           {right.label}
         </div>
       )}
       {dx < 0 && left && (
-        <div className={cx('absolute inset-0 flex items-center justify-end pr-5 text-[14px] font-bold text-white transition-colors', armed ? 'bg-danger' : 'bg-danger/70')}>
+        <div className={cx('absolute inset-0 flex items-center justify-end pr-5 text-callout font-bold text-white transition-colors', armed ? 'bg-danger' : 'bg-danger/70')}>
           {left.label}
         </div>
       )}
       <div
-        className={cx('no-select relative touch-pan-y bg-bg', rounded && 'rounded-[9px]', animating && 'transition-transform duration-200')}
+        className={cx('no-select relative touch-pan-y bg-bg', rounded && 'rounded-md', animating && 'transition-transform duration-200')}
         style={{ transform: dx ? `translateX(${dx}px)` : undefined }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}

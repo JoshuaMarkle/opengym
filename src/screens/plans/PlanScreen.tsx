@@ -29,7 +29,7 @@ export function PlanScreen() {
   if (!folder) {
     if (!gaveUp) return null;
     return (
-      <Screen header={<TopBar left={<BackButton iconSize={14} label="Plans" onClick={() => navigate('/plans')} />} />}>
+      <Screen header={<TopBar left={<BackButton label="Plans" onClick={() => navigate('/plans')} />} />}>
         <p className="mt-10 text-center text-[15px] text-fg2">This plan was deleted.</p>
       </Screen>
     );
@@ -54,7 +54,7 @@ export function PlanScreen() {
       header={
         <TopBar
           border={false}
-          left={<BackButton iconSize={14} label="Plans" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/plans'))} />}
+          left={<BackButton label="Plans" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/plans'))} />}
           right={<BarButton onClick={() => setEditing(true)}>Edit</BarButton>}
         />
       }

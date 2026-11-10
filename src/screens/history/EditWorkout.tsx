@@ -454,16 +454,15 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
           );
         })}
 
-        <button
-          type="button"
+        <AddButton
+          className="mt-4 w-full"
           onClick={() => {
             setEditing(null);
             setOverlay('add');
           }}
-          className="mt-4 flex h-12 w-full items-center justify-center rounded-[12px] border border-dashed border-line-strong text-[16px] font-semibold text-accent"
         >
           + Add exercises
-        </button>
+        </AddButton>
         <p className="mt-3 text-[12.5px] leading-normal text-fg2">
           {emptyCount ? `${emptyCount} empty ${emptyCount === 1 ? 'row' : 'rows'} will be removed on Save. ` : ''}
           Records and charts update on Save.

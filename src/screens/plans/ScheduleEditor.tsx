@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { CheckGlyph, ChevronLeft, ChevronRight, Handle } from '../../components/icons';
 import { Sheet, SheetOption } from '../../components/overlays';
-import { BackButton, BarButton, cx, Note, Radio, Screen, SectionLabel, Segmented, TopBar } from '../../components/ui';
+import { AddRow, BackButton, BarButton, cx, Note, Radio, Screen, SectionLabel, Segmented, TopBar } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { saveSchedule, usePlanView, type PlanView } from '../../data/schedule';
 import { usePlans } from '../../data/usePlans';
@@ -227,7 +227,7 @@ function Editor({ folder, view }: { folder: Folder; view: PlanView }) {
   const day1 = addDayKey(today, -Math.min(draft.todayIndex, draft.cycle.length - 1));
   return (
     <Screen header={<TopBar
-      left={<BackButton iconSize={14} label={folder.name} onClick={leave} />}
+      left={<BackButton label={folder.name} onClick={leave} />}
       title="Schedule"
       right={<BarButton kind="bold" disabled={saving} onClick={() => void save(draft.kind)}>Save</BarButton>}
     />}>
@@ -303,14 +303,7 @@ function Editor({ folder, view }: { folder: Folder; view: PlanView }) {
         onReorder={(cycle) => patch({ cycle })}
         onOpen={(index) => setAssign({ kind: 'cycle', index })}
       />
-      <button
-        type="button"
-        onClick={() => patch({ cycle: [...draft.cycle, { key: newKey(), slot: null }] })}
-        className="flex h-12 w-full items-center gap-2.5 border-b border-line text-[16px] font-semibold text-accent active:opacity-70"
-      >
-        <span className="flex h-[24px] w-[24px] items-center justify-center rounded-full bg-accent text-[17px] text-white">+</span>
-        Add a day
-      </button>
+      <AddRow onClick={() => patch({ cycle: [...draft.cycle, { key: newKey(), slot: null }] })}>Add a day</AddRow>
 
       <SectionLabel>Starts</SectionLabel>
       <button type="button" onClick={() => setPickToday(true)} className="flex min-h-[52px] w-full items-center gap-3 border-b border-line text-left active:bg-surface/60">

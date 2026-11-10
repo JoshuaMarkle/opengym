@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { cx } from '../../components/ui';
+import { MoreLabel, VariationChip } from '../../components/ui';
 import { GROUP_LABELS } from '../../db/seedExercises';
 import type { Exercise } from '../../db/types';
 import { variationChips } from '../../lib/popularity';
@@ -36,28 +36,20 @@ export function VariationChipRow({
   onAll: () => void;
 }) {
   const { chips, more } = useMemo(() => variationChips(current, members, sessions), [current, members, sessions]);
-  const chip = 'h-8 flex-none rounded-[8px] border px-3 text-[13px] font-semibold whitespace-nowrap transition-colors';
   const list = chips.map((v) => {
     const on = v.id === current.id;
     const yours = !on && sessions(v.id) > 0;
     return (
-      <button
-        key={v.id}
-        type="button"
-        role="radio"
-        aria-checked={on}
-        onClick={() => onPick(v.id)}
-        className={cx(chip, on ? 'border-accent bg-done text-fg' : yours ? 'border-accent text-fg' : 'border-line-strong text-fg2')}
-      >
+      <VariationChip key={v.id} state={on ? 'current' : yours ? 'history' : 'other'} onClick={() => onPick(v.id)}>
         {labels.get(v.id) ?? v.name}
-        {on && wrap && <span className="ml-1 font-normal text-fg2">· this</span>}
-      </button>
+        {on && wrap && <span className="font-normal text-fg2">· this</span>}
+      </VariationChip>
     );
   });
   const all = more > 0 && (
-    <button type="button" onClick={onAll} aria-label={`All ${members.length} variations`} className={cx(chip, 'border-line-strong text-accent')}>
-      {wrap ? `All ${members.length} ›` : `+${more}`}
-    </button>
+    <VariationChip state="more" onClick={onAll} ariaLabel={`All ${members.length} variations`}>
+      {wrap ? <MoreLabel>All {members.length}</MoreLabel> : `+${more}`}
+    </VariationChip>
   );
   if (wrap)
     return (

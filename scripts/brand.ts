@@ -46,7 +46,8 @@ const ROLE: Record<string, string> = {
   cyan: 'Carbs (nutrition only)',
   gold: 'Fat (nutrition only)',
 };
-const tabs = ['home', 'plans', 'history', 'progress', 'settings'].map((n) => [n, readFileSync(join(brand, 'tabs', `${n}.svg`), 'utf8')]);
+const TAB_LABEL: Record<string, string> = { home: 'Home', history: 'Calendar', progress: 'Progress', settings: 'Settings' };
+const tabs = ['home', 'history', 'progress', 'settings'].map((n) => [n, readFileSync(join(brand, 'tabs', `${n}.svg`), 'utf8')]);
 const dark = tokens('dark');
 const light = new Map(tokens('light'));
 const tip = dark.find(([k]) => k === 'tip')![1];
@@ -81,7 +82,7 @@ ${dark.map(([k, v]) => `<tr><td>--og-${k}</td><td>${swatch(v)}${v}</td><td>${swa
 <div><h2>Meaning colors</h2><table><tr><th>Color</th><th>Role</th></tr>
 ${[...meaning, ['tip', tip]].map(([k, v]) => `<tr><td>${swatch(v)}${k} ${v}</td><td>${ROLE[k] ?? ''}</td></tr>`).join('')}
 </table>
-<h2>Tab bar (solid icons, design/brand/tabs)</h2><div class="tabs">${tabs.map(([n, s]) => `<div>${s.replace('<svg', '<svg fill="currentColor"')}${n[0].toUpperCase() + n.slice(1)}</div>`).join('')}</div>
+<h2>Tab bar (solid icons, design/brand/tabs)</h2><div class="tabs">${tabs.map(([n, s]) => `<div>${s.replace('<svg', '<svg fill="currentColor"')}${TAB_LABEL[n]}</div>`).join('')}</div>
 <h2>In-app glyphs</h2><div class="glyphs"><span>▶</span><span>+</span><span style="color:#007aff">✓</span><span>•••</span><span>≡</span><span style="color:#a1a1aa;font-weight:700">W</span><span style="color:#ff9500;font-weight:700">D</span></div>
 <h2>Type</h2><p style="color:#fff"><b style="font-size:34px">34 Title</b> · <b style="font-size:22px">22 Exercise</b> · <span style="font-size:17px">17 Row</span> · <span style="font-size:13px;color:#a1a1aa">13 Meta</span> · <b style="font-size:10px;letter-spacing:.12em;color:#a1a1aa">10 CAPS</b></p>
 </div></div>

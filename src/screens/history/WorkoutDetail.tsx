@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Alert, Sheet, SheetOption, useToast } from '../../components/overlays';
-import { BackButton, BarButton, Button, cx, EmptyState, Screen, StatRow, Tag, TopBar } from '../../components/ui';
+import { BackButton, BarButton, Button, cx, DetailTitle, EmptyState, Screen, StatRow, Tag, TopBar } from '../../components/ui';
 import { exerciseOrMissing, useData } from '../../data/DataProvider';
 import { workoutTotals } from '../../data/history';
 import { routineFromWorkout } from '../../data/routines';
@@ -43,7 +43,7 @@ export function WorkoutDetail() {
 
   if (!hw)
     return (
-      <Screen header={<TopBar left={<BackButton iconSize={14} label="History" onClick={() => navigate('/history')} />} />}>
+      <Screen header={<TopBar left={<BackButton label="History" onClick={() => navigate('/history')} />} />}>
         <EmptyState icon="?" title="Workout not found" className="pt-20">
           It may have been deleted.
         </EmptyState>
@@ -62,25 +62,22 @@ export function WorkoutDetail() {
         <TopBar
           border={false}
           // 6.6: center History and Edit with the chevron, with a wider back-label gap.
-          left={<BackButton iconSize={14} label="History" onClick={back} className="gap-3 leading-none" />}
+          left={<BackButton label="History" onClick={back} className="gap-3 leading-none" />}
           right={<BarButton className="leading-none" onClick={() => navigate(`/history/${id}/edit`)}>Edit</BarButton>}
         />
       }
       footer={
         <div className="grid flex-none grid-cols-[1fr_50px] gap-2 border-t border-line px-4 pt-2.5 pb-[max(12px,env(safe-area-inset-bottom))]">
-          <Button size="md" onClick={() => start.repeat(w.id, w.name)}>
+          <Button onClick={() => start.repeat(w.id, w.name)}>
             Repeat this workout
           </Button>
-          <Button size="md" kind="secondary" aria-label="More" onClick={() => setMenu(true)} className="tracking-[1px]">
+          <Button kind="secondary" aria-label="More" onClick={() => setMenu(true)} className="tracking-[1px]">
             •••
           </Button>
         </div>
       }
     >
-      <h1 className="mt-1 text-[30px] leading-tight font-bold tracking-[-0.02em]">{w.name}</h1>
-      <p className="mt-1 text-[13px] text-fg2">
-        {fmtDay(w.startedAt)} · {w.endedAt ? fmtTimeRange(w.startedAt, w.endedAt) : fmtTime(w.startedAt)}
-      </p>
+      <DetailTitle title={w.name} meta={`${fmtDay(w.startedAt)} · ${w.endedAt ? fmtTimeRange(w.startedAt, w.endedAt) : fmtTime(w.startedAt)}`} />
       <StatRow
         className="mt-3"
         items={[

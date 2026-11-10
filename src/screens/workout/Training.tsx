@@ -2,11 +2,11 @@
 // The bar under the exercise header, the Why sheet, the break question and the tip line.
 // Screens 4.27–4.33.
 
-import { Fragment, useMemo, useState, type ReactNode } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { LiftChart } from '../../components/charts';
-import { CheckGlyph } from '../../components/icons';
+import { TrendDown, TrendUp } from '../../components/icons';
 import { Sheet } from '../../components/overlays';
-import { Button, cx, Radio, Segmented } from '../../components/ui';
+import { Button, ConfirmedBar, cx, OfferBar, Radio, Row, Segmented } from '../../components/ui';
 import type { HistoryIndex } from '../../data/history';
 import { liftSeries, sessionSets, type WorkoutTraining } from '../../data/training';
 import type { Exercise, Settings, Units, WorkoutSuggestion } from '../../db/types';
@@ -76,21 +76,13 @@ export function TrainingBar({
   onWhy: () => void;
 }) {
   const down = t.sg.lead === 'down';
-  const tone = down ? 'text-warn' : 'text-tip';
   const line = weightsLine(t, exercise, units);
   if (state === 'accepted')
     return (
-      <div className="mt-2.5 flex min-h-11 items-center gap-2 border-b border-line">
-        <span className={cx('flex min-w-0 flex-1 items-center gap-1.5 text-[14px] font-semibold', tone)}>
-          <CheckGlyph size={13} className="flex-none" />
-          <span className="truncate">Using the suggested weights</span>
-        </span>
-        <button type="button" onClick={onUndo} className="flex h-11 items-center px-1 text-[15px] font-semibold text-accent active:opacity-60">
-          Undo
-        </button>
-      </div>
+      <ConfirmedBar tone={down ? 'warn' : 'tip'} onUndo={onUndo}>
+        Using the suggested weights
+      </ConfirmedBar>
     );
-
   let title: string;
   let sub: string;
   const cb = t.comeback;
@@ -109,40 +101,18 @@ export function TrainingBar({
     title = 'Use suggested weights?';
     sub = t.sg.reason + (t.sg.bigStep ? ' · big step' : '');
   }
-  const glyph = state === 'auto' ? '' : down ? '▼ ' : '▲ ';
   return (
-    <div className="mt-2.5 flex items-center gap-1 border-b border-line pb-2">
-      <div className="min-w-0 flex-1">
-        <b className={cx('block text-[15px] leading-snug font-bold', tone)}>
-          {glyph}
-          {title}
-        </b>
-        <span className="block text-[12.5px] leading-snug text-fg2">{sub}</span>
-      </div>
-      <button type="button" onClick={onWhy} className="flex h-11 flex-none items-center px-2 text-[15px] font-semibold text-accent active:opacity-60">
-        Why
-      </button>
-      {state === 'offer' && (
-        <>
-          <RoundButton label="Dismiss suggestion" onClick={onDismiss}>
-            <span className="text-[13px] font-bold">✕</span>
-          </RoundButton>
-          <RoundButton label={`Use ${line}`} onClick={onAccept} tone={down ? 'warn' : 'tip'}>
-            <CheckGlyph size={14} />
-          </RoundButton>
-        </>
-      )}
-    </div>
-  );
-}
-
-function RoundButton({ children, label, onClick, tone }: { children: ReactNode; label: string; onClick: () => void; tone?: 'tip' | 'warn' }) {
-  return (
-    <button type="button" aria-label={label} onClick={onClick} className="flex h-11 w-10 flex-none items-center justify-center active:scale-90">
-      <span className={cx('flex h-[30px] w-[30px] items-center justify-center rounded-full', tone === 'tip' ? 'bg-tip text-black' : tone === 'warn' ? 'bg-warn text-black' : 'bg-surface-2 text-fg2')}>
-        {children}
-      </span>
-    </button>
+    <OfferBar
+      title={title}
+      tone={down ? 'warn' : 'tip'}
+      trend={state === 'auto' ? undefined : down ? 'down' : 'up'}
+      reason={sub}
+      onWhy={onWhy}
+      onDismiss={state === 'offer' ? onDismiss : undefined}
+      dismissLabel="Dismiss suggestion"
+      onAccept={state === 'offer' ? onAccept : undefined}
+      acceptLabel={`Use ${line}`}
+    />
   );
 }
 
@@ -163,19 +133,16 @@ export function GapPrompt({
 }) {
   const weighted = t.lastWeight != null && exercise.type !== 'bodyweight';
   return (
-    <div className="mt-2.5">
-      <div className="flex items-center gap-2">
-        <div className="min-w-0 flex-1">
-          <b className="block text-[15px] leading-snug font-bold text-warn">Back after {weeksText(t.days)}?</b>
-          <span className="block text-[12.5px] text-fg2">
-            {exercise.name} was last logged {fmtMonthDay(t.lastDate)}
-          </span>
-        </div>
-        {/* Radio-sized, centred over the options' radios; the 44 px target overhangs the edge. */}
-        <button type="button" aria-label="Not now" onClick={onDismiss} className="-mr-[11px] flex h-11 w-11 flex-none items-center justify-center active:scale-90">
-          <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-surface-2 text-[10px] leading-none font-bold text-fg2">✕</span>
-        </button>
-      </div>
+    <div>
+      <OfferBar
+        title={`Back after ${weeksText(t.days)}?`}
+        tone="warn"
+        reason={`${exercise.name} was last logged ${fmtMonthDay(t.lastDate)}`}
+        onDismiss={onDismiss}
+        dismissLabel="Not now"
+        line={false}
+        className="pb-0"
+      />
       <GapOption
         title="I took a break"
         detail={weighted && t.start != null ? `Start at ${fmtW(t.start, exercise, units)} (${Math.round(t.pct * 100)}%) and build back over 3 sessions` : 'Ease back in over 3 sessions'}
@@ -192,28 +159,20 @@ export function GapPrompt({
 
 function GapOption({ title, detail, onClick }: { title: string; detail: string; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="flex min-h-[52px] w-full items-center gap-3 border-b border-line py-1.5 text-left active:bg-surface/60">
+    <Row variant="two" onClick={onClick} className="active:bg-surface/60">
       <span className="min-w-0 flex-1">
-        <b className="block text-[15px] font-semibold">{title}</b>
-        <span className="block text-[12.5px] leading-snug text-fg2">{detail}</span>
+        <b className="block text-body font-semibold">{title}</b>
+        <span className="block text-caption text-fg2">{detail}</span>
       </span>
       <Radio on={false} />
-    </button>
+    </Row>
   );
 }
 
 // ───────────────────────────── tip (A9, §23)
 
 export function TipLine({ tip, onDismiss }: { tip: TipId; onDismiss: () => void }) {
-  return (
-    <div className="mt-2.5 flex items-start gap-2 border-b border-line pb-1.5">
-      <span className="pt-[3px] text-[10.5px] font-bold tracking-[0.07em] text-accent">TIP</span>
-      <p className="min-w-0 flex-1 pt-0.5 text-[13.5px] leading-snug">{TIP_TEXT[tip]}</p>
-      <button type="button" aria-label="Dismiss tip for good" onClick={onDismiss} className="-mt-2.5 -mr-2 flex h-11 w-11 flex-none items-center justify-center text-[13px] text-fg2">
-        ✕
-      </button>
-    </div>
-  );
+  return <OfferBar kicker="Tip" onDismiss={onDismiss} dismissLabel="Dismiss tip for good">{TIP_TEXT[tip]}</OfferBar>;
 }
 
 // ───────────────────────────── Why sheet (A3, A4, A8)
@@ -289,24 +248,24 @@ export function WhySheet({
   const footer =
     state === 'offer' ? (
       <div className="mt-5 grid grid-cols-2 gap-2">
-        <Button kind="secondary" size="md" onClick={onClose}>
+        <Button kind="secondary" onClick={onClose}>
           Ignore
         </Button>
-        <Button size="md" onClick={onUse}>
+        <Button onClick={onUse}>
           Use {first != null ? fmtW(first, exercise, units) : 'these'}
         </Button>
       </div>
     ) : state === 'auto' ? (
       <div className="mt-5 grid grid-cols-2 gap-2">
-        <Button kind="secondary" size="md" onClick={onIgnore}>
+        <Button kind="secondary" onClick={onIgnore}>
           Ignore
         </Button>
-        <Button size="md" onClick={onClose}>
+        <Button onClick={onClose}>
           Keep
         </Button>
       </div>
     ) : (
-      <Button kind="secondary" size="md" className="mt-5" onClick={onClose}>
+      <Button kind="secondary" className="mt-5" onClick={onClose}>
         Close
       </Button>
     );
@@ -344,13 +303,21 @@ export function WhySheet({
                     </span>
                   </span>
                   <span className={cx('text-right text-[15px] font-bold', MOVE_TONE[mv])}>
-                    {w != null ? `${mv === 'up' ? '▲' : mv === 'down' ? '▼' : '='} ${fmtW(w, exercise, units)}` : aim != null ? `${aim} reps` : '='}
+                    {w != null ? (
+                      <span className="inline-flex items-center gap-1">
+                        {mv === 'up' ? <TrendUp size={10} /> : mv === 'down' ? <TrendDown size={10} /> : '='} {fmtW(w, exercise, units)}
+                      </span>
+                    ) : aim != null ? (
+                      `${aim} reps`
+                    ) : (
+                      '='
+                    )}
                   </span>
                 </div>
               );
             })}
           </div>
-          {sessions.length > 0 && <div className="mt-4 text-[11px] font-bold tracking-[0.07em] text-fg2 uppercase">Last sessions</div>}
+          {sessions.length > 0 && <div className="mt-4 text-caps text-fg2">Last sessions</div>}
           {sessions.map(({ s, sets, call }) => {
             const d = new Date(s.date);
             return (
@@ -382,7 +349,7 @@ export function WhySheet({
         </>
       ) : (
         <>
-          <div className="mt-4 text-[11px] font-bold tracking-[0.07em] text-fg2 uppercase">Est. 1RM · last 6 weeks</div>
+          <div className="mt-4 text-caps text-fg2">Est. 1RM · last 6 weeks</div>
           {series.length > 1 ? (
             <LiftChart points={series.map((p) => ({ date: p.date, value: exercise.type === 'bodyweight' ? p.value : toDisplay(p.value, units) }))} from={at - 42 * DAY_MS} to={at} height={150} />
           ) : (
@@ -390,7 +357,7 @@ export function WhySheet({
           )}
           {set1.length > 0 && (
             <>
-              <div className="mt-4 text-[11px] font-bold tracking-[0.07em] text-fg2 uppercase">Set 1 reps{r0 ? ` · range ${rangeText(r0)}` : ''}</div>
+              <div className="mt-4 text-caps text-fg2">Set 1 reps{r0 ? ` · range ${rangeText(r0)}` : ''}</div>
               <div className="mt-2 flex h-[110px] items-end gap-2">
                 {set1.map(({ date, set }) => {
                   const inR = r0 ? set.reps >= r0.min && set.reps <= r0.max : false;

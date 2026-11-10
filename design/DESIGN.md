@@ -126,7 +126,7 @@ Import from `src/components/ui` (the folder's `index.ts`). Each component's comm
 | `BarButton` | Top-bar text button, 44 tall, 17 | `kind: 'plain' \| 'bold' \| 'muted'` |
 | `BackButton` | ChevronLeft 17 + label | `label`, `onClick` |
 | `DetailTitle` | Title 1 under a top bar + Callout meta | `title`, `meta`, `right` |
-| `WorkoutBar` | Live-workout header: name, Footnote meta, orange past date, pencil, Finish (compact) | `name`, `meta`, `pastDate`, `onOptions`, `onFinish`, `finishLabel` |
+| `WorkoutBar` | Live-workout header: back, name, Footnote meta, orange past date, pencil, Finish (compact) | `name`, `meta`, `pastDate`, `backLabel`, `onBack`, `onOptions`, `onFinish`, `finishing` |
 | `SectionLabel` | Caps label, optional action, hairline. Every list starts with one | `action`, `tone: 'warn' \| 'accent'`, `line` |
 | `LabelAction` | Blue 13/600 action with ChevronRight 10 for a SectionLabel | `onClick`, `chevron`, `tone` |
 | `FieldLabel` | Caps label above an input (no hairline) | — |
@@ -137,18 +137,18 @@ Import from `src/components/ui` (the folder's `index.ts`). Each component's comm
 | --- | --- | --- |
 | `Row` | Flat row with hairline. 52 single · 60 two lines · 52 dense | `variant: 'single' \| 'two' \| 'dense'`, `onClick`, `chevron`, `as` |
 | `RowText` | Title + subtitle for a row (Headline + Callout, or 15/600 + 12 dense) | `title`, `subtitle`, `dense`, `badge` |
-| `FolderRow` | Tappable caps label: chevron, count, trailing total or MoreGlyph. Children indent 24 | `label`, `count`, `open`, `onToggle`, `trailing`, `archived` |
-| `EditRow` | Edit mode: delete disc, Headline name, Handle | `onDelete`, `deleteLabel`, `handle`, `children` |
+| `FolderChevron` / `FolderLabel` / `FolderMenuButton` | Parts of a folder row (h52): ChevronRight / ChevronDown 12, Caps label (fg2 closed, white open) + fg3 count + Caption note, MoreGlyph in a 44 target. Children indent 24 | `open` / `label`, `count`, `open`, `note` / `onClick`, `label` |
+| `EditRow` | Edit-mode row: leading DeleteDisc, content, trailing DragHandle. `lifted` while dragging (the one shadow besides the effort badge) | `leading`, `trailing`, `lifted`, `children` |
 | `DeleteDisc` | Disc S, danger-fill, white bar | `onClick`, `label` |
-| `DragHandle` | Handle in a 44 target | `listeners` (spread) |
-| `AddRow` | 52 row: Disc S action + PlusGlyph + 17/600 blue label | `onClick`, `indent` |
+| `DragHandle` | Handle in a 44 target; dnd-kit listeners spread onto it | `label`, `handleRef`, `className`, …listeners |
+| `AddRow` | 52 row: Disc S action + PlusGlyph + 17/600 blue label | `onClick`, `className` |
 
 ### §7 Tables · `ui/tables.tsx`
 
 | Component | Use | Props |
 | --- | --- | --- |
 | `SetTable` | (stays in `screens/workout/SetTable.tsx`) the logging table. Columns 34 · 1fr · 74 · 58 · 46, header Caps h24, rows 44 r10 | — |
-| `PlanTable` | Read-only copy of the set table: header h24, rows h28, same columns minus the tick | `rows`, `weightLabel`, `showWeight` |
+| `PlanTable` | Read-only copy of the set table: header h24, rows h28, same columns minus the tick (`planColumns`). `Dash` is the empty cell | `rows: PlanRow[]`, `showPrev`, `weightLabel` (omit for no weight column) |
 | `InfoTable` / `InfoRow` / `InfoSubRow` | Many facts about one thing: header Caps + note, rows h32 Callout | `title`, `note` / `label`, `value`, `tone` |
 | `DataHeader` / `DataRow` | Read-only comparison table: header Caps h24, rows h32, gap 10; highlighted row accent-soft r8 | `cols` (grid template), `highlight` |
 | `InlineBar` | h8 bar in a data table | `frac`, `recent` |
@@ -160,36 +160,39 @@ Import from `src/components/ui` (the folder's `index.ts`). Each component's comm
 | --- | --- | --- |
 | `TargetBar` | h8, the one main number against its target | `frac`, `tone` |
 | `LabeledBar` | h4 under a Caps label, ≤ 3 side by side | `frac`, `color` |
-| `GoalBar` | h8, green ahead / orange behind, white 3 × 16 marker | `frac`, `marker`, `behind` |
+| `GoalBar` | h8, green ahead / orange behind, white 3 × 16 marker | `frac`, `marker`, `behind`, `markerLabel` |
 | `SegmentBar` | h4 steps, gap 4: done blue, current white, to do surface-2 | `steps: ('done' \| 'current' \| 'todo')[]` |
-| `Ring` | S 36/3 (28/3 in rows), M 104/8, L 144/10. Progress or segments | `size`, `progress`, `segments`, `children` |
+| `Ring` | S 36/3 (28/3 in rows), M 104/8, L 144/10. Progress or segments | `size: 's' \| 'row' \| 'm' \| 'l'`, `progress`, `segments`, `color`, `children` |
+| `CountRing` | Row ring with "2/4" inside; full ring + CheckGlyph when complete (All exercises) | `done`, `total` |
 
 ### §9 Buttons · `ui/buttons.tsx`
 
 | Component | Use | Props |
 | --- | --- | --- |
 | `Button` | The one filled size: 44 / r10 / 15/700. `compact` 36 / r10 / 15/600 is Finish only | `kind: 'primary' \| 'secondary' \| 'danger' \| 'ghost' \| 'white'`, `size?: 'compact'` |
-| `Disc` | Round one-tap answer. S 24 (glyph 12) at a row start, L 34 (glyph 14) as the button. Always in a 44 target | `size: 's' \| 'l'`, `tone: 'action' \| 'grey' \| 'success' \| 'warn' \| 'danger'`, `onClick`, `label` |
+| `Disc` | Round one-tap answer. S 24 (glyph 12) at a row start, L 34 (glyph 14) as the button. Always in a 44 target; without `onClick` it's a mark | `size: 's' \| 'l'`, `tone: 'action' \| 'grey' \| 'success' \| 'warn' \| 'danger'`, `onClick`, `label`, `disabled` |
+| `DiscFace` | The drawn circle alone, for a disc inside a bigger button or a list mark | `size`, `tone` |
 | `PlayButton` / `DoneDisc` | Disc L with PlayGlyph / CheckGlyph | `primary`, `onClick`, `label` |
 | `StartPill` | Today's Start: 34 full, 14/700, PlayGlyph 12 | `onClick`, `label` |
 | `AddButton` | Dashed add, 44 / r10 / 15/600 | `tone: 'accent' \| 'warn'` |
 | `IconButton` | Bordered small: 32 / r10 / 13/600 blue, glyphs only; on = action fill | `active`, `label`, `onClick` |
 | `TextButton` | Low-weight action in content: 15/600 (or 13/600 `small`) blue, 44 tall | `tone`, `small` |
-| `NavCard` | Previous / Next card: 52 (44 with keypad), r10, Caps 11 over Callout 14/600, drawn chevrons | `side`, `label`, `title`, `tone`, `short` |
-| `Fab` | Floating 48 / r10 surface-2 | `label`, `onClick` |
+| `NavCard` | Previous / Next card: 52 (44 with keypad), r10, Caps 11 over Callout 14/600, drawn chevrons | `small` (caps line), `children` (name), `side`, `tone?: 'action'`, `align`, `compact` |
+| `Fab` | Floating 48 / r10 surface-2, `data-dock-side` | `label`, `onClick`, `className` |
 
 ### §10 Controls · `ui/controls.tsx`
 
 | Component | Use | Props |
 | --- | --- | --- |
 | `Segmented` | 2–4 views. Track 44 r14 p4, items 36 r10 13/600 | `options`, `value`, `onChange` |
-| `CompactSegmented` | Toolbars, form rows: track 32 r10 p2, items 28 r8 | `tone: 'neutral' \| 'action'` |
-| `IconSegmented` | View switch in a large header: 44 / 40 × 36 | `options` with glyphs |
+| `CompactSegmented` | Toolbars, form rows: track 32 r10 p2, items 28 r8. `instant` answers on pointer-down (keypad) | `options`, `value`, `onChange`, `label`, `tone: 'neutral' \| 'action'`, `instant` |
+| `IconSegmented` | View switch in a large header: 44 / 40 × 36 | `options` (glyph labels + `ariaLabel`), `value`, `onChange`, `label` |
 | `Chips` | Filters: 34 full, on = white fill | `options`, `value`, `wrap` |
-| `VariationChip` | 32 r8 1.5 border; current = blue border + done fill | `state: 'current' \| 'history' \| 'other'` |
+| `VariationChip` / `MoreLabel` | 32 r8 1.5 border; current = blue border + done fill; `more` is the blue "All N" chip (`MoreLabel` adds its chevron) | `state: 'current' \| 'history' \| 'other' \| 'more'`, `onClick`, `ariaLabel` |
 | `ChoiceTile` | 52 r10 1.5 border, Micro label + Callout 600 value; selected blue border + accent-soft | `label`, `value`, `on` |
 | `TextField` | 44 r10 surface-2 16/400, 1.5 border blue on focus | `value`, `onChange`, … |
-| `ValueBox` | 44 r10 surface-2, centered 17/700 + Footnote unit; editing blue border + edit fill | `value`, `unit`, `editing` |
+| `fieldClass` | The text-field look as a class string, for native date / time inputs | — |
+| `ValueBox` | 44 r10 surface-2, centered 17/700 + Footnote unit; focused blue border + edit fill. It is a `<label>`, so don't nest it in one | `value`, `onChange`, `unit`, `label`, `inputMode`, `maxLength` |
 | `PickerBox` | Value box that opens a sheet, ChevronDown 9 | `label`, `onClick` |
 | `InlineInput` | 32 r8 min-w 80, 16/600 right + unit | `value`, `unit` |
 | `Stepper` | Two 36 × 32 r8 buttons with Minus / Plus 14 | `onDown`, `onUp`, `children` |
@@ -198,17 +201,17 @@ Import from `src/components/ui` (the folder's `index.ts`). Each component's comm
 | `Badge` | 16 r4 10/700: `next` (action), `tag` (outline), `muted`, `d` (orange, black), `success` | `variant` |
 | `Pill` / `Tag` / `DropBadge` | Badge presets kept for existing call sites | — |
 | `StatusPill` | 22 full 12/700, soft fill: up / down / same / new | `tone` |
-| `BarChip` | 32 r10 surface, 13/600 + ChevronDown 9 | `onClick` |
+| `BarChip` | 32 r10 surface, 13/600 + ChevronDown 9 | `label`, `onPress`, `ariaLabel` |
 
 ### §11 Notices · `ui/notices.tsx`
 
 | Component | Use | Props |
 | --- | --- | --- |
-| `OfferBar` | Suggestion / Tip / Back-after: title in its tone, reason Caption, Why, dismiss + accept Disc L | `tone`, `title`, `reason`, `onWhy`, `onDismiss`, `onAccept` |
+| `OfferBar` | Suggestion / Tip / Back-after: title in its tone (TrendUp / TrendDown before it), reason Caption, Why, dismiss + accept Disc L. `kicker` makes the Tip line | `tone`, `trend`, `title`, `reason`, `kicker`, `onWhy`, `onDismiss`, `onAccept`, `dismissLabel`, `acceptLabel`, `line` |
 | `ConfirmedBar` | "Using the suggested weights" with Undo | `children`, `onUndo`, `tone` |
 | `AttentionNote` | 2 px orange left rule, lead in orange 600 + fg2, text buttons below | `lead`, `children`, `actions` |
 | `LiveDot` | 7 px green pulse | — |
-| `LiveStatus` | Home's running-workout block | `title`, `timer`, `where`, `steps`, `onResume` |
+| `LiveStatus` | Home's running-workout block | `title`, `timer`, `where`, `detail`, `steps`, `onResume` |
 | `EmptyState` | Dashed glyph box, Title 3, Callout | `icon`, `title` |
 | `Note` | Footnote fg2 paragraph | — |
 
@@ -216,10 +219,14 @@ Import from `src/components/ui` (the folder's `index.ts`). Each component's comm
 
 | Component | Use | Props |
 | --- | --- | --- |
-| `DayDisc` | 34 week-strip disc | `state`, `today`, `live`, `selected`, `changed` |
-| `WeekStrip` | 7 columns: Caps weekday letter + DayDisc | `days`, `onPick` |
-| `DayCell` | Month-grid cell: h44 r10, Callout 14/600 number, 12 px marks row | `state`, `today`, `selected`, `marks` |
-| `CalendarLegend` | Micro 10 legend with swatches | `items` |
+| `Weekday` | Caps weekday letter over a strip column; white on today | `today` |
+| `DayDisc` | 34 week-strip disc (Home, plan strip) | `state: DayState`, `today`, `live`, `changed` |
+| `DayCell` | Month-grid cell: h44 r10, Callout 14/600 number, 12 px marks row | `number`, `marks`, `selected`, `today`, `live`, `missed`, `changed`, `tone` |
+| `DayDots` / `DayCode` | Marks under a DayCell number: workout dots, or a routine code | `count`, `selected` / `selected` |
+| `ChangedOutline` | The 1 px dashed fg2 outline of a changed day | `round` |
+| `CalendarLegend` | Micro 10 legend with swatches | `items: LegendItem[]` |
+
+`PlanStrip`, `PlanGrid`, `CodesSwitch` and `MONTH_LEGEND` live in `screens/plans/PlanParts.tsx` and are built from these.
 
 Day marks are the same everywhere: done / selected = action fill · **today = white ring** (2 on discs, 1.5 on cells), green while a workout is live · today done = action fill + canvas gap + blue ring · missed = 1 px orange ring · changed = 1 px dashed fg2 · past nothing = surface disc / fg2 number · rest = fg3. Blue means done or selected, nothing else.
 

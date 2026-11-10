@@ -63,7 +63,6 @@ export function Sheet({
   children,
   tall = false,
   short = false,
-  tight = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -74,8 +73,6 @@ export function Sheet({
   tall?: boolean;
   /** Fixed at two thirds of the screen plus a line, so switching tabs inside doesn't resize it (4.8). */
   short?: boolean;
-  /** Subtitle hugs the title like a screen header's meta line (5.4). */
-  tight?: boolean;
 }) {
   useEscape(onClose, open);
   const { dy, handlers } = useDragDismiss(onClose);
@@ -88,29 +85,35 @@ export function Sheet({
           role="dialog"
           aria-modal="true"
           className={cx(
-            'anim-sheet absolute inset-x-0 bottom-0 flex flex-col rounded-t-[18px] border-t border-line-strong bg-raised pb-safe',
+            'anim-sheet absolute inset-x-0 bottom-0 flex flex-col rounded-t-xl border-t border-line-strong bg-raised pb-safe',
             tall ? 'top-[calc(env(safe-area-inset-top)+56px)]' : short ? 'h-[calc(200%/3+24px)]' : 'max-h-[86%]',
           )}
           style={{ transform: dy ? `translateY(${dy}px)` : undefined, transition: dy ? 'none' : 'transform .2s' }}
         >
           <div className="flex-none touch-none pt-2 pb-1" {...handlers}>
-            <div className="mx-auto h-[5px] w-9 rounded-full bg-line-strong" />
+            <div className="mx-auto h-1.25 w-9 rounded-full bg-line-strong" />
             {(title || action) && (
-              <div className={cx('mt-2.5 flex items-center justify-between gap-3 px-4', !tight && 'min-h-8')}>
-                <h2 className={cx('min-w-0 truncate text-[19px] font-bold', tight && 'leading-tight')}>{title}</h2>
+              <div className="mt-2.5 flex items-center justify-between gap-3 px-4">
+                <h2 className="min-w-0 truncate text-title3">{title}</h2>
                 {action}
               </div>
             )}
-            {subtitle && <p className={cx('px-4 text-[13px] leading-snug text-fg2', tight ? 'mt-0.5' : 'mt-1')}>{subtitle}</p>}
+            {/* design §14: the subtitle sits directly under the title (mt 2), like a screen header's meta line. */}
+            {subtitle && <p className="mt-0.5 px-4 text-footnote text-fg2">{subtitle}</p>}
           </div>
-          <div className="scroll-y min-h-0 flex-1 px-4 pb-4">{children}</div>
+          {/* design §14 O2: an option list ends the sheet with no padding under it, only the safe area. */}
+          <div className="scroll-y min-h-0 flex-1 px-4 pb-4 has-[>[data-sheet-option]:last-child]:pb-0">{children}</div>
         </div>
       </div>
     </Portal>
   );
 }
 
-/** One option row in a sheet (opt). */
+/**
+ * design §14 Sheet option: min-h 52, 17/400, detail Callout fg2, whole row pressable. Runs the
+ * sheet's full width with a hairline above it, so a list has one above the first, one between
+ * each, and none after the last.
+ */
 export function SheetOption({
   children,
   detail,
@@ -127,16 +130,17 @@ export function SheetOption({
   return (
     <button
       type="button"
+      data-sheet-option
       disabled={disabled}
       onClick={onClick}
       className={cx(
-        'flex min-h-[52px] w-full items-center justify-between gap-3 border-b border-line text-left text-[17px] last:border-b-0 active:opacity-60 disabled:opacity-40',
+        '-mx-4 flex min-h-13 w-[calc(100%+2rem)] items-center justify-between gap-3 border-t border-line px-4 text-left text-body-lg active:opacity-60 disabled:opacity-40',
         tone === 'danger' && 'text-danger',
         tone === 'accent' && 'font-semibold text-accent',
       )}
     >
       <span className="min-w-0 truncate">{children}</span>
-      {detail !== undefined && <span className="flex flex-none items-center gap-2 text-[14px] font-normal text-fg2">{detail}</span>}
+      {detail !== undefined && <span className="flex flex-none items-center gap-2 text-callout font-normal text-fg2">{detail}</span>}
     </button>
   );
 }
@@ -184,11 +188,11 @@ export function Alert({
         <div
           role="alertdialog"
           aria-modal="true"
-          className="anim-alert relative max-h-full w-[270px] overflow-y-auto rounded-[14px] bg-[color-mix(in_srgb,var(--og-surface-2)_92%,transparent)] text-center backdrop-blur-xl"
+          className="anim-alert relative max-h-full w-67.5 overflow-y-auto rounded-lg bg-[color-mix(in_srgb,var(--og-surface-2)_92%,transparent)] text-center backdrop-blur-xl"
         >
           <div className="px-4 pt-5 pb-[18px]">
-            <div className="text-[17px] leading-snug font-semibold">{title}</div>
-            {message && <div className="mt-1 text-[13px] leading-snug text-fg">{message}</div>}
+            <div className="text-body-lg leading-snug font-semibold">{title}</div>
+            {message && <div className="mt-1 text-footnote text-fg">{message}</div>}
             {children}
           </div>
           <div className={cx('border-t border-line-strong', row && 'grid grid-cols-2')}>
@@ -199,7 +203,7 @@ export function Alert({
                 disabled={a.disabled}
                 onClick={a.onClick}
                 className={cx(
-                  'flex min-h-11 w-full items-center justify-center px-3 py-2.5 text-[17px] leading-tight active:bg-key-fn disabled:opacity-35',
+                  'flex min-h-11 w-full items-center justify-center px-3 py-2.5 text-body-lg leading-tight active:bg-key-fn disabled:opacity-40',
                   row ? i > 0 && 'border-l border-line-strong' : i > 0 && 'border-t border-line-strong',
                   a.kind === 'danger' ? 'text-danger' : 'text-accent',
                   a.kind === 'bold' && 'font-semibold',
@@ -234,9 +238,9 @@ export function HoldMenu({ open, anchor, items, onClose }: { open: boolean; anch
   const vh = window.innerHeight;
   const vw = window.innerWidth;
   const height = items.length * 46;
-  // A little air around the held row so the outline doesn't touch its text.
+  // design §14 O3: the ring sits 4 px above and below the held row and 8 px at the sides.
   const a = anchor
-    ? { top: anchor.top, bottom: anchor.bottom, left: Math.max(4, anchor.left - 8), right: Math.min(vw - 4, anchor.right + 8) }
+    ? { top: anchor.top - 4, bottom: anchor.bottom + 4, left: Math.max(4, anchor.left - 8), right: Math.min(vw - 4, anchor.right + 8) }
     : { top: vh / 2, bottom: vh / 2, left: 0, right: vw };
   const below = a.bottom + 6;
   const top = below + height < vh - 24 ? below : Math.max(64, a.top - 6 - height);
@@ -250,12 +254,12 @@ export function HoldMenu({ open, anchor, items, onClose }: { open: boolean; anch
             <div className={cx(scrim, 'inset-x-0 bottom-0')} style={{ top: a.bottom }} />
             <div className={cx(scrim, 'left-0')} style={{ top: a.top, height: a.bottom - a.top, width: Math.max(0, a.left) }} />
             <div className={cx(scrim, 'right-0')} style={{ top: a.top, height: a.bottom - a.top, left: a.right }} />
-            <div className="pointer-events-none absolute rounded-[10px] ring-[1.5px] ring-accent" style={{ top: a.top, left: a.left, width: a.right - a.left, height: a.bottom - a.top }} />
+            <div className="pointer-events-none absolute rounded-lg ring-[1.5px] ring-accent" style={{ top: a.top, left: a.left, width: a.right - a.left, height: a.bottom - a.top }} />
           </>
         ) : (
           <div className={cx(scrim, 'inset-0')} />
         )}
-        <div role="menu" className="anim-pop absolute right-4 left-4 overflow-hidden rounded-[14px] border border-line-strong bg-surface-2" style={{ top }} onClick={(e) => e.stopPropagation()}>
+        <div role="menu" className="anim-pop absolute right-4 left-4 overflow-hidden rounded-lg border border-line-strong bg-surface-2" style={{ top }} onClick={(e) => e.stopPropagation()}>
           {items.map((it, i) => (
             <button
               key={i}
@@ -266,13 +270,13 @@ export function HoldMenu({ open, anchor, items, onClose }: { open: boolean; anch
                 it.onClick();
               }}
               className={cx(
-                'flex h-[46px] w-full items-center justify-between border-b border-line-strong px-4 text-left text-[16px] last:border-b-0 active:bg-key-fn',
+                'flex h-11.5 w-full items-center justify-between border-b border-line-strong px-4 text-left text-input last:border-b-0 active:bg-key-fn',
                 it.tone === 'danger' && 'text-danger',
                 it.tone === 'accent' && 'font-semibold text-accent',
               )}
             >
               <span>{it.label}</span>
-              {it.glyph && <span className={cx('text-[14px]', it.tone === 'accent' ? 'text-accent' : 'text-fg2')}>{it.glyph}</span>}
+              {it.glyph && <span className={cx('flex items-center text-callout', it.tone === 'accent' ? 'text-accent' : 'text-fg2')}>{it.glyph}</span>}
             </button>
           ))}
         </div>
@@ -365,7 +369,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               key={toast.id}
               role="status"
               className={cx(
-                'anim-toast pointer-events-auto flex h-12 items-center justify-between rounded-[13px] bg-surface-2 pr-1 pl-4 text-[15px]',
+                'anim-toast pointer-events-auto flex h-12 items-center justify-between rounded-lg bg-surface-2 pr-1 pl-4 text-body',
                 !toast.borderless && 'border border-line-strong',
               )}
             >

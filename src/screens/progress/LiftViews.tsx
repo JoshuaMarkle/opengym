@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { LiftChart, type ChartPoint } from '../../components/charts';
-import { cx, DropBadge, Segmented, StatRow, Tag } from '../../components/ui';
+import { cx, DataHeader, DataRow, DropBadge, InlineBar, Segmented, StatRow, Tag } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import type { HistorySession } from '../../data/history';
 import { liftPoints, type LiftPoint } from '../../data/lifts';
@@ -297,6 +297,8 @@ export function ChartsView({
 
 // ───────────────────────────── Records (4.9, 7.4)
 
+const REC_COLS = 'grid-cols-[46px_44px_1fr_60px]';
+
 /** Records dates keep the year to two digits: "Oct 29 '25". */
 const shortDate = (ts: number) => fmtMonthDay(ts, Date.now(), true);
 
@@ -346,30 +348,22 @@ export function RecordsView({ exercise, exerciseIds, currentReps }: { exercise: 
           : pair('Most reps', `${rec.mostReps.reps} reps`, `${formatSet(rec.mostReps, exercise.type, units)} · ${shortDate(rec.mostReps.date)}`)}
         {rec.heaviest && pair('Heaviest', `${fw(rec.heaviest.weight)} ${unitLabel(units)}`, `× ${rec.heaviest.reps} · ${shortDate(rec.heaviest.date)}`)}
       </div>
-      <div className="mt-2 text-[14px]">
-        <div className="grid h-6 grid-cols-[46px_44px_1fr_60px] items-center gap-2.5 text-[10.5px] font-bold tracking-[0.05em] text-fg2">
-          <span>REPS</span>
-          <span className="text-right">{unitLabel(units).toUpperCase()}</span>
-          <span>VS. HEAVIEST</span>
-          <span className="text-right">DATE</span>
-        </div>
+      <div className="mt-2">
+        <DataHeader cols={REC_COLS}>
+          <span>Reps</span>
+          <span className="text-right">{unitLabel(units)}</span>
+          <span>Vs. heaviest</span>
+          <span className="text-right">Date</span>
+        </DataHeader>
         {rows.map(({ reps, entry }) => {
           const recent = entry && isRecent(entry.date);
           return (
-            <div
-              key={reps}
-              className={cx(
-                'grid h-[30px] grid-cols-[46px_44px_1fr_60px] items-center gap-2.5 border-b border-line whitespace-nowrap',
-                currentReps === reps && '-mx-1.5 rounded-[7px] border-transparent bg-accent-soft px-1.5',
-              )}
-            >
+            <DataRow key={reps} cols={REC_COLS} highlight={currentReps === reps}>
               <span className="font-bold">{reps} RM</span>
               <span className="text-right font-bold">{entry ? fw(entry.weight) : '—'}</span>
-              <span className="relative h-[7px] rounded-full bg-surface-2">
-                {entry && <i className={cx('absolute inset-y-0 left-0 rounded-full', recent ? 'bg-accent' : 'bg-[var(--og-bar)]')} style={{ width: `${width(entry.weight)}%` }} />}
-              </span>
-              <span className={cx('text-right text-[12px]', recent ? 'font-bold text-accent' : 'text-fg2')}>{entry ? shortDate(entry.date) : ''}</span>
-            </div>
+              <InlineBar frac={entry ? width(entry.weight) / 100 : 0} recent={recent} />
+              <span className={cx('text-right text-caption', recent ? 'font-bold text-accent' : 'text-fg2')}>{entry ? shortDate(entry.date) : ''}</span>
+            </DataRow>
           );
         })}
       </div>

@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { SwipeRow } from '../../components/gestures';
-import { ChevronRight } from '../../components/icons';
+import { ChevronRight, TrendDown, TrendUp } from '../../components/icons';
 import { Alert, useToast } from '../../components/overlays';
-import { BarButton, cx, Tag } from '../../components/ui';
+import { AddButton, BarButton, Button, CountRing, cx, DeleteDisc, Tag } from '../../components/ui';
 import { type ActiveExercise, useData } from '../../data/DataProvider';
 import { lastSession } from '../../data/history';
 import { moveWorkoutExercise, removeWorkoutExercise, restoreWorkoutExercise } from '../../data/workouts';
@@ -10,7 +10,6 @@ import { cardioSummary } from '../../lib/cardio';
 import { bestSet } from '../../lib/oneRm';
 import { formatSet, TYPE_TAG } from '../../lib/sets';
 import { supersetBlocks, supersetTags } from '../../lib/supersets';
-import { Ring } from './Ring';
 import { TagPill } from './WorkoutScreen';
 
 /**
@@ -94,10 +93,10 @@ export function AllExercises({
           const moves = (key: string) => (
             <span className="flex flex-none gap-1">
               <MoveButton label="Move up" disabled={bi === 0} onClick={() => void moveWorkoutExercise(key, -1)}>
-                ▲
+                <TrendUp size={9} />
               </MoveButton>
               <MoveButton label="Move down" disabled={bi === blocks.length - 1} onClick={() => void moveWorkoutExercise(key, 1)}>
-                ▼
+                <TrendDown size={9} />
               </MoveButton>
             </span>
           );
@@ -112,7 +111,7 @@ export function AllExercises({
                     <TagPill tag={tag} on={isCur} done={e.sets.length > 0 && done === e.sets.length} />
                   </span>
                 ) : (
-                  <Ring done={done} total={e.sets.length} />
+                  <CountRing done={done} total={e.sets.length} />
                 )}
                 <span className="min-w-0 flex-1">
                   <b className={cx('block truncate text-[16px] font-semibold', isCur && 'text-accent')}>
@@ -126,11 +125,7 @@ export function AllExercises({
             if (editing)
               return (
                 <div key={e.we.id} className="flex min-h-[60px] items-center gap-3 border-b border-line">
-                  <button type="button" aria-label={`Remove ${e.exercise.name}`} onClick={() => void remove(e)} className="-ml-2 flex h-11 w-11 flex-none items-center justify-center">
-                    <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-danger">
-                      <i className="block h-[2px] w-[10px] rounded-full bg-white" />
-                    </span>
-                  </button>
+                  <DeleteDisc label={`Remove ${e.exercise.name}`} onClick={() => void remove(e)} />
                   {body}
                   {!inGroup && moves(e.we.id)}
                 </div>
@@ -165,21 +160,10 @@ export function AllExercises({
       </div>
       {!exercises.length && <p className="py-8 text-center text-[14px] text-fg2">No exercises yet.</p>}
       <div className="mt-4 grid grid-cols-[1fr_100px] gap-2">
-        <button
-          type="button"
-          onClick={onAdd}
-          className="flex h-11 items-center justify-center rounded-[12px] border border-dashed border-line-strong text-[15px] font-semibold text-accent active:opacity-70"
-        >
-          + Add exercise
-        </button>
-        <button
-          type="button"
-          onClick={() => setEditing((v) => !v)}
-          disabled={!exercises.length}
-          className={cx('flex h-11 items-center justify-center rounded-[12px] text-[15px] font-semibold disabled:opacity-40', editing ? 'bg-accent text-white' : 'bg-surface-2')}
-        >
+        <AddButton onClick={onAdd}>+ Add exercise</AddButton>
+        <Button kind={editing ? 'primary' : 'secondary'} onClick={() => setEditing((v) => !v)} disabled={!exercises.length}>
           {editing ? 'Done' : 'Edit'}
-        </button>
+        </Button>
       </div>
       <div className="h-6" />
       <Alert
@@ -206,10 +190,11 @@ export function AllExercises({
   );
 }
 
-function MoveButton({ children, label, disabled, onClick }: { children: string; label: string; disabled: boolean; onClick: () => void }) {
+/** Drawn like a stepper button (design §10): 36 × 32 / r8 / surface-2, in a 44-tall target. */
+function MoveButton({ children, label, disabled, onClick }: { children: ReactNode; label: string; disabled: boolean; onClick: () => void }) {
   return (
     <button type="button" aria-label={label} disabled={disabled} onClick={onClick} className="flex h-11 w-9 items-center justify-center disabled:opacity-30">
-      <span className="flex h-[30px] w-[30px] items-center justify-center rounded-[8px] bg-surface-2 text-[11px] text-fg">{children}</span>
+      <span className="flex h-8 w-9 items-center justify-center rounded-sm bg-surface-2 text-fg">{children}</span>
     </button>
   );
 }

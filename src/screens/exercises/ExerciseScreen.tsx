@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { ChevronRight } from '../../components/icons';
 import { Alert, FullScreen, useToast } from '../../components/overlays';
-import { BackButton, BarButton, Check, EmptyState, LabelAction, Note, Screen, SearchField, SectionLabel, StatRow, Tag, TopBar } from '../../components/ui';
+import { BackButton, BarButton, Check, DetailTitle, EmptyState, LabelAction, Note, Screen, SearchField, SectionLabel, StatRow, Tag, TopBar } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { deleteExercise, mergeExercise, routinesUsing, setVariations } from '../../data/exercises';
 import { equipmentLabel, muscleLabel, type Exercise } from '../../db/types';
@@ -74,14 +74,15 @@ export function ExerciseScreen() {
         />
       }
     >
-      <h1 className="mt-1 text-[30px] leading-tight font-bold tracking-[-0.02em]">
-        {exercise.name}
-        {TYPE_TAG[exercise.type] && <Tag>{TYPE_TAG[exercise.type]}</Tag>}
-      </h1>
-      <p className="mt-1 text-[13px] text-fg2">
-        {exercise.type === 'cardio' ? `Cardio · ${columnsLabel(exercise, units)}` : `${muscleLabel(exercise.muscle)} · ${equipmentLabel(exercise.equipment)} · ${TYPE_LABEL[exercise.type]}`}
-        {exercise.isCustom ? ' · custom' : ''}
-      </p>
+      <DetailTitle
+        title={
+          <>
+            {exercise.name}
+            {TYPE_TAG[exercise.type] && <Tag>{TYPE_TAG[exercise.type]}</Tag>}
+          </>
+        }
+        meta={`${exercise.type === 'cardio' ? `Cardio · ${columnsLabel(exercise, units)}` : `${muscleLabel(exercise.muscle)} · ${equipmentLabel(exercise.equipment)} · ${TYPE_LABEL[exercise.type]}`}${exercise.isCustom ? ' · custom' : ''}`}
+      />
 
       <StatRow
         className="mt-3"

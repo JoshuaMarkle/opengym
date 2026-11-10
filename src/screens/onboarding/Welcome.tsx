@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { CheckGlyph, LogoMark } from '../../components/icons';
 import { Sheet, SheetOption } from '../../components/overlays';
-import { Button } from '../../components/ui';
+import { Button, DiscFace } from '../../components/ui';
 import { useRestoreFlow } from '../settings/RestoreFlow';
 
 /** True when opened from the Home Screen (installed), not a browser tab. */
@@ -29,9 +29,9 @@ export function Welcome() {
         <ul className="mt-7 flex flex-col gap-3.5 text-[16px]">
           {['Free. No account, no ads, no subscription.', 'Your data stays on this phone.', 'Works offline at the gym.'].map((t) => (
             <li key={t} className="flex items-start gap-3">
-              <span className="mt-[1px] flex h-[22px] w-[22px] flex-none items-center justify-center rounded-full bg-accent text-white">
+              <DiscFace size="s" className="-mt-px">
                 <CheckGlyph size={12} />
-              </span>
+              </DiscFace>
               {t}
             </li>
           ))}

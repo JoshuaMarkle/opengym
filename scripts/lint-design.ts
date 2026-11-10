@@ -45,8 +45,7 @@ const ALLOW: { file: string; rule: Rule; match: RegExp; reason: string }[] = [
   { file: 'src/components/PlatePad.tsx', rule: 'radius', match: /rounded-(\w+-)?\[[123]px\]/, reason: 'bar and plate drawing (design §4: 2–3 px only inside drawings)' },
   { file: 'src/components/PlatePad.tsx', rule: 'height', match: /h-\[/, reason: 'bar and plate drawing, sized to scale' },
   // Round controls that aren't discs: their sizes are their own spec lines in design §10.
-  { file: 'src/components/ui.tsx', rule: 'disc', match: /h-\[27px\] w-\[27px\]/, reason: 'toggle knob 27 in a 51 × 31 track (design §10)' },
-  { file: 'src/components/ui.tsx', rule: 'disc', match: /h-\[22px\] w-\[22px\]/, reason: 'radio 22 (design §10)' },
+  { file: 'src/components/ui/controls.tsx', rule: 'disc', match: /h-5\.5 w-5\.5/, reason: 'radio 22 (design §10)' },
   // Browser chrome, not UI: the <meta name="theme-color"> value must be a literal.
   { file: 'src/data/DataProvider.tsx', rule: 'hex', match: /theme-color/, reason: 'theme-color meta tag needs a literal color' },
   // Prose inside strings: "A → B" in the routine-change alert and an app's menu path.

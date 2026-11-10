@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { BarButton, Chips, cx, FieldLabel, Note, Radio, Screen, TextField, Toggle, TopBar } from '../../components/ui';
+import { CheckGlyph } from '../../components/icons';
+import { BarButton, Check, Chips, cx, DiscFace, FieldLabel, Note, Radio, Screen, TextField, Toggle, TopBar } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { createExercise, nameTaken, updateExercise } from '../../data/exercises';
 import { EQUIPMENT, EXERCISE_TYPES, MUSCLES, type CardioColumn, type DistanceUnit, type Equipment, type Exercise, type ExerciseType, type Muscle } from '../../db/types';
@@ -127,10 +128,12 @@ export function ExerciseFormView({
         <>
           <FieldLabel>Columns · time + up to {MAX_CARDIO_COLUMNS}</FieldLabel>
           <div className="mt-1">
-            <div className="flex min-h-[48px] items-center gap-3 border-b border-line text-[16px]">
-              <span className="flex h-[24px] w-[24px] flex-none items-center justify-center rounded-full bg-surface-2 text-[12px] font-bold text-fg2">✓</span>
+            <div className="flex min-h-13 items-center gap-3 border-b border-line text-body-lg">
+              <DiscFace size="s" tone="grey">
+                <CheckGlyph size={12} />
+              </DiscFace>
               <span className="flex-1">Time</span>
-              <span className="text-[13px] text-fg2">always</span>
+              <span className="text-callout text-fg2">always</span>
             </div>
             {CARDIO_COLUMN_INFO.map((c) => {
               const n = columns.indexOf(c.id);
@@ -143,18 +146,18 @@ export function ExerciseFormView({
                   aria-checked={n >= 0}
                   disabled={full}
                   onClick={() => toggleColumn(c.id)}
-                  className="flex min-h-[48px] w-full items-center gap-3 border-b border-line text-left text-[16px] disabled:opacity-40"
+                  className="flex min-h-13 w-full items-center gap-3 border-b border-line text-left text-body-lg disabled:opacity-40"
                 >
-                  <span
-                    className={cx(
-                      'flex h-[24px] w-[24px] flex-none items-center justify-center rounded-full text-[12px] font-bold',
-                      n >= 0 ? 'bg-accent text-white' : 'border-[1.5px] border-fg3',
-                    )}
-                  >
-                    {n >= 0 ? n + 1 : ''}
-                  </span>
+                  {/* design §9 Disc S: the column's place in the row once picked; an empty ring until then. */}
+                  {n >= 0 ? (
+                    <DiscFace size="s" tone="action">
+                      <span className="text-caption font-bold">{n + 1}</span>
+                    </DiscFace>
+                  ) : (
+                    <Check on={false} />
+                  )}
                   <span className="flex-1">{c.label}</span>
-                  <span className="text-[13px] text-fg2">{columnUnitHint(c.id, spec, units)}</span>
+                  <span className="text-callout text-fg2">{columnUnitHint(c.id, spec, units)}</span>
                 </button>
               );
             })}
@@ -171,7 +174,9 @@ export function ExerciseFormView({
                 {columnHeader(c, spec, units)}
               </span>
             ))}
-            <span>✓</span>
+            <span className="flex justify-center">
+              <CheckGlyph size={11} />
+            </span>
           </div>
 
           {columns.includes('distance') && (

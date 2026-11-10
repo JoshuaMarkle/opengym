@@ -1,9 +1,9 @@
 import { useNavigate } from 'react-router';
 import { useState, type ReactNode } from 'react';
 import { useLongPress } from '../../components/gestures';
-import { CheckGlyph, ChevronRight } from '../../components/icons';
+import { ArrowGlyph, CheckGlyph, ChevronRight } from '../../components/icons';
 import { Sheet, SheetOption } from '../../components/overlays';
-import { cx, Note } from '../../components/ui';
+import { CalendarLegend, CompactSegmented, cx, DayCell, DayCode, DayDisc, DayDots, Note, Weekday, type DayState, type LegendItem } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { changeDays, resetDay, type PlanView } from '../../data/schedule';
 import type { Folder, ScheduleVersion } from '../../db/types';
@@ -17,127 +17,110 @@ export function dayLabel(day: { key: string }, today: string, withDate = true): 
   return withDate ? `${weekdayShort(d.getDay())} ${d.getDate()}` : weekdayShort(d.getDay());
 }
 
-/** What a day's box says: the routine's code, R / · for rest, → when moved away. */
-export function dayCode(day: PlanDay, codes: Map<string, string>, rest = 'R'): string {
+/** What a day's mark says: the routine's code, R for rest, a check when done off-plan, an arrow when moved away. */
+export type DayMark = { text: string; glyph?: 'check' | 'arrow' };
+
+export function dayCode(day: PlanDay, codes: Map<string, string>, rest = 'R'): DayMark {
+  const logged = () => {
+    const id = day.doneIds.find((x) => x && codes.has(x));
+    return id ? { text: codes.get(id)! } : { text: '', glyph: 'check' as const };
+  };
   // Done with a different routine than planned: show what you actually did.
-  if (day.state === 'done' && day.planned && !day.doneIds.includes(day.planned)) {
-    const id = day.doneIds.find((x) => x && codes.has(x));
-    return id ? codes.get(id)! : '✓';
-  }
-  if (day.planned) return codes.get(day.planned) ?? '?';
-  if (day.state === 'moved') return '→';
-  if (day.state === 'extra') {
-    const id = day.doneIds.find((x) => x && codes.has(x));
-    return id ? codes.get(id)! : '✓';
-  }
-  return day.state === 'off' ? '' : rest;
+  if (day.state === 'done' && day.planned && !day.doneIds.includes(day.planned)) return logged();
+  if (day.planned) return { text: codes.get(day.planned) ?? '?' };
+  if (day.state === 'moved') return { text: '', glyph: 'arrow' };
+  if (day.state === 'extra') return logged();
+  return { text: day.state === 'off' ? '' : rest };
 }
 
-/** Blue = done, orange outline = missed, ring = today, grey outline = changed by hand, outline = rest. */
-export function boxClass(day: PlanDay, isToday: boolean, unfilled = false): string {
-  // PH3.1 / 3.4: Home uses unfilled days and an accent outline for today.
-  if (unfilled) {
-    if (isToday) return 'text-fg ring-2 ring-inset ring-accent';
-    if (day.changed) return day.state === 'done' || day.state === 'extra' ? 'text-accent' : 'text-fg';
-    if (day.state === 'rest') return 'text-fg3';
-    return boxClass(day, false).split(' ').filter((c) => !c.startsWith('bg-')).map((c) => c === 'text-white' ? 'text-accent' : c).join(' ');
-  }
+function markLabel(m: DayMark): string {
+  return m.text || (m.glyph === 'check' ? 'done' : m.glyph === 'arrow' ? 'moved' : 'no plan');
+}
+
+function MarkContent({ mark }: { mark: DayMark }) {
+  if (mark.glyph === 'check') return <CheckGlyph size={14} />;
+  if (mark.glyph === 'arrow') return <ArrowGlyph size={10} />;
+  return <>{mark.text}</>;
+}
+
+/** design §12: a plan day's state as a day mark. */
+export function dayState(day: PlanDay): DayState {
   const s = day.state;
-  if (s === 'done' || s === 'extra') return cx('bg-accent text-white', isToday && 'ring-2 ring-fg ring-offset-2 ring-offset-bg');
-  // Today keeps the planned-day shading under its ring; a rest day today is just the ring.
-  if (isToday) return cx('text-fg ring-2 ring-inset ring-fg', (s === 'today' || s === 'upcoming') && day.planned && 'bg-surface-2');
-  if (s === 'missed') return 'text-warn ring-[1.5px] ring-inset ring-warn';
-  if (s === 'today' || s === 'upcoming') return day.changed ? 'text-fg ring-[1.5px] ring-inset ring-fg2' : 'bg-surface-2 text-fg';
-  if (s === 'paused') return 'bg-surface text-fg3';
-  if (s === 'moved') return 'text-fg2 ring-[1.5px] ring-inset ring-fg3';
-  if (s === 'rest') return 'text-fg3 ring-1 ring-inset ring-line-strong';
-  return 'text-fg3';
+  if (s === 'done' || s === 'extra') return 'done';
+  if (s === 'missed' || s === 'moved' || s === 'paused' || s === 'rest') return s;
+  if (s === 'today' || s === 'upcoming') return day.planned ? 'planned' : 'rest';
+  return 'empty';
 }
 
-/** A one-week strip: weekday + date over a box with the day's code (2.14, 2.15, 2.17 preview). */
+/** design §12 Week strip of a plan (3.4, PH3.1): weekday letters over day discs with each day's code. */
 export function PlanStrip({
   days,
   codes,
   today,
+  live,
   onTap,
   onHold,
   className = '',
-  labelClassName = '',
-  dense = false,
-  hideDates = false,
-  unfilled = false,
 }: {
   days: PlanDay[];
   codes: Map<string, string>;
   today: string;
+  live?: boolean;
   onTap?: (d: PlanDay) => void;
   onHold?: (d: PlanDay) => void;
   className?: string;
-  /** Home keeps the entire weekday/date label gray (PH3.1). */
-  labelClassName?: string;
-  /** Header shows "S1" instead of "S 1". */
-  dense?: boolean;
-  /** PH3.1 / 3.4: Home labels show only the weekday. */
-  hideDates?: boolean;
-  /** Home: no day fills, blue today outline (PH3.1 / 3.4). */
-  unfilled?: boolean;
 }) {
   return (
-    <div className={cx('grid grid-cols-7 gap-1.5 text-center', className)}>
+    <div className={cx('grid grid-cols-7 gap-1 text-center', className)}>
       {days.map((d) => (
-        <StripCell key={d.key} day={d} code={dayCode(d, codes)} isToday={d.key === today} dense={dense} hideDates={hideDates} unfilled={unfilled} labelClassName={labelClassName} onTap={onTap} onHold={onHold} />
+        <StripCell key={d.key} day={d} mark={dayCode(d, codes)} isToday={d.key === today} live={live} onTap={onTap} onHold={onHold} />
       ))}
     </div>
   );
 }
 
-function StripCell({
-  day,
-  code,
-  isToday,
-  dense,
-  hideDates,
-  unfilled,
-  labelClassName,
-  onTap,
-  onHold,
-}: {
-  day: PlanDay;
-  code: string;
-  isToday: boolean;
-  dense: boolean;
-  hideDates: boolean;
-  unfilled: boolean;
-  labelClassName: string;
-  onTap?: (d: PlanDay) => void;
-  onHold?: (d: PlanDay) => void;
-}) {
+function StripCell({ day, mark, isToday, live, onTap, onHold }: { day: PlanDay; mark: DayMark; isToday: boolean; live?: boolean; onTap?: (d: PlanDay) => void; onHold?: (d: PlanDay) => void }) {
   const hold = useLongPress(() => onHold?.(day), !!onHold);
   const date = new Date(day.ts);
   const body = (
     <>
-      <small className={cx('block text-[11px] font-bold tabular-nums', labelClassName || (isToday ? 'text-fg' : 'text-fg2'))}>
-        {weekdayLetter(date.getDay())}
-        {!hideDates && <>{dense ? '' : ' '}<span>{date.getDate()}</span></>}
-      </small>
-      <i className={cx('relative mt-1 flex h-[34px] items-center justify-center rounded-[9px] text-[12.5px] font-bold not-italic tabular-nums', boxClass(day, isToday, unfilled))}>{unfilled && day.changed && <ChangedDayOutline />}{/* PH3.1: use the shared SVG for completed days without a routine code. */}{code === '✓' ? <CheckGlyph size={15} /> : code}</i>
+      <Weekday today={isToday}>{weekdayLetter(date.getDay())}</Weekday>
+      <DayDisc className="mt-1.5" state={dayState(day)} today={isToday} live={live} changed={day.changed}>
+        <MarkContent mark={mark} />
+      </DayDisc>
     </>
   );
   if (!onTap && !onHold) return <span className="block min-w-0">{body}</span>;
   return (
-    <button
-      type="button"
-      {...hold}
-      onClick={() => onTap?.(day)}
-      aria-label={`${weekdayShort(date.getDay())} ${date.getDate()}: ${code || 'no plan'}`}
-      className="no-select block min-h-11 min-w-0 active:opacity-70"
-    >
+    <button type="button" {...hold} onClick={() => onTap?.(day)} aria-label={`${weekdayShort(date.getDay())} ${date.getDate()}: ${markLabel(mark)}`} className="no-select block min-h-11 min-w-0 active:opacity-70">
       {body}
     </button>
   );
 }
 
-/** 2.20: match the main calendar's compact Dates / Codes styling. */
+/** design §12 legend under every month grid. */
+export const MONTH_LEGEND: LegendItem[] = [
+  { label: 'Missed', mark: 'missed' },
+  { label: 'Workout', mark: 'workout' },
+  { label: 'Changed', mark: 'changed' },
+];
+
+/** design §12 View switch under a month grid: Dates / Codes. */
+export function CodesSwitch({ codes, onChange }: { codes: boolean; onChange: (codes: boolean) => void }) {
+  return (
+    <CompactSegmented
+      label="Day labels"
+      options={[
+        { value: 'dates', label: 'Dates' },
+        { value: 'codes', label: 'Codes' },
+      ]}
+      value={codes ? 'codes' : 'dates'}
+      onChange={(v) => onChange(v === 'codes')}
+    />
+  );
+}
+
+/** 2.20: the schedule editor's four weeks, with the main calendar's day cells, legend and Dates / Codes switch. */
 export function PlanGrid({ days, codes, today, weekStart, onOpen }: { days: PlanDay[]; codes: Map<string, string>; today: string; weekStart: 0 | 1; onOpen: (d: PlanDay) => void }) {
   const [showCodes, setShowCodes] = useState(false);
   const { history } = useData();
@@ -145,9 +128,9 @@ export function PlanGrid({ days, codes, today, weekStart, onOpen }: { days: Plan
     <>
       <div className="mt-1 grid grid-cols-7 gap-1 text-center">
         {weekOrder(weekStart).map((wd) => (
-          <small key={wd} className="pb-1 text-[11px] font-bold text-fg2">
-            {weekdayLetter(wd)}
-          </small>
+          <span key={wd} className="pb-1">
+            <Weekday>{weekdayLetter(wd)}</Weekday>
+          </span>
         ))}
         {days.map((d) => {
           const sessions = history.workouts.filter((w) => {
@@ -155,20 +138,14 @@ export function PlanGrid({ days, codes, today, weekStart, onOpen }: { days: Plan
             const day = new Date(d.ts);
             return date.getFullYear() === day.getFullYear() && date.getMonth() === day.getMonth() && date.getDate() === day.getDate();
           });
-          const primary = sessions.reduce<(typeof sessions)[number] | undefined>((best, w) => !best || w.setCount > best.setCount ? w : best, undefined);
+          const primary = sessions.reduce<(typeof sessions)[number] | undefined>((best, w) => (!best || w.setCount > best.setCount ? w : best), undefined);
           const loggedCode = primary && ((primary.workout.routineId && codes.get(primary.workout.routineId)) || routineCodes([{ id: primary.workout.id, name: primary.workout.name }]).get(primary.workout.id));
-          return <CalCell key={d.key} day={d} code={d.planned ? codes.get(d.planned) ?? '?' : '-'} loggedCode={loggedCode} count={sessions.length} showCodes={showCodes} isToday={d.key === today} onOpen={() => onOpen(d)} />;
+          return <CalCell key={d.key} day={d} code={d.planned ? (codes.get(d.planned) ?? '?') : '-'} loggedCode={loggedCode} count={sessions.length} showCodes={showCodes} isToday={d.key === today} onOpen={() => onOpen(d)} />;
         })}
       </div>
       <div className="flex min-h-11 items-center justify-between gap-1">
-        <div className="flex items-center gap-2 text-[10px] leading-none text-fg2">
-          <span className="flex items-center gap-1"><i className="h-2.5 w-2.5 rounded-[3px] border border-warn" /><span className="translate-y-px">Missed</span></span>
-          <span className="flex items-center gap-1"><i className="h-1 w-1 rounded-full bg-accent" /><span className="translate-y-px">Workout</span></span>
-          <span className="flex items-center gap-1"><i className="h-2.5 w-2.5 rounded-[3px] border border-dashed border-fg2" /><span className="translate-y-px">Changed</span></span>
-        </div>
-        <div className="flex">
-          {[false, true].map((v) => <button key={String(v)} type="button" aria-pressed={showCodes === v} onClick={() => setShowCodes(v)} className={cx('h-11 px-2 text-[12px]', showCodes === v ? 'font-bold text-fg underline underline-offset-4' : 'text-fg2')}>{v ? 'Codes' : 'Dates'}</button>)}
-        </div>
+        <CalendarLegend items={MONTH_LEGEND} />
+        <CodesSwitch codes={showCodes} onChange={setShowCodes} />
       </div>
     </>
   );
@@ -176,54 +153,32 @@ export function PlanGrid({ days, codes, today, weekStart, onOpen }: { days: Plan
 
 function CalCell({ day, code, loggedCode, count, showCodes, isToday, onOpen }: { day: PlanDay; code: string; loggedCode: string | undefined; count: number; showCodes: boolean; isToday: boolean; onOpen: () => void }) {
   const hold = useLongPress(onOpen);
+  const arrow = <ArrowGlyph size={10} className="text-plan-code" />;
   return (
-    <button
-      type="button"
+    <DayCell
       {...hold}
       onClick={onOpen}
       aria-label={`${fmtMonthDay(day.ts)}: ${loggedCode ?? code}${count ? `, ${count} logged workouts` : ''}${day.movedTo ? ', moved to ' + day.movedTo : day.movedFrom ? ', moved from ' + day.movedFrom : day.changed ? ', changed' : ''}`}
       aria-current={isToday ? 'date' : undefined}
-      className={cx(
-        'no-select relative flex h-11 min-w-0 flex-col items-center rounded-[9px] pt-[7px] text-[14px] font-semibold tabular-nums active:opacity-70',
-        count || isToday ? 'text-fg' : day.planned ? 'text-fg2' : 'text-fg3',
-        isToday && 'ring-[1.5px] ring-inset ring-accent',
-        !isToday && day.state === 'missed' && 'ring-1 ring-inset ring-warn',
-      )}
-    >
-      {day.changed && (
-        <ChangedDayOutline />
-      )}
-      <span className="leading-[18px]">{showCodes ? loggedCode ?? (day.movedTo ? '→' : code) : new Date(day.ts).getDate()}</span>
-      <span className="flex h-3 max-w-full items-center justify-center gap-[2px]">
-        {!showCodes && day.movedTo && !count && <span className="text-[12px] leading-[12px] text-plan-code">→</span>}
-        {!showCodes && day.planned && !count && <span className="truncate px-1 text-[10px] leading-[12px] text-plan-code">{day.movedFrom ? '→ ' : ''}{code}</span>}
-        {showCodes && day.movedFrom && !count && <span className="text-[10px] leading-[12px] text-plan-code">→</span>}
-        {Array.from({ length: count }, (_, i) => <i key={i} className="h-1 w-1 rounded-full bg-accent" />)}
-      </span>
-    </button>
-  );
-}
-
-/** PH3.10 / PH3.11: shared changed-day treatment across calendars and Home. */
-export function ChangedDayOutline() {
-  return (
-    <svg aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full fill-none text-fg3">
-      <rect x="0.75" y="0.75" width="calc(100% - 1.5px)" height="calc(100% - 1.5px)" rx="8.25" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 3" />
-    </svg>
-  );
-}
-
-/** Small grey caps row for legends and hints. */
-export function Legend({ items }: { items: { label: string; box: string }[] }) {
-  return (
-    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-[12px] text-fg2">
-      {items.map((it) => (
-        <span key={it.label} className="flex items-center gap-1.5">
-          <i className={cx('block h-3 w-3 rounded-[4px]', it.box)} />
-          {it.label}
-        </span>
-      ))}
-    </div>
+      today={isToday}
+      missed={day.state === 'missed'}
+      changed={day.changed}
+      tone={count || isToday ? 'fg' : day.planned ? 'fg2' : 'fg3'}
+      number={showCodes ? (loggedCode ?? (day.movedTo ? arrow : code)) : new Date(day.ts).getDate()}
+      marks={
+        <>
+          {!showCodes && day.movedTo && !count && arrow}
+          {!showCodes && day.planned && !count && (
+            <DayCode>
+              {day.movedFrom && <ArrowGlyph size={8} className="mr-0.5" />}
+              {code}
+            </DayCode>
+          )}
+          {showCodes && day.movedFrom && !count && arrow}
+          <DayDots count={count} />
+        </>
+      }
+    />
   );
 }
 

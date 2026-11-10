@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { KeypadKey } from '../lib/keypad';
 import { BackspaceIcon, CheckGlyph, ChevronDown } from './icons';
-import { cx } from './ui';
+import { CompactSegmented, cx } from './ui';
 
 export interface KeypadTab {
   id: string;
@@ -50,11 +50,11 @@ export function Keypad({
       {d}
     </Key>
   );
-  const small = (s: string) => <small className="mt-0.5 text-[10px] font-semibold text-fg2">{s}</small>;
+  const small = (s: string) => <small className="mt-0.5 text-micro font-semibold text-fg2">{s}</small>;
   return (
     <div className="no-select flex-none border-t border-line-strong bg-kp px-2 pt-1.5 pb-[max(8px,env(safe-area-inset-bottom))]" role="group" aria-label="Keypad" data-dock>
       <div className="flex min-h-11 items-center justify-between gap-2 pb-1.5 pl-1.5">
-        <div className="min-w-0 truncate text-[13px] font-semibold text-fg2">{left}</div>
+        <div className="min-w-0 truncate text-footnote font-semibold text-fg2">{left}</div>
         <div className="flex flex-none items-center gap-1.5">
           {tabs && tabs.length > 1 && onTab && <FieldTabs tabs={tabs} value={tab} onChange={onTab} />}
           {next && (
@@ -73,8 +73,8 @@ export function Keypad({
               }}
               className="flex h-11 min-w-11 items-center justify-center active:opacity-80"
             >
-              {/* Drawn the size of a selected field tab; the button around it keeps the 44 px target. */}
-              <span className="flex h-[28px] items-center rounded-[7px] bg-accent px-2.5 text-white">
+              {/* design §13 Confirm: drawn the size of a selected field tab (28 / r8, action fill); the button keeps the 44 px target. */}
+              <span className="flex h-7 items-center rounded-sm bg-action px-2.5 text-white">
                 <CheckGlyph size={14} />
               </span>
             </button>
@@ -130,82 +130,26 @@ export function Keypad({
 /** Height of the number grid: the plate pad matches it exactly. */
 export const KEYPAD_GRID_HEIGHT = 4 * 50 + 3 * 6;
 
-/** 123 | Plates on the left of the header (4.2, 4.16). */
+/** design §13 Mode switch: 123 | Plates on the left of the toolbar (4.2, 4.16). Key-fn when selected. */
 export function ModeTabs({ value, onChange }: { value: 'numbers' | 'plates'; onChange: (v: 'numbers' | 'plates') => void }) {
   return (
-    <Pills
+    <CompactSegmented
       options={[
-        { id: 'numbers', label: '123' },
-        { id: 'plates', label: 'Plates' },
+        { value: 'numbers', label: '123' },
+        { value: 'plates', label: 'Plates' },
       ]}
       value={value}
-      onChange={(v) => onChange(v as 'numbers' | 'plates')}
+      onChange={onChange}
       tone="neutral"
       label="Keypad mode"
+      instant
     />
   );
 }
 
-/** "Bar 45 ▾" beside the mode tabs on Plates (4.16, 4.18). Drawn like a pill; 44 px tall to tap. */
-export function BarChip({ label, onPress }: { label: string; onPress: () => void }) {
-  return (
-    <button
-      type="button"
-      aria-label={`${label}. Choose the bar`}
-      // A click, not pointerdown: it opens a sheet, and the tap must not land on its scrim.
-      onClick={onPress}
-      className="flex h-11 flex-none items-center active:opacity-70"
-    >
-      <span className="flex h-[32px] items-center gap-1 rounded-[9px] bg-surface px-2.5 text-[13px] font-semibold whitespace-nowrap text-fg">
-        {label}
-        <ChevronDown size={9} />
-      </span>
-    </button>
-  );
-}
-
+/** design §13 Field switch: lbs | reps (or the cardio columns). Action fill on the box being typed. */
 function FieldTabs({ tabs, value, onChange }: { tabs: KeypadTab[]; value?: string; onChange: (id: string) => void }) {
-  return <Pills options={tabs} value={value} onChange={onChange} tone="accent" label="Field" />;
-}
-
-/** A small segmented pill group. Each button is 44 px tall; the grey track is drawn behind them. */
-function Pills({ options, value, onChange, tone, label }: { options: KeypadTab[]; value?: string; onChange: (id: string) => void; tone: 'accent' | 'neutral'; label: string }) {
-  return (
-    <div role="tablist" aria-label={label} className="relative flex items-center px-[2px]">
-      <span aria-hidden className="absolute inset-x-0 top-1/2 h-[32px] -translate-y-1/2 rounded-[9px] bg-surface" />
-      {options.map((o) => {
-        const on = o.id === value;
-        return (
-          <button
-            key={o.id}
-            type="button"
-            role="tab"
-            aria-selected={on}
-            onPointerDown={(e) => {
-              e.preventDefault();
-              if (!on) onChange(o.id);
-            }}
-            onKeyDown={(e) => {
-              if ((e.key === 'Enter' || e.key === ' ') && !on) {
-                e.preventDefault();
-                onChange(o.id);
-              }
-            }}
-            className="relative flex h-11 items-center"
-          >
-            <span
-              className={cx(
-                'flex h-[28px] items-center rounded-[7px] px-2.5 text-[13px] font-semibold whitespace-nowrap transition-colors',
-                on ? (tone === 'accent' ? 'bg-accent text-white' : 'bg-key-fn text-fg') : 'text-fg2',
-              )}
-            >
-              {o.label}
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
+  return <CompactSegmented options={tabs.map((t) => ({ value: t.id, label: t.label }))} value={value} onChange={onChange} tone="action" label="Field" instant />;
 }
 
 export function Key({
@@ -247,11 +191,11 @@ export function Key({
         }
       }}
       className={cx(
-        'flex h-[50px] flex-col items-center justify-center rounded-[10px] leading-none transition-[filter] active:brightness-125',
+        // design §13 Number keys: h50 / r10; digits 23/500, function keys 19/600 on key-fn. No shadow (design §17).
+        'flex h-12.5 flex-col items-center justify-center rounded-md leading-none transition-[filter] active:brightness-125',
         fn ? 'bg-key-fn text-[19px] font-semibold' : 'bg-key text-[23px] font-medium',
         outlined && !disabled && 'ring-[1.5px] ring-accent ring-inset',
         disabled && 'opacity-25',
-        '[&:not(:disabled)]:shadow-[0_1px_0_rgba(0,0,0,0.25)]',
         className,
       )}
     >

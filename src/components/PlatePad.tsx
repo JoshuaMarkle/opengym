@@ -4,7 +4,8 @@ import { BAR_OPTIONS, barIdFor, canAddPlate, loadPlates, MAX_PLATES_PER_SIDE, PL
 import { formatNumber } from '../lib/units';
 import { KEYPAD_GRID_HEIGHT } from './Keypad';
 import { Sheet } from './overlays';
-import { Button, cx, Radio } from './ui';
+import { ChevronLeft } from './icons';
+import { Button, cx, fieldClass, Radio } from './ui';
 
 /**
  * 4.16–4.17: the plate pad. Bar drawing on the left (the right half of a barbell, like
@@ -58,14 +59,14 @@ export function PlatePad({
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex h-[34px] items-baseline justify-between gap-1 px-0.5" aria-live="polite">
             <span className="truncate">
-              <b className="text-[26px] leading-none font-bold tracking-[-0.01em]">{formatNumber(total, 2)}</b>
-              <small className="ml-0.5 text-[12px] font-semibold text-fg2">{units}</small>
+              <b className="text-title2 leading-none">{formatNumber(total, 2)}</b>
+              <small className="ml-0.5 text-caption font-semibold text-fg2">{units}</small>
             </span>
-            <span className={cx('flex-none text-[12px]', full ? 'font-semibold text-warn' : 'text-fg2')}>
+            <span className={cx('flex-none text-caption', full ? 'font-semibold text-warn' : 'text-fg2')}>
               {full ? `Max ${MAX_PLATES_PER_SIDE} / side` : `${formatNumber(sum(stack), 2)} / side`}
             </span>
           </div>
-          <div className="grid flex-1 grid-cols-2 grid-rows-3 gap-[5px]">
+          <div className="grid flex-1 grid-cols-2 grid-rows-3 gap-1.5">
             {plates.map((p) => {
               const n = counts.get(p) ?? 0;
               return (
@@ -85,13 +86,13 @@ export function PlatePad({
                     }
                   }}
                   className={cx(
-                    'flex items-center justify-between rounded-[10px] bg-key px-2.5 leading-none transition-[filter]',
+                    'flex items-center justify-between rounded-md bg-key px-2.5 leading-none transition-[filter]',
                     full ? 'opacity-35' : 'active:brightness-125',
                     n > 0 && 'ring-[1.5px] ring-fg3 ring-inset',
                   )}
                 >
-                  <span className={cx('text-[17px] font-semibold', p === newest && 'text-accent')}>{formatNumber(p, 2)}</span>
-                  {n > 0 && <small className="text-[11px] font-semibold text-fg2">×{n}</small>}
+                  <span className={cx('text-body-lg font-semibold', p === newest && 'text-accent')}>{formatNumber(p, 2)}</span>
+                  {n > 0 && <small className="text-caption font-semibold text-fg2">×{n}</small>}
                 </button>
               );
             })}
@@ -135,8 +136,9 @@ function PadButton({ children, onPress, primary, disabled }: { children: string;
         }
       }}
       className={cx(
-        'rounded-[10px] text-[16px] font-semibold active:brightness-125 disabled:opacity-35',
-        primary ? 'bg-accent text-white' : 'bg-key-fn text-fg',
+        // design §13 Action row: key-fn 15/600; Done action fill 15/700; disabled 35%.
+        'rounded-md text-body active:brightness-125 disabled:opacity-35',
+        primary ? 'bg-action font-bold text-white' : 'bg-key-fn font-semibold text-fg',
       )}
     >
       {children}
@@ -163,13 +165,13 @@ function BarDrawing({ units, stack, onRemove }: { units: Units; stack: number[];
 
   const H = 124;
   return (
-    <div ref={box} className="relative h-full overflow-hidden rounded-[10px] bg-surface" aria-label={`Bar drawing: ${stack.length ? stack.map((p) => formatNumber(p, 2)).join(', ') : 'empty'}. Tap a plate to take it off.`}>
+    <div ref={box} className="relative h-full overflow-hidden rounded-md bg-surface" aria-label={`Bar drawing: ${stack.length ? stack.map((p) => formatNumber(p, 2)).join(', ') : 'empty'}. Tap a plate to take it off.`}>
       <div ref={row} className="absolute inset-y-0 left-0 flex items-center transition-transform duration-200" style={{ transform: `translateX(${shift}px)` }}>
         {/* shaft running off the left edge, collar, sleeve under the plates, short overhang */}
-        <span className="h-[7px] w-[22px] flex-none bg-[var(--og-chart-dot)]" />
-        <span className="h-[34px] w-[7px] flex-none rounded-[2px] bg-[var(--og-chart-dot)]" />
+        <span className="h-[7px] w-[22px] flex-none bg-chart-dot" />
+        <span className="h-[34px] w-[7px] flex-none rounded-[2px] bg-chart-dot" />
         <span className="relative flex items-center gap-[2px] pr-[22px] pl-[3px]">
-          <span aria-hidden className="absolute inset-x-0 top-1/2 h-[9px] -translate-y-1/2 rounded-r-[2px] bg-[var(--og-bar)]" />
+          <span aria-hidden className="absolute inset-x-0 top-1/2 h-[9px] -translate-y-1/2 rounded-r-[2px] bg-bar" />
           {stack.map((p, i) => {
             const s = plateShape(p, units);
             const last = i === stack.length - 1;
@@ -183,7 +185,7 @@ function BarDrawing({ units, stack, onRemove }: { units: Units; stack: number[];
                 style={{ width: Math.round(24 * s.w) }}
               >
                 <span
-                  className={cx('block w-full rounded-[3px]', last ? 'bg-accent' : 'bg-[var(--og-chart-dot)]')}
+                  className={cx('block w-full rounded-[3px]', last ? 'bg-accent' : 'bg-chart-dot')}
                   style={{ height: Math.round(H * s.h) }}
                 />
               </button>
@@ -192,11 +194,11 @@ function BarDrawing({ units, stack, onRemove }: { units: Units; stack: number[];
         </span>
       </div>
       {shift < 0 && (
-        <span aria-hidden className="absolute inset-y-0 left-0 flex w-5 items-center justify-center bg-gradient-to-r from-[var(--og-surface)] to-transparent text-[15px] font-bold text-fg2">
-          ‹
+        <span aria-hidden className="absolute inset-y-0 left-0 flex w-5 items-center justify-center bg-gradient-to-r from-[var(--og-surface)] to-transparent text-fg2">
+          <ChevronLeft size={13} />
         </span>
       )}
-      {!stack.length && <span className="absolute inset-x-0 bottom-2 text-center text-[11px] text-fg3">Empty bar</span>}
+      {!stack.length && <span className="absolute inset-x-0 bottom-2 text-center text-caption text-fg3">Empty bar</span>}
     </div>
   );
 }
@@ -238,16 +240,16 @@ export function BarPicker({
             onPick(b.weight);
             onClose();
           }}
-          className="flex min-h-[48px] w-full items-center gap-3 border-b border-line text-left text-[16px]"
+          className="flex min-h-13 w-full items-center gap-3 border-b border-line text-left text-body-lg"
         >
           <span className="min-w-0 flex-1 truncate">{b.label}</span>
-          <span className="text-[13px] text-fg2">
+          <span className="text-callout text-fg2">
             {formatNumber(b.weight, 2)} {units}
           </span>
           <Radio on={!custom && current === b.id} />
         </button>
       ))}
-      <button type="button" onClick={() => setCustom(true)} className="flex min-h-[48px] w-full items-center gap-3 text-left text-[16px]">
+      <button type="button" onClick={() => setCustom(true)} className="flex min-h-13 w-full items-center gap-3 text-left text-body-lg">
         <span className="min-w-0 flex-1">Custom…</span>
         <Radio on={custom} />
       </button>
@@ -260,19 +262,19 @@ export function BarPicker({
             value={text}
             onChange={(e) => setText(e.target.value.replace(',', '.').replace(/[^0-9.]/g, ''))}
             placeholder={`Bar weight (${units})`}
-            className="h-11 min-w-0 flex-1 rounded-[10px] border-[1.5px] border-transparent bg-surface-2 px-3 text-[16px] outline-none focus:border-accent"
+            className={cx(fieldClass, 'min-w-0 flex-1')}
           />
-          <Button
-            size="md"
-            className="w-[90px]"
-            disabled={!valid}
-            onClick={() => {
-              onPick(value);
-              onClose();
-            }}
-          >
-            Use
-          </Button>
+          <div className="w-22.5 flex-none">
+            <Button
+              disabled={!valid}
+              onClick={() => {
+                onPick(value);
+                onClose();
+              }}
+            >
+              Use
+            </Button>
+          </div>
         </div>
       )}
     </Sheet>

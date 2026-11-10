@@ -1,12 +1,12 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { Navigate, useNavigate } from 'react-router';
-import { ChartIcon, CheckGlyph, ChevronDown, ChevronLeft, KeyboardGlyph, PencilGlyph } from '../../components/icons';
+import { ChartIcon, CheckGlyph, ChevronDown, KeyboardGlyph, MoreGlyph } from '../../components/icons';
 import { EffortPad } from '../../components/Effort';
-import { BarChip, Keypad, ModeTabs, type KeypadTab } from '../../components/Keypad';
+import { Keypad, ModeTabs, type KeypadTab } from '../../components/Keypad';
 import { Alert, HoldMenu, Sheet, SheetOption, useToast, type MenuItem } from '../../components/overlays';
 import { BarPicker, PlatePad } from '../../components/PlatePad';
-import { AddButton, Button, cx, EmptyState, IconButton, TextField } from '../../components/ui';
+import { AddButton, BarChip, Button, cx, EmptyState, Fab, fieldClass, IconButton, NavCard, TextField, WorkoutBar } from '../../components/ui';
 import { type ActiveExercise, type ActiveWorkoutData, useActiveWorkout, useData } from '../../data/DataProvider';
 import { setExercisePrefs } from '../../data/exercises';
 import { updateSettings } from '../../data/settings';
@@ -616,41 +616,20 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
   // ───── render
 
   const header = (
-    <header className="flex flex-none items-center gap-1 border-b border-line py-1 pr-4 pl-1">
-      <button
-        type="button"
-        aria-label={showAll ? 'Back to the exercise' : 'All exercises'}
-        onClick={() => (showAll ? setShowAll(false) : openAll())}
-        className="flex h-11 w-9 flex-none items-center justify-center text-accent"
-      >
-        <ChevronLeft size={18} />
-      </button>
-      <div className="min-w-0 flex-1 py-1">
-        <span className="block truncate text-[17px] font-bold">{workout.name}</span>
-        <span className="block text-[12.5px] text-fg2">
+    <WorkoutBar
+      name={workout.name}
+      meta={
+        <>
           <Clock since={workout.startedAt} /> · {doneCount} of {list.length} done
-          {/* 4.35 / PH3.7: the timer stays live while the finished session uses this date. */}
-          {workout.loggedFor && <span> · Logging {fmtMonthDay(new Date(workout.loggedFor + 'T12:00').getTime())}</span>}
-        </span>
-      </div>
-      {/* 5.4: pause, rename, start time, discard. */}
-      <button
-        type="button"
-        aria-label="Workout options"
-        onClick={() => setOverlay('options')}
-        className="flex h-11 w-11 flex-none items-center justify-center text-accent active:opacity-60"
-      >
-        <PencilGlyph size={18} />
-      </button>
-      <button
-        type="button"
-        onClick={() => void startFinish()}
-        disabled={busy}
-        className="h-9 flex-none rounded-[9px] bg-accent px-4 text-[15px] font-semibold text-white active:opacity-80 disabled:opacity-50"
-      >
-        Finish
-      </button>
-    </header>
+        </>
+      }
+      pastDate={workout.loggedFor ? fmtMonthDay(new Date(workout.loggedFor + 'T12:00').getTime()) : undefined}
+      backLabel={showAll ? 'Back to the exercise' : 'All exercises'}
+      onBack={() => (showAll ? setShowAll(false) : openAll())}
+      onOptions={() => setOverlay('options')}
+      onFinish={() => void startFinish()}
+      finishing={busy}
+    />
   );
 
   const subtitle = (m: ActiveExercise) => {
@@ -669,7 +648,7 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
         <ChartIcon size={15} />
       </IconButton>
       <IconButton label="Exercise options" onClick={() => setOverlay('exercise')}>
-        •••
+        <MoreGlyph size={16} />
       </IconButton>
     </div>
   );
@@ -911,7 +890,7 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
           plateOk ? (
             <span className="flex items-center gap-1">
               <ModeTabs value={platesOn ? 'plates' : 'numbers'} onChange={setPad} />
-              {platesOn && <BarChip label={barShortLabel(barDisplayOf(editEx))} onPress={() => setOverlay('bar')} />}
+              {platesOn && <BarChip label={barShortLabel(barDisplayOf(editEx))} ariaLabel={`${barShortLabel(barDisplayOf(editEx))}. Choose the bar`} onPress={() => setOverlay('bar')} />}
             </span>
           ) : (
             label
@@ -1033,42 +1012,36 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
         <div className="relative flex-none" data-dock>
           {padTarget && (
             // The nav buttons' grey, in a ring of the page colour so it stands off whatever scrolls under it.
-            <button
-              type="button"
-              aria-label={`Open the keypad on ${setWord(padTarget.member, padTarget.set)}`}
-              onClick={openPad}
-              // Toasts (Undo after a delete) share its row and stop short of it.
-              data-dock-side
-              className="absolute right-3 bottom-full z-20 mb-3 flex h-12 w-12 items-center justify-center rounded-[11px] bg-surface-2 text-fg ring-2 ring-bg active:brightness-125"
-            >
+            // Toasts (Undo after a delete) share its row and stop short of it (data-dock-side).
+            <Fab label={`Open the keypad on ${setWord(padTarget.member, padTarget.set)}`} onClick={openPad} className="absolute right-3 bottom-full z-20 mb-3">
               <KeyboardGlyph size={22} />
-            </button>
+            </Fab>
           )}
           <nav
             className={cx('grid grid-cols-2 gap-2 border-t border-line bg-bg px-3', keypadOpen ? 'py-2' : 'pt-2.5 pb-[max(10px,env(safe-area-inset-bottom))]')}
             aria-label="Exercises"
           >
             {prevNav ? (
-              <NavButton small={prevNav.small} onClick={prevNav.go} side="left" compact={keypadOpen}>
+              <NavCard small={prevNav.small} onClick={prevNav.go} side="left" compact={keypadOpen}>
                 {prevNav.text}
-              </NavButton>
+              </NavCard>
             ) : (
-              <NavButton small="No previous" onClick={openAll} compact={keypadOpen}>
+              <NavCard small="No previous" onClick={openAll} compact={keypadOpen}>
                 All exercises
-              </NavButton>
+              </NavCard>
             )}
             {nextNav ? (
-              <NavButton small={nextNav.small} onClick={nextNav.go} side="right" compact={keypadOpen}>
+              <NavCard small={nextNav.small} onClick={nextNav.go} side="right" compact={keypadOpen}>
                 {nextNav.text}
-              </NavButton>
+              </NavCard>
             ) : everyDone ? (
-              <NavButton small="All done" onClick={() => void startFinish()} tone="accent" align="right" compact={keypadOpen}>
+              <NavCard small="All done" onClick={() => void startFinish()} tone="action" align="right" compact={keypadOpen}>
                 Finish workout
-              </NavButton>
+              </NavCard>
             ) : (
-              <NavButton small="Last one" onClick={openAll} align="right" compact={keypadOpen}>
+              <NavCard small="Last one" onClick={openAll} align="right" compact={keypadOpen}>
                 All exercises
-              </NavButton>
+              </NavCard>
             )}
           </nav>
           {keypad}
@@ -1369,47 +1342,6 @@ function Clock({ since }: { since: number }) {
   return <span className="tabular-nums">{fmtClock(Math.max(0, now - since))}</span>;
 }
 
-/** Prev / Next exercise in the bottom bar; a blue "Finish workout" once nothing is left (SPEC §5). */
-function NavButton({
-  children,
-  small,
-  onClick,
-  side,
-  tone,
-  align,
-  compact,
-}: {
-  children: ReactNode;
-  small: string;
-  onClick: () => void;
-  side?: 'left' | 'right';
-  tone?: 'accent';
-  align?: 'right';
-  /** Shorter (still 44 px) while the keypad is open below. */
-  compact?: boolean;
-}) {
-  const right = side === 'right' || align === 'right';
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cx(
-        'flex min-w-0 items-center gap-2 rounded-[11px] px-3 transition-colors active:opacity-80',
-        compact ? 'h-11' : 'h-[50px]',
-        right ? 'justify-end text-right' : 'text-left',
-        tone === 'accent' ? 'bg-accent text-white' : 'bg-surface-2 text-fg',
-      )}
-    >
-      {side === 'left' && <span className="text-[19px] text-fg2">‹</span>}
-      <span className="min-w-0">
-        <small className={cx('block text-[10px] font-bold tracking-[0.05em] uppercase', tone === 'accent' ? 'text-white/75' : 'text-fg2')}>{small}</small>
-        <span className="block truncate text-[14px] font-semibold">{children}</span>
-      </span>
-      {side === 'right' && <span className={cx('text-[19px]', tone === 'accent' ? 'text-white/80' : 'text-fg2')}>›</span>}
-    </button>
-  );
-}
-
 // ───────────────────────────── 5.4 workout options
 
 function WorkoutOptions({
@@ -1433,7 +1365,7 @@ function WorkoutOptions({
 }) {
   const now = useNow(30_000);
   return (
-    <Sheet open={open} onClose={onClose} title={name} tight subtitle={`Started ${fmtTime(startedAt)} · ${fmtDuration(now - startedAt)}`}>
+    <Sheet open={open} onClose={onClose} title={name} subtitle={`Started ${fmtTime(startedAt)} · ${fmtDuration(now - startedAt)}`}>
       <SheetOption onClick={onPause} detail="resume from Home">
         Pause workout
       </SheetOption>
@@ -1482,7 +1414,7 @@ function StartTimeSheet({ open, startedAt, onClose, onSave }: { open: boolean; s
         value={value}
         max={toLocalInputValue(Date.now())}
         onChange={(e) => setValue(e.target.value)}
-        className="mt-2 h-12 w-full rounded-[10px] bg-surface-2 px-3 text-[17px] text-fg outline-none focus:ring-2 focus:ring-accent"
+        className={cx('mt-2', fieldClass)}
       />
       {ts && ts > Date.now() && <p className="mt-1.5 text-[13px] font-semibold text-danger">That's in the future.</p>}
       <Button

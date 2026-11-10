@@ -4,7 +4,7 @@ import type { KeypadKey } from '../lib/keypad';
 import { BackspaceIcon, ChevronDown, CloseIcon } from './icons';
 import { Key } from './Keypad';
 import { Sheet } from './overlays';
-import { cx } from './ui';
+import { cx, Disc } from './ui';
 
 export type BadgeTone = 'logged' | 'active' | 'target' | 'add';
 
@@ -207,11 +207,9 @@ export function EffortSheet({ open, onClose, mode, onSwitch }: { open: boolean; 
       onClose={onClose}
       title="RPE and RIR"
       action={
-        <button type="button" aria-label="Close" onClick={onClose} className="-mr-2 flex h-11 w-11 items-center justify-center">
-          <span className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-key-fn text-fg2">
-            <CloseIcon size={11} />
-          </span>
-        </button>
+        <Disc tone="grey" label="Close" onClick={onClose} className="-mr-2">
+          <CloseIcon size={11} />
+        </Disc>
       }
     >
       <p className="text-[14px] leading-snug text-fg2">

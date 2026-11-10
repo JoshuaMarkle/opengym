@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { CheckGlyph, ChevronLeft, ChevronRight } from '../../components/icons';
-import { cx, LabelAction, Note, SectionLabel, StartPill, StatRow } from '../../components/ui';
-import { useData } from '../../data/DataProvider';
+import { AttentionNote, CalendarLegend, DayCell, DayCode, DayDots, LabelAction, Note, SectionLabel, StartPill, StatRow, TextButton, Weekday } from '../../components/ui';
+import { useActiveWorkout, useData } from '../../data/DataProvider';
 import { workoutLine, type HistoryWorkout } from '../../data/history';
 import { skipMissed, usePlanView } from '../../data/schedule';
 import type { Folder } from '../../db/types';
@@ -11,7 +11,7 @@ import { useNow } from '../../hooks/useNow';
 import { addDays, addMonths, dayKey, fmtDay, fmtDuration, fmtMonthYear, startOfMonth, weekdayLetter } from '../../lib/dates';
 import { currentStreak } from '../../lib/historyStats';
 import { onPlan, routineCodes, weekOrder, type PlanDay } from '../../lib/schedule';
-import { ChangedDayOutline, DaySheet } from './PlanParts';
+import { CodesSwitch, DaySheet, MONTH_LEGEND } from './PlanParts';
 
 // PH3.2, PH3.3, PH3.7–PH3.9: Dates adds a brighter planned code below uncompleted days; codes describe the plan; dots count actual sessions. Completed days have no fill, planned days have no border, and dots sit close beneath dates. Today keeps a foreground outline when unselected.
 const memory: { day?: string; codes: boolean } = { codes: false };
@@ -38,6 +38,8 @@ export function PlanHistoryCalendar({ folder, month, onMonthChange }: { folder?:
     }
     return map;
   }, [history]);
+  // design §12: today's ring turns green while a workout is live.
+  const live = !!useActiveWorkout();
   if (!view) return null;
   const planned = new Map(view.days.map((d) => [d.key, d]));
   const days: PlanDay[] = [];
@@ -72,7 +74,7 @@ export function PlanHistoryCalendar({ folder, month, onMonthChange }: { folder?:
           onClick={() => changeMonth(addMonths(month, -1))}
           className="-ml-2 flex h-11 w-11 items-center justify-center text-accent disabled:text-fg3"
         >
-          <ChevronLeft size={12} />
+          <ChevronLeft size={13} />
         </button>
         <button
           type="button"
@@ -82,7 +84,7 @@ export function PlanHistoryCalendar({ folder, month, onMonthChange }: { folder?:
             setSelected(today);
             memory.day = today;
           }}
-          className="h-11 text-[17px] font-bold"
+          className="h-11 text-headline"
         >
           {fmtMonthYear(month)}
         </button>
@@ -93,13 +95,13 @@ export function PlanHistoryCalendar({ folder, month, onMonthChange }: { folder?:
           onClick={() => changeMonth(addMonths(month, 1))}
           className="-mr-2 flex h-11 w-11 items-center justify-center text-accent disabled:text-fg3"
         >
-          <ChevronRight size={12} />
+          <ChevronRight size={13} />
         </button>
       </div>
       <div className="grid grid-cols-7 gap-1 text-center">
         {weekOrder(settings.weekStart).map((w) => (
-          <div key={w} className="pb-1 text-[11px] font-bold text-fg2">
-            {weekdayLetter(w)}
+          <div key={w} className="pb-1">
+            <Weekday>{weekdayLetter(w)}</Weekday>
           </div>
         ))}
         {Array.from({ length: (new Date(month).getDay() - settings.weekStart + 7) % 7 }, (_, i) => (
@@ -117,70 +119,39 @@ export function PlanHistoryCalendar({ folder, month, onMonthChange }: { folder?:
           const isSel = d.key === sel.key;
           const isToday = d.key === today;
           return (
-            <button
+            <DayCell
               key={d.key}
-              type="button"
               aria-pressed={isSel}
               aria-current={isToday ? 'date' : undefined}
               aria-label={`${fmtDay(d.ts)}, ${d.planned ? 'planned ' + view.routineName(d.planned) : 'rest'}${count ? `, ${count} logged workout${count === 1 ? '' : 's'}` : ''}${d.state === 'missed' ? ', missed' : ''}${d.movedTo ? ', moved to ' + d.movedTo : d.movedFrom ? ', moved from ' + d.movedFrom : d.changed ? ', changed' : ''}`}
               onClick={() => select(d)}
-              className={cx(
-                'relative flex h-11 min-w-0 flex-col items-center rounded-[9px] pt-[7px] text-[14px] font-semibold',
-                isSel ? 'bg-accent text-white' : count ? 'text-fg' : 'text-fg2',
-                !isSel && !isToday && d.state === 'missed' && 'ring-1 ring-inset ring-warn',
-                !isSel && isToday && 'ring-[1.5px] ring-inset ring-accent',
-              )}
-            >
-              {/* PH3.10: changed days match the routine editor; selection hides the dashed outline. */}
-              {d.changed && !isSel && <ChangedDayOutline />}
-              <span className={cx('leading-[18px]', isSel ? 'text-white' : codes && count ? 'text-fg' : !codes && isToday ? 'text-fg' : !d.planned && !count ? 'text-fg3' : isToday && 'text-fg')}>
-                {codes ? (loggedCode ?? (d.planned ? view.codes.get(d.planned) : '-')) : new Date(d.ts).getDate()}
-              </span>
-              <span className="flex h-3 max-w-full items-center justify-center gap-[2px]">
-                {!codes && d.planned && !count && (
-                  <span className={cx('truncate px-1 text-[10px] leading-[12px]', !isSel && 'text-plan-code')}>
-                    {view.codes.get(d.planned)}
-                  </span>
-                )}
-                {Array.from({ length: count }, (_, i) => (
-                  <i key={i} className={cx('h-1 w-1 rounded-full', isSel ? 'bg-white' : 'bg-accent')} />
-                ))}
-              </span>
-            </button>
+              selected={isSel}
+              today={isToday}
+              live={live}
+              missed={d.state === 'missed'}
+              // PH3.10: changed days match the routine editor; selection hides the dashed outline.
+              changed={d.changed}
+              tone={count || isToday ? 'fg' : codes ? (d.planned ? 'fg2' : 'fg3') : d.planned ? 'fg2' : 'fg3'}
+              number={codes ? (loggedCode ?? (d.planned ? view.codes.get(d.planned) : '-')) : new Date(d.ts).getDate()}
+              marks={
+                <>
+                  {!codes && d.planned && !count && <DayCode selected={isSel}>{view.codes.get(d.planned)}</DayCode>}
+                  <DayDots count={count} selected={isSel} />
+                </>
+              }
+            />
           );
         })}
       </div>
       <div className="flex min-h-11 items-center justify-between gap-1">
-        <div className="flex items-center gap-2 text-[10px] leading-none text-fg2">
-          <span className="flex items-center gap-1">
-            <i className="h-2.5 w-2.5 rounded-[3px] border border-warn" />
-            <span className="translate-y-px">Missed</span>
-          </span>
-          <span className="flex items-center gap-1">
-            <i className="h-1 w-1 rounded-full bg-accent" />
-            <span className="translate-y-px">Workout</span>
-          </span>
-          <span className="flex items-center gap-1">
-            <i className="h-2.5 w-2.5 rounded-[3px] border border-dashed border-fg2" />
-            <span className="translate-y-px">Changed</span>
-          </span>
-        </div>
-        <div className="flex" aria-label="Day labels">
-          {[false, true].map((v) => (
-            <button
-              key={String(v)}
-              type="button"
-              aria-pressed={codes === v}
-              onClick={() => {
-                memory.codes = v;
-                setCodes(v);
-              }}
-              className={cx('h-11 px-2 text-[12px]', codes === v ? 'font-bold text-fg underline underline-offset-4' : 'text-fg2')}
-            >
-              {v ? 'Codes' : 'Dates'}
-            </button>
-          ))}
-        </div>
+        <CalendarLegend items={MONTH_LEGEND} />
+        <CodesSwitch
+          codes={codes}
+          onChange={(v) => {
+            memory.codes = v;
+            setCodes(v);
+          }}
+        />
       </div>
       {month <= startOfMonth(now) && (
         <StatRow
@@ -199,7 +170,7 @@ export function PlanHistoryCalendar({ folder, month, onMonthChange }: { folder?:
           ]}
         />
       )}
-      <SectionLabel action={canChange && <LabelAction onClick={() => setSheetDay(sel)}>Change this day ›</LabelAction>}>
+      <SectionLabel action={canChange && <LabelAction chevron onClick={() => setSheetDay(sel)}>Change this day</LabelAction>}>
         {fmtDay(sel.ts)}
         {sel.state === 'missed' ? ' · Missed' : sel.key === today ? ' · Today' : ''}
       </SectionLabel>
@@ -225,19 +196,21 @@ export function PlanHistoryCalendar({ folder, month, onMonthChange }: { folder?:
         <p className="border-b border-line py-3.5 text-[13px] text-fg2">{sel.state === 'moved' ? `Moved to ${sel.movedTo}.` : sel.key < today ? 'Nothing logged.' : 'Rest · No workout planned.'}</p>
       )}
       {sel.state === 'missed' && sel.planned && folder && (
-        <div className="mt-3 border-l-2 border-warn pl-3 text-[13px] text-fg2">
-          <p>{folder.schedule?.skipped?.includes(sel.key) ? 'Kept skipped. Your next workout is unchanged.' : 'Planned workout was not logged. Your schedule continues.'}</p>
-          <div className="flex gap-4">
-            <button type="button" onClick={() => start.startRoutine(sel.planned!, view.routineName(sel.planned), sel.key)} className="min-h-11 font-semibold text-accent">
-              Log it late
-            </button>
-            {!folder.schedule?.skipped?.includes(sel.key) && (
-              <button type="button" onClick={() => void skipMissed(folder.id, sel.key)} className="min-h-11 text-accent">
-                Keep skipped
-              </button>
-            )}
-          </div>
-        </div>
+        <AttentionNote
+          className="mt-3"
+          actions={
+            <>
+              <TextButton onClick={() => start.startRoutine(sel.planned!, view.routineName(sel.planned), sel.key)}>Log it late</TextButton>
+              {!folder.schedule?.skipped?.includes(sel.key) && (
+                <TextButton tone="muted" onClick={() => void skipMissed(folder.id, sel.key)}>
+                  Keep skipped
+                </TextButton>
+              )}
+            </>
+          }
+        >
+          {folder.schedule?.skipped?.includes(sel.key) ? 'Kept skipped. Your next workout is unchanged.' : 'Planned workout was not logged. Your schedule continues.'}
+        </AttentionNote>
       )}
       {!view.scheduled && <Note className="mt-4">Give a folder a schedule to see what's planned.</Note>}
       {sheetDay && folder && <DaySheet folder={folder} day={sheetDay} view={view} onClose={() => setSheetDay(null)} />}

@@ -75,8 +75,8 @@ export function changeText(t: TrendResult, ex: Exercise): string {
 
 export const VERDICT_TONE: Record<Verdict, string> = { ready: 'text-tip', likely: 'text-tip', stretch: 'text-warn', unlikely: 'text-danger' };
 
-export function VerdictTag({ v, className }: { v: Verdict; className?: string }) {
-  return <span className={cx('text-[11px] font-bold tracking-[0.06em] uppercase', VERDICT_TONE[v], className)}>{VERDICT_LABEL[v]}</span>;
+export function VerdictTag({ v, small, className }: { v: Verdict; small?: boolean; className?: string }) {
+  return <span className={cx(small ? 'text-micro uppercase' : 'text-caps', VERDICT_TONE[v], className)}>{VERDICT_LABEL[v]}</span>;
 }
 
 // ───────────────────────────── data

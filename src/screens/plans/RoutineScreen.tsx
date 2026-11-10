@@ -1,7 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useNavigate, useParams } from 'react-router';
 import { Sheet, SheetOption } from '../../components/overlays';
-import { BackButton, BarButton, Button, cx, DropBadge, EmptyState, Screen, Tag, TopBar } from '../../components/ui';
+import { ChevronRight, MoreGlyph } from '../../components/icons';
+import { BackButton, BarButton, Button, Dash, DetailTitle, DropBadge, EmptyState, PlanTable, Screen, Tag, TopBar } from '../../components/ui';
 import { exerciseOrMissing, useData } from '../../data/DataProvider';
 import type { HistoryIndex } from '../../data/history';
 import { lastSession } from '../../data/history';
@@ -91,18 +92,17 @@ export function RoutineScreen() {
       }
       footer={
         <div className="grid flex-none grid-cols-[1fr_50px] gap-2 border-t border-line px-4 pt-2.5 pb-[max(12px,env(safe-area-inset-bottom))]">
-          <Button size="md" onClick={() => start.startRoutine(routine.id, routine.name)} disabled={!draft.exercises.length}>
+          <Button onClick={() => start.startRoutine(routine.id, routine.name)} disabled={!draft.exercises.length}>
             Start workout
           </Button>
           {/* 2.11: match the History detail footer (6.6). */}
-          <Button size="md" kind="secondary" aria-label="More" onClick={() => setMenu(true)} className="tracking-[1px]">
-            •••
+          <Button kind="secondary" aria-label="More" onClick={() => setMenu(true)}>
+            <MoreGlyph size={16} />
           </Button>
         </div>
       }
     >
-      <h1 className="mt-1 text-[30px] leading-tight font-bold tracking-[-0.02em]">{routine.name}</h1>
-      <p className="mt-1 text-[13px] leading-snug text-fg2">{meta}</p>
+      <DetailTitle title={routine.name} meta={meta} />
       {routine.notes && <p className="mt-3 rounded-[10px] bg-surface px-3 py-2.5 text-[14px] leading-normal whitespace-pre-wrap text-fg/85">{routine.notes}</p>}
 
       {!draft.exercises.length && (
@@ -141,7 +141,6 @@ export function RoutineScreen() {
         const work = e.sets.length - warm;
         const showPrev = !!prevSets?.length;
         const showW = hasWeightColumn(ex.type);
-        const cols = cx('grid items-center gap-1.5', showPrev ? (showW ? 'grid-cols-[28px_1fr_1fr_1fr]' : 'grid-cols-[28px_1fr_1fr]') : showW ? 'grid-cols-[28px_1fr_1fr]' : 'grid-cols-[28px_1fr]');
         return (
           <section key={e.key} className="border-b border-line py-3 last:border-b-0">
             <button type="button" onClick={() => navigate(`/exercises/${ex.id}`)} className="flex w-full items-baseline justify-between gap-3 text-left">
@@ -161,31 +160,25 @@ export function RoutineScreen() {
               </span>
             </button>
             {e.sets.length > 0 && (
-              <div className="mt-1.5 text-[14px]">
-                <div className={cx(cols, 'h-5 text-center text-[10.5px] font-bold tracking-[0.05em] text-fg2')}>
-                  <span>SET</span>
-                  {showPrev && <span>PREVIOUS</span>}
-                  {showW && <span>{weightColumnLabel(ex.type, unitColumn(units))}</span>}
-                  <span>REPS</span>
-                </div>
-                {asLogged.map((s) => {
+              <PlanTable
+                showPrev={showPrev}
+                weightLabel={showW ? weightColumnLabel(ex.type, unitColumn(units)) : undefined}
+                rows={asLogged.map((s) => {
                   const p = prev.get(s.id);
-                  const label = labels.get(s.id);
-                  return (
-                    <div key={s.id} className={cx(cols, 'h-[27px] text-center')}>
-                      <span className={cx('text-[13px] font-bold', label === 'W' ? 'text-fg2' : 'text-fg2')}>{label}</span>
-                      {showPrev && (
-                        <span className="flex items-center justify-center gap-1 text-[13px] text-fg2">
-                          {p?.prev ? formatSet(p.prev, ex.type, units) : '—'}
-                          {p?.prevHadDrop && <DropBadge small />}
-                        </span>
-                      )}
-                      {showW && <span className="font-semibold">{s.weight === undefined && ex.type === 'weight' ? <span className="text-fg3">—</span> : formatSetWeight(s.weight, ex.type, units)}</span>}
-                      <span className={cx('font-semibold', !s.repsMin && !s.repsMax && 'text-fg3')}>{formatRepRange(s.repsMin, s.repsMax) || '—'}</span>
-                    </div>
-                  );
+                  return {
+                    id: s.id,
+                    label: labels.get(s.id),
+                    prev: (
+                      <>
+                        {p?.prev ? formatSet(p.prev, ex.type, units) : '—'}
+                        {p?.prevHadDrop && <DropBadge small />}
+                      </>
+                    ),
+                    weight: s.weight === undefined && ex.type === 'weight' ? <Dash /> : formatSetWeight(s.weight, ex.type, units),
+                    reps: formatRepRange(s.repsMin, s.repsMax) || <Dash />,
+                  };
                 })}
-              </div>
+              />
             )}
           </section>
         );
@@ -194,7 +187,7 @@ export function RoutineScreen() {
         const rounds = Math.max(...block.items.map((x) => x.sets.filter((s) => s.kind === 'working').length));
         return (
           <div key={`ss-${block.items[0].key}`} className="mt-3 border-b border-line border-l-2 border-l-accent pb-1 pl-3 last:border-b-0">
-            <div className="pt-1 text-[11px] font-bold tracking-[0.07em] text-accent uppercase">
+            <div className="pt-1 text-caps text-accent">
               Superset {block.letter} · {rounds} {rounds === 1 ? 'round' : 'rounds'}
             </div>
             {block.items.map(section)}
@@ -222,7 +215,12 @@ export function RoutineScreen() {
             setMenu(false);
             actions.move(routine);
           }}
-          detail={`${folder?.name ?? 'No folder'} ›`}
+          detail={
+            <span className="inline-flex items-center gap-1">
+              {folder?.name ?? 'No folder'}
+              <ChevronRight size={10} />
+            </span>
+          }
         >
           Move to folder…
         </SheetOption>

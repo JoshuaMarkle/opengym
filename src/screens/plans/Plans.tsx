@@ -4,9 +4,9 @@ import { CSS } from '@dnd-kit/utilities';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { useLongPress } from '../../components/gestures';
-import { CalendarIcon, ListIcon, ChevronRight, Handle } from '../../components/icons';
+import { CalendarIcon, ChevronRight, ClipboardIcon, ListIcon, PlusGlyph } from '../../components/icons';
 import { Alert, Sheet, SheetOption, useToast } from '../../components/overlays';
-import { BarButton, cx, EmptyState, LargeHeader, Pill, Screen } from '../../components/ui';
+import { AddRow, Badge, BarButton, Button, cx, DeleteDisc, DragHandle, EditRow, EmptyState, FolderChevron, FolderLabel, FolderMenuButton, IconSegmented, LargeHeader, RowText, Screen } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { deleteRoutine, saveLayout } from '../../data/routines';
 import { usePlanView } from '../../data/schedule';
@@ -61,8 +61,8 @@ export function Plans() {
                   : currentVersion(activeFolder.schedule, dayKey(Date.now()))?.kind === 'cycle'
                     ? 'Repeating cycle'
                     : 'Rotation'}{' '}
-                <button type="button" onClick={() => navigate(`/plan/${activeFolder.id}`)} className="-my-3 inline-flex min-h-11 items-center text-accent">
-                  · Plan ›
+                <button type="button" onClick={() => navigate(`/plan/${activeFolder.id}`)} className="-my-3 inline-flex min-h-11 items-center gap-1 text-accent">
+                  · Plan <ChevronRight size={10} />
                 </button>
               </>
             )
@@ -74,31 +74,17 @@ export function Plans() {
               </BarButton>
             ) : (
               <>
-                <div className="-my-0.5 flex rounded-[10px] bg-surface p-[2px]" role="tablist" aria-label="Calendar views">
-                  {/* PH3.2–PH3.5: Calendar, Routines, History in that order. */}
-                  {(['calendar', 'routines', 'history'] as const).map((v) => (
-                    <button
-                      key={v}
-                      type="button"
-                      role="tab"
-                      aria-selected={tab === v}
-                      aria-label={v === 'calendar' ? 'Calendar' : v === 'history' ? 'History' : 'Routines'}
-                      onClick={() => setTab(v)}
-                      className={cx('flex h-11 w-11 items-center justify-center rounded-[8px]', tab === v ? 'bg-key-fn text-fg' : 'text-fg2')}
-                    >
-                      {v === 'calendar' ? (
-                        <CalendarIcon size={16} />
-                      ) : v === 'history' ? (
-                        <ListIcon size={16} />
-                      ) : (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
-                          <path d="M8 5H5v16h14V5h-3M8 11h8M8 15h8" />
-                          <rect x="8" y="3" width="8" height="4" rx="1" />
-                        </svg>
-                      )}
-                    </button>
-                  ))}
-                </div>
+                {/* PH3.2–PH3.5: Calendar, Routines, History in that order. */}
+                <IconSegmented
+                  label="Calendar views"
+                  value={tab}
+                  onChange={setTab}
+                  options={[
+                    { value: 'calendar', ariaLabel: 'Calendar', label: <CalendarIcon size={16} /> },
+                    { value: 'routines', ariaLabel: 'Routines', label: <ClipboardIcon size={18} /> },
+                    { value: 'history', ariaLabel: 'History', label: <ListIcon size={16} /> },
+                  ]}
+                />
               </>
             )
           }
@@ -107,13 +93,11 @@ export function Plans() {
     >
       {!plans ? null : empty && tab === 'routines' ? (
         <div className="pt-16">
-          <EmptyState icon="+" title="No routines yet">
+          <EmptyState icon={<PlusGlyph size={20} />} title="No routines yet">
             A routine is a list of exercises with their sets. Build one once, start it in one tap.
           </EmptyState>
           <div className="mx-auto mt-6 max-w-[300px]">
-            <button type="button" onClick={() => navigate('/routine/new')} className="h-[50px] w-full rounded-[13px] bg-accent text-[17px] font-bold text-white">
-              Create a routine
-            </button>
+            <Button onClick={() => navigate('/routine/new')}>Create a routine</Button>
           </div>
         </div>
       ) : editing ? (
@@ -122,11 +106,11 @@ export function Plans() {
         <>
           {tab === 'routines' && (
             <div className="flex min-h-11 items-center justify-between">
-              <span className="text-[12px] font-bold text-fg2 uppercase">Your library</span>
+              <span className="text-caps text-fg2">Your library</span>
               <div className="flex">
                 <BarButton onClick={() => setEditing(true)}>Edit</BarButton>
                 <BarButton aria-label="New" className="font-normal" onClick={() => setPlusOpen(true)}>
-                  <span className="translate-y-[1px] text-[26px] leading-none">+</span>
+                  <span className="translate-y-px text-title1 leading-none font-normal">+</span>
                 </BarButton>
               </div>
             </div>
@@ -210,11 +194,8 @@ function ViewLayout({
         return (
           <div key={f.id} className={cx(!isOpen && 'opacity-60')}>
             <FolderHeader
-              title={
-                <>
-                  ARCHIVED <small className="ml-1 font-semibold tracking-normal text-fg2 normal-case">{`${f.name} · ${list.length}`}</small>
-                </>
-              }
+              title="Archived"
+              note={`${f.name} · ${list.length}`}
               collapsed={!isOpen}
               onToggle={() => onToggle(`a:${f.id}`)}
               onHold={() => onFolderMenu(f)}
@@ -223,8 +204,8 @@ function ViewLayout({
           </div>
         );
       })}
-      {!plans.routines.length && <p className="mt-6 text-center text-[14px] text-fg2">No routines yet. Tap + to make one.</p>}
-      <p className="mt-6 text-center text-[12.5px] text-fg3">Tap a folder name to open it as a plan with a schedule. Hold a routine for shortcuts. Edit to reorder or move.</p>
+      {!plans.routines.length && <p className="mt-6 text-center text-callout text-fg2">No routines yet. Tap + to make one.</p>}
+      <p className="mt-6 text-center text-caption text-fg3">Tap a folder name to open it as a plan with a schedule. Hold a routine for shortcuts. Edit to reorder or move.</p>
     </div>
   );
 }
@@ -261,13 +242,15 @@ function FolderGroup({
       )}
       {!collapsed &&
         list.map((r) => <RoutineRow key={r.id} plans={plans} routine={r} onHold={onHold} when={scheduled ? (describeWhen(version, r.id, settings.weekStart) ?? 'Not scheduled') : undefined} />)}
-      {!collapsed && !list.length && <p className="border-b border-line py-3 text-[13px] text-fg2">Empty folder.</p>}
+      {!collapsed && !list.length && <p className="border-b border-line py-3 pl-6 text-footnote text-fg2">Empty folder.</p>}
     </div>
   );
 }
 
+/** design §6 Folder row: h52, chevron, Caps label (white when open) and count; tap the name to open the folder as a plan (2.15). */
 function FolderHeader({
   title,
+  note,
   count,
   active,
   collapsed,
@@ -276,6 +259,7 @@ function FolderHeader({
   onHold,
 }: {
   title: ReactNode;
+  note?: string;
   count?: number;
   active?: boolean;
   collapsed: boolean;
@@ -285,39 +269,26 @@ function FolderHeader({
   onHold?: () => void;
 }) {
   const hold = useLongPress(() => onHold?.(), !!onHold);
-  // Centered on the name's caps (measured in 2.14). A down chevron's ink sits low in its box, so lift it.
-  const chevron = (
-    <span
-      className={cx(
-        'inline-block h-[7px] w-[7px] flex-none border-r-2 border-b-2 border-fg2 transition-transform',
-        collapsed ? '-translate-x-[1px] -translate-y-[1px] -rotate-45' : '-translate-y-[3px] rotate-45',
-      )}
-    />
-  );
-  const label = (
-    <span className="flex min-w-0 items-center gap-2 text-[12.5px] font-bold tracking-[0.05em] text-fg/80 uppercase">
-      <span className="truncate">{title}</span>
-      {count !== undefined && <small className="font-semibold tracking-normal text-fg2">{count}</small>}
-    </span>
-  );
+  const label = <FolderLabel label={title} count={count} open={!collapsed} note={note} />;
+  const badge = active && <Badge variant="next">active</Badge>;
   if (!onOpen)
     return (
-      <button type="button" onClick={onToggle} {...hold} aria-expanded={!collapsed} className="no-select mt-4 flex h-11 w-full items-center justify-between border-b border-line text-left">
-        <span className="flex min-w-0 items-center gap-2">
-          {chevron}
+      <button type="button" onClick={onToggle} {...hold} aria-expanded={!collapsed} className="no-select mt-2 flex h-13 w-full items-center gap-2 border-b border-line text-left">
+        <FolderChevron open={!collapsed} />
+        <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
           {label}
+          {badge}
         </span>
-        {active && <Pill tone="accent">active</Pill>}
       </button>
     );
   return (
-    <div className="mt-4 flex h-11 w-full items-center border-b border-line">
-      <button type="button" onClick={onToggle} aria-expanded={!collapsed} aria-label={collapsed ? 'Expand' : 'Collapse'} className="flex h-11 w-[22px] flex-none items-center justify-start">
-        {chevron}
+    <div className="mt-2 flex h-13 w-full items-center gap-2 border-b border-line">
+      <button type="button" onClick={onToggle} aria-expanded={!collapsed} aria-label={collapsed ? 'Expand' : 'Collapse'} className="-ml-3.5 flex h-11 w-11 flex-none items-center justify-end pr-0.5">
+        <FolderChevron open={!collapsed} />
       </button>
-      <button type="button" onClick={onOpen} {...hold} className="no-select flex h-11 min-w-0 flex-1 items-center justify-between text-left active:opacity-70">
+      <button type="button" onClick={onOpen} {...hold} className="no-select flex h-11 min-w-0 flex-1 items-center justify-between gap-2 text-left active:opacity-70">
         {label}
-        {active && <Pill tone="accent">active</Pill>}
+        {badge}
       </button>
     </div>
   );
@@ -333,15 +304,9 @@ function RoutineRow({ plans, routine, onHold, when }: { plans: PlansData; routin
       type="button"
       {...hold}
       onClick={() => navigate(`/routine/${routine.id}`)}
-      className="no-select flex min-h-[58px] w-full items-center gap-3 border-b border-line text-left active:bg-surface/60"
+      className="no-select flex min-h-13 w-full items-center gap-3 border-b border-line py-2 pl-6 text-left active:bg-surface/60"
     >
-      <span className="min-w-0 flex-1 py-2">
-        <b className="block truncate text-[16px] font-semibold">{routine.name}</b>
-        <span className="block truncate text-[13px] text-fg2">
-          {when && `${when} · `}
-          {names.length ? names.join(', ') : 'No exercises yet'}
-        </span>
-      </span>
+      <RowText dense title={routine.name} subtitle={`${when ? `${when} · ` : ''}${names.length ? names.join(', ') : 'No exercises yet'}`} />
       <ChevronRight size={13} className="flex-none text-fg3" />
     </button>
   );
@@ -445,13 +410,12 @@ function EditLayout({ plans, onFolderMenu, onNewFolder }: { plans: PlansData; on
         </SortableContext>
         <DragOverlay>{draggingItem ? <ItemView item={draggingItem} overlay /> : null}</DragOverlay>
       </DndContext>
-      {ids.length <= 1 && <p className="py-4 text-[13px] text-fg2">Nothing to arrange yet.</p>}
-      <button type="button" onClick={onNewFolder} className="mt-2 flex h-12 w-full items-center gap-2.5 border-b border-line text-[16px] font-semibold text-accent">
-        <span className="flex h-[24px] w-[24px] items-center justify-center rounded-full bg-accent text-[17px] text-white">+</span>
+      {ids.length <= 1 && <p className="py-4 text-footnote text-fg2">Nothing to arrange yet.</p>}
+      <AddRow onClick={onNewFolder} className="mt-2">
         Add routine
-      </button>
-      <p className="mt-4 text-[12.5px] leading-normal text-fg2">
-        Drag ≡ to reorder routines or move them between folders. Drag a folder to reorder folders. − deletes a routine; its workouts stay in History.
+      </AddRow>
+      <p className="mt-4 text-caption text-fg2">
+        Drag a handle to reorder routines or move them between folders. Drag a folder to reorder folders. − deletes a routine; its workouts stay in History.
       </p>
       <Alert
         open={!!deleting}
@@ -487,6 +451,7 @@ function SortableItem({ item, onFolderMenu, onDelete }: { item: Item; onFolderMe
   );
 }
 
+/** design §6 Edit mode (2.7): folders lead with the handle; routines get the delete disc in front and the handle at the end. */
 function ItemView({
   item,
   overlay,
@@ -502,47 +467,25 @@ function ItemView({
   onFolderMenu?: (f: Folder) => void;
   onDelete?: (r: Routine) => void;
 }) {
-  const handle = (label: string) => (
-    <button type="button" ref={handleRef} {...handleProps} aria-label={label} className="-m-2 flex h-11 w-11 flex-none touch-none items-center justify-center text-fg3">
-      <Handle />
-    </button>
-  );
-  if (item.kind === 'none') return <div className="mt-4 flex h-10 items-end border-b border-line pb-2 text-[12.5px] font-bold tracking-[0.05em] text-fg2 uppercase">No folder</div>;
+  if (item.kind === 'none')
+    return (
+      <div className="mt-2 flex h-13 items-center border-b border-line">
+        <FolderLabel label="No folder" open={false} />
+      </div>
+    );
   if (item.kind === 'folder')
     return (
-      <div
-        className={cx(
-          'mt-4 flex h-11 items-center gap-2 border-b border-line',
-          overlay && 'rounded-[10px] bg-surface px-3 outline-[1.5px] outline-accent',
-          item.folder.archived && !overlay && 'opacity-60',
-        )}
-      >
-        {handle(`Reorder ${item.folder.name}`)}
-        <span className="min-w-0 flex-1 truncate text-[12.5px] font-bold tracking-[0.05em] text-fg/80 uppercase">
-          {item.folder.name}
-          {item.folder.archived && <small className="ml-1.5 font-semibold tracking-normal text-fg2 normal-case">archived</small>}
+      <div className={cx('mt-2 flex h-13 items-center gap-2 border-b border-line', overlay && 'rounded-md border-transparent bg-surface px-3 shadow-[0_8px_20px_rgba(0,0,0,0.6)] ring-[1.5px] ring-accent', item.folder.archived && !overlay && 'opacity-60')}>
+        <DragHandle label={`Reorder ${item.folder.name}`} handleRef={handleRef} {...handleProps} className="-ml-3" />
+        <span className="flex min-w-0 flex-1">
+          <FolderLabel label={item.folder.name} open={false} note={item.folder.archived ? 'archived' : undefined} />
         </span>
-        {onFolderMenu && (
-          <button
-            type="button"
-            onClick={() => onFolderMenu(item.folder)}
-            aria-label={`${item.folder.name} options`}
-            className="-mr-2 flex h-11 w-11 items-center justify-center text-[14px] font-bold tracking-[1px] text-accent"
-          >
-            •••
-          </button>
-        )}
+        {onFolderMenu && <FolderMenuButton onClick={() => onFolderMenu(item.folder)} label={`${item.folder.name} options`} />}
       </div>
     );
   return (
-    <div className={cx('flex h-[54px] items-center gap-3 border-b border-line bg-bg', overlay && 'rounded-[10px] border-transparent bg-surface px-3 outline-[1.5px] outline-accent')}>
-      <button type="button" aria-label={`Delete ${item.routine.name}`} onClick={() => onDelete?.(item.routine)} className="-ml-2 flex h-11 w-11 flex-none items-center justify-center">
-        <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full bg-danger">
-          <i className="block h-[2px] w-[10px] rounded-full bg-white" />
-        </span>
-      </button>
-      <b className="min-w-0 flex-1 truncate text-[16px] font-semibold">{item.routine.name}</b>
-      {handle(`Move ${item.routine.name}`)}
-    </div>
+    <EditRow lifted={overlay} leading={<DeleteDisc label={`Delete ${item.routine.name}`} onClick={() => onDelete?.(item.routine)} />} trailing={<DragHandle label={`Move ${item.routine.name}`} handleRef={handleRef} {...handleProps} />}>
+      {item.routine.name}
+    </EditRow>
   );
 }

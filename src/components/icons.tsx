@@ -20,17 +20,6 @@ export function HomeIcon({ size = 24, ...p }: P) {
   );
 }
 
-export function PlansIcon({ size = 24, ...p }: P) {
-  return (
-    <svg viewBox="0 0 24 24" {...svg(size, p)}>
-      <path
-        fill="currentColor"
-        d="M4.6 4h14.8a1.6 1.6 0 0 1 1.6 1.6v1a1.6 1.6 0 0 1-1.6 1.6H4.6A1.6 1.6 0 0 1 3 6.6v-1A1.6 1.6 0 0 1 4.6 4zm0 6h10.8a1.6 1.6 0 0 1 1.6 1.6v1a1.6 1.6 0 0 1-1.6 1.6H4.6A1.6 1.6 0 0 1 3 12.6v-1A1.6 1.6 0 0 1 4.6 10zm0 6h6.3a1.6 1.6 0 0 1 1.6 1.6v1a1.6 1.6 0 0 1-1.6 1.6H4.6A1.6 1.6 0 0 1 3 18.6v-1A1.6 1.6 0 0 1 4.6 16z"
-      />
-    </svg>
-  );
-}
-
 export function HistoryIcon({ size = 24, ...p }: P) {
   return (
     <svg viewBox="0 0 24 24" {...svg(size, p)}>
@@ -198,14 +187,106 @@ export function KeyboardGlyph({ size = 20, ...p }: P) {
   );
 }
 
-/** ≡ drag handle */
-export function Handle({ className = '' }: { className?: string }) {
+/** Drag handle: three bars 14 × 2, gap 3, fg3 (design §6). */
+export function Handle({ size = 14, ...p }: P) {
   return (
-    <span className={`flex flex-col gap-[3px] ${className}`} aria-hidden>
-      <i className="block h-[2px] w-[14px] rounded-[1px] bg-fg3" />
-      <i className="block h-[2px] w-[14px] rounded-[1px] bg-fg3" />
-      <i className="block h-[2px] w-[14px] rounded-[1px] bg-fg3" />
-    </span>
+    <svg viewBox="0 0 14 12" {...svg(size, { height: (size * 12) / 14, className: 'text-fg3', ...p })}>
+      <g fill="currentColor">
+        <rect x="0" y="0" width="14" height="2" rx="1" />
+        <rect x="0" y="5" width="14" height="2" rx="1" />
+        <rect x="0" y="10" width="14" height="2" rx="1" />
+      </g>
+    </svg>
+  );
+}
+
+/** ••• in bordered buttons and menus, 16 wide (design §3). */
+export function MoreGlyph({ size = 16, ...p }: P) {
+  return (
+    <svg viewBox="0 0 16 4" {...svg(size, { height: (size * 4) / 16, ...p })}>
+      <g fill="currentColor">
+        <circle cx="2" cy="2" r="1.7" />
+        <circle cx="8" cy="2" r="1.7" />
+        <circle cx="14" cy="2" r="1.7" />
+      </g>
+    </svg>
+  );
+}
+
+/** Up / down triangle before a trend number or word, 9–10 px (design §3). */
+export function TrendUp({ size = 9, ...p }: P) {
+  return (
+    <svg viewBox="0 0 10 9" {...svg(size, { height: (size * 9) / 10, ...p })}>
+      <path d="M5 .6 9.6 8.4H.4z" fill="currentColor" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function TrendDown({ size = 9, ...p }: P) {
+  return (
+    <svg viewBox="0 0 10 9" {...svg(size, { height: (size * 9) / 10, ...p })}>
+      <path d="M5 8.4 9.6.6H.4z" fill="currentColor" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** + inside discs, steppers and add rows, 12–14 px. */
+export function PlusGlyph({ size = 12, ...p }: P) {
+  return (
+    <svg viewBox="0 0 12 12" {...svg(size, p)}>
+      <path d="M6 1.2v9.6M1.2 6h9.6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** − inside steppers and the delete disc, 12–14 px. */
+export function MinusGlyph({ size = 12, ...p }: P) {
+  return (
+    <svg viewBox="0 0 12 12" {...svg(size, p)}>
+      <path d="M1.2 6h9.6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** → between Previous and Next, on the Next key and moved days, 10 px. Drawn so it centers. */
+export function ArrowGlyph({ size = 10, ...p }: P) {
+  return (
+    <svg viewBox="0 0 12 10" {...svg(size, { height: (size * 10) / 12, ...p })}>
+      <path d="M1 5h9.4M6.8 1.2 10.6 5l-3.8 3.8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** Magnifier in search fields, 14 px. */
+export function SearchGlyph({ size = 14, ...p }: P) {
+  return (
+    <svg viewBox="0 0 13 13" {...svg(size, p)}>
+      <circle cx="5.5" cy="5.5" r="4.3" stroke="currentColor" strokeWidth="1.6" fill="none" />
+      <line x1="8.6" y1="8.6" x2="12" y2="12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** A target: the goals empty states (was a typed ◎). */
+export function TargetGlyph({ size = 22, ...p }: P) {
+  return (
+    <svg viewBox="0 0 22 22" {...svg(size, p)}>
+      <circle cx="11" cy="11" r="9" stroke="currentColor" strokeWidth="1.6" fill="none" />
+      <circle cx="11" cy="11" r="4.5" stroke="currentColor" strokeWidth="1.6" fill="none" />
+      <circle cx="11" cy="11" r="1.4" fill="currentColor" />
+    </svg>
+  );
+}
+
+/** Routines view toggle in the Calendar tab (PH3.5), 18 px. */
+export function ClipboardIcon({ size = 18, ...p }: P) {
+  return (
+    <svg viewBox="0 0 24 24" {...svg(size, p)}>
+      <g fill="none" stroke="currentColor" strokeWidth="1.7">
+        <path d="M8 5H5v16h14V5h-3M8 11h8M8 15h8" />
+        <rect x="8" y="3" width="8" height="4" rx="1" />
+      </g>
+    </svg>
   );
 }
 

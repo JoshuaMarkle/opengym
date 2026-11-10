@@ -5,9 +5,9 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { ForecastChart, type ChartPoint, type ForecastBand } from '../../components/charts';
-import { CheckGlyph } from '../../components/icons';
+import { CheckGlyph, MoreGlyph, TargetGlyph } from '../../components/icons';
 import { Alert, Sheet, SheetOption } from '../../components/overlays';
-import { BackButton, BarButton, Button, cx, EmptyState, FieldLabel, IconButton, Note, Screen, SectionLabel, Segmented, StatRow, TextField, TopBar } from '../../components/ui';
+import { BackButton, BarButton, Button, ChoiceTile, cx, EmptyState, fieldClass, FieldLabel, GoalBar, IconButton, Note, Screen, SectionLabel, Segmented, StatRow, TopBar, ValueBox } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { addGoal, canHaveGoal, deleteGoal, goalTargetOf, goalTrend, goalView, updateGoal, useGoals, type GoalView } from '../../data/goals';
 import { liftTraining, type LiftTraining } from '../../data/training';
@@ -63,7 +63,7 @@ export function GoalsList({ views, loading, units }: { views: GoalView[]; loadin
   if (loading) return null;
   if (!views.length)
     return (
-      <EmptyState icon="◎" title="No goals yet" className="pt-20">
+      <EmptyState icon={<TargetGlyph />} title="No goals yet" className="pt-20">
         A goal is a weight × reps on one lift, with or without a date. Every set counts toward it.
         <Button className="mt-5" onClick={() => navigate('/progress/goal/new')}>
           New goal
@@ -193,7 +193,7 @@ export function NewGoal() {
       }
     >
       {!lifts.length ? (
-        <EmptyState icon="◎" title="Nothing to aim at yet" className="pt-20">
+        <EmptyState icon={<TargetGlyph />} title="Nothing to aim at yet" className="pt-20">
           Log a lift first. Goals use its est. 1RM.
         </EmptyState>
       ) : (
@@ -208,15 +208,15 @@ export function NewGoal() {
 
           <div className="mt-1 grid grid-cols-2 gap-3">
             {ex?.type !== 'bodyweight' && (
-              <label className="block">
+              <div>
                 <FieldLabel className="mt-3">{ex?.type === 'bodyweight_plus' ? `Added ${unitLabel(units)}` : unitLabel(units) === 'kg' ? 'KG' : 'LBS'}</FieldLabel>
-                <TextField value={weightText} onChange={setWeightText} inputMode="decimal" placeholder="225" label="Goal weight" className="text-center text-[18px] font-bold tabular-nums" maxLength={6} />
-              </label>
+                <ValueBox value={weightText} onChange={setWeightText} inputMode="decimal" placeholder="225" label="Goal weight" maxLength={6} />
+              </div>
             )}
-            <label className="block">
+            <div>
               <FieldLabel className="mt-3">Reps</FieldLabel>
-              <TextField value={repsText} onChange={setRepsText} inputMode="numeric" placeholder="5" label="Goal reps" className="text-center text-[18px] font-bold tabular-nums" maxLength={2} />
-            </label>
+              <ValueBox value={repsText} onChange={setRepsText} inputMode="numeric" placeholder="5" label="Goal reps" maxLength={2} />
+            </div>
           </div>
 
           <FieldLabel>By</FieldLabel>
@@ -224,11 +224,11 @@ export function NewGoal() {
             <DateChip on={by === null} top="Estimate" label="No date" onClick={() => setBy(null)} />
             {dated.map((d) => {
               const v = verdictAt(d);
-              return <DateChip key={d} on={by === d} top={v ? <VerdictTag v={v} className="text-[9.5px]" /> : '—'} label={fmtMonthDay(d)} onClick={() => setBy(d)} />;
+              return <DateChip key={d} on={by === d} top={v ? <VerdictTag v={v} small /> : '—'} label={fmtMonthDay(d)} onClick={() => setBy(d)} />;
             })}
             <DateChip
               on={by !== null && !dated.includes(by)}
-              top={by !== null && !dated.includes(by) && verdictAt(by) ? <VerdictTag v={verdictAt(by)!} className="text-[9.5px]" /> : 'Pick'}
+              top={by !== null && !dated.includes(by) && verdictAt(by) ? <VerdictTag v={verdictAt(by)!} small /> : 'Pick'}
               label={by !== null && !dated.includes(by) ? fmtMonthDay(by) : 'Custom…'}
               onClick={() => setCustomOpen(true)}
             />
@@ -301,17 +301,7 @@ export function NewGoal() {
 }
 
 function DateChip({ on, top, label, onClick }: { on: boolean; top: React.ReactNode; label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={on}
-      onClick={onClick}
-      className={cx('flex h-[52px] flex-col items-center justify-center rounded-[10px] border-[1.5px] tabular-nums', on ? 'border-accent bg-accent-soft' : 'border-line-strong')}
-    >
-      <span className="text-[9.5px] leading-none font-bold tracking-[0.06em] text-fg2 uppercase">{top}</span>
-      <span className="mt-1 text-[14px] font-semibold">{label}</span>
-    </button>
-  );
+  return <ChoiceTile on={on} label={top} value={label} onClick={onClick} />;
 }
 
 /** C2, simplified: the normal date picker, with the verdict for the date you land on. */
@@ -327,7 +317,7 @@ function CustomDateSheet({ open, onClose, value, verdictAt, onPick }: { open: bo
         min={isoDay(Date.now() + 7 * 86_400_000)}
         onChange={(e) => setText(e.target.value)}
         aria-label="Goal date"
-        className="mt-1 h-12 w-full rounded-[10px] bg-surface-2 px-3 text-[17px] font-semibold text-fg outline-none"
+        className={cx(fieldClass, 'mt-1 font-semibold')}
       />
       <p className="mt-3 min-h-[20px] text-[14px]">{v ? <VerdictTag v={v} /> : <span className="text-fg2">No verdict without a projection.</span>}</p>
       <div className="mt-4 grid grid-cols-2 gap-3">
@@ -431,22 +421,19 @@ export function GoalDetail() {
           title={`${ex.name} goal`}
           right={
             <IconButton label="Goal options" onClick={() => setMenu(true)}>
-              •••
+              <MoreGlyph size={16} />
             </IconButton>
           }
         />
       }
     >
-      <div className="mt-4 text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase">Goal · {view.by != null ? `by ${fmtMonthDay(view.by)}` : 'no date'}</div>
-      <div className="text-[38px] leading-tight font-bold tracking-[-0.02em] tabular-nums">{fmtGoal(goal, ex, units)}</div>
+      <div className="mt-4 text-caps text-fg2">Goal · {view.by != null ? `by ${fmtMonthDay(view.by)}` : 'no date'}</div>
+      <div className="text-hero tabular-nums">{fmtGoal(goal, ex, units)}</div>
       <div className={cx('text-[15px] font-bold tabular-nums', tone)}>{status}</div>
 
       {!state.done && (
         <div className="mt-5">
-          <div className="relative h-2 rounded-full bg-surface-2">
-            <div className={cx('absolute inset-y-0 left-0 rounded-full', state.behind ? 'bg-warn' : 'bg-tip')} style={{ width: `${state.progress * 100}%` }} />
-            {view.by != null && <div className="absolute -top-1 h-4 w-[3px] rounded-full bg-fg" style={{ left: `calc(${state.tickProgress * 100}% - 1.5px)` }} aria-label="Where steady gains would put you today" />}
-          </div>
+          <GoalBar frac={state.progress} behind={state.behind} marker={view.by != null ? state.tickProgress : undefined} markerLabel="Where steady gains would put you today" />
           <div className="mt-2 grid grid-cols-3 text-[12.5px] text-fg2 tabular-nums">
             <span>
               Start {num(goal.startE1rm)} · {fmtMonthDay(goal.startedAt)}

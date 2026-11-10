@@ -4,7 +4,7 @@
 import { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { ChevronLeft, ChevronRight } from '../../components/icons';
-import { BackButton, cx, EmptyState, Screen, SectionLabel, StatRow, TopBar } from '../../components/ui';
+import { BackButton, cx, DetailTitle, EmptyState, Screen, SectionLabel, StatRow, TopBar } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { liftSeries, recentLifts, sessionSets } from '../../data/training';
 import { addMonths, fmtMonthDay, MONTHS_LONG, startOfMonth } from '../../lib/dates';
@@ -83,8 +83,7 @@ export function MonthReview() {
       }
     >
       <div className="mt-4 text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase">{new Date(from).getFullYear()}</div>
-      <h1 className="text-[30px] leading-tight font-bold tracking-[-0.02em]">{name}</h1>
-      <p className="text-[15px] text-fg2">{from === thisMonth ? 'Your month so far' : 'Your month in lifting'}</p>
+      <DetailTitle className="mt-0" title={name} meta={from === thisMonth ? 'Your month so far' : 'Your month in lifting'} />
 
       {review.workouts === 0 ? (
         <EmptyState icon="·" title="No workouts this month" className="pt-12" />
