@@ -29,6 +29,12 @@ type Section = { n: number; title: string; blurb: string; screens: Entry[] };
 
 export const CATALOG: Section[] = [
   {
+    n: 0,
+    title: 'Components',
+    blurb: 'Dev only. Every shared component in src/components/ui/ with its variants, to compare with design/proposals/design-system.html.',
+    screens: [['0.1', 'Component gallery', '#/dev/ui. Tokens, then one group per design section (§5 headers to §12 calendars), each component in all its variants. Captured full length.']],
+  },
+  {
     n: 1,
     title: 'First launch',
     blurb: 'Seen once: what the app is, how to install it, three short setup steps.',
@@ -239,6 +245,8 @@ type Ctx = {
   /** Navigate within the app (hash route). */
   go: (route: string) => Promise<void>;
   shot: (id: string) => Promise<void>;
+  /** Capture the whole scrolling body, not just the first screen (0.1). */
+  shotTall: (id: string) => Promise<void>;
   /** Tap the scrim above a sheet to close it. */
   dismiss: () => Promise<void>;
   /** Scroll so the element sits at the top of its scroller. */
@@ -249,6 +257,11 @@ type Scene = { server: 'sample' | 'empty'; ids: string[]; run: (c: Ctx) => Promi
 
 const SCENES: Scene[] = [];
 const scene = (server: Scene['server'], ids: string, run: Scene['run']) => SCENES.push({ server, ids: ids.split(' '), run });
+
+scene('sample', '0.1', async ({ go, shotTall }) => {
+  await go('/dev/ui');
+  await shotTall('0.1');
+});
 
 scene('empty', '1.1 1.2 1.3 1.5 1.6 1.4 6.8 7.6', async ({ p, go, shot }) => {
   await go('/welcome');
@@ -1005,6 +1018,15 @@ async function main() {
           shot: async (id) => {
             await sleep(450); // let transitions settle
             await p.screenshot(join(OUT, `${id}.png`));
+            console.log(`  ${id}`);
+          },
+          shotTall: async (id) => {
+            await sleep(450);
+            const h = await p.eval<number>(`(() => { const s = document.querySelector('.scroll-y'); return s ? s.scrollHeight + s.getBoundingClientRect().top : 844; })()`);
+            await p.viewport(390, Math.ceil(h), 2);
+            await sleep(450);
+            await p.screenshot(join(OUT, `${id}.png`));
+            await p.viewport(390, 844, 2);
             console.log(`  ${id}`);
           },
         };

@@ -80,6 +80,63 @@
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
+/*
+ * Type scale and radii (design/DESIGN.md, design §2 and §4). Screens write these utilities,
+ * never px: `text-callout rounded-md`, not `text-[14px] rounded-[10px]`. Weight and tracking
+ * here are defaults; `font-*` / `tracking-*` / `leading-*` still override them.
+ */
+@theme {
+  --text-*: initial;
+  --text-hero: 40px;
+  --text-hero--line-height: 44px;
+  --text-hero--font-weight: 700;
+  --text-hero--letter-spacing: -0.03em;
+  --text-display: 34px;
+  --text-display--line-height: 40px;
+  --text-display--font-weight: 700;
+  --text-display--letter-spacing: -0.02em;
+  --text-title1: 30px;
+  --text-title1--line-height: 36px;
+  --text-title1--font-weight: 700;
+  --text-title1--letter-spacing: -0.02em;
+  --text-title2: 22px;
+  --text-title2--line-height: 28px;
+  --text-title2--font-weight: 700;
+  --text-title2--letter-spacing: -0.01em;
+  --text-title3: 19px;
+  --text-title3--line-height: 24px;
+  --text-title3--font-weight: 700;
+  --text-headline: 17px;
+  --text-headline--line-height: 22px;
+  --text-headline--font-weight: 700;
+  --text-body-lg: 17px;
+  --text-body-lg--line-height: 22px;
+  --text-input: 16px;
+  --text-input--line-height: 20px;
+  --text-body: 15px;
+  --text-body--line-height: 20px;
+  --text-callout: 14px;
+  --text-callout--line-height: 19px;
+  --text-footnote: 13px;
+  --text-footnote--line-height: 18px;
+  --text-caption: 12px;
+  --text-caption--line-height: 16px;
+  --text-caps: 11px;
+  --text-caps--line-height: 14px;
+  --text-caps--font-weight: 700;
+  --text-caps--letter-spacing: 0.06em;
+  --text-micro: 10px;
+  --text-micro--line-height: 12px;
+  --text-micro--font-weight: 700;
+
+  --radius-*: initial;
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+}
+
 @layer base {
   html,
   body {
@@ -125,13 +182,9 @@
 }
 
 @layer components {
-  /* Large title header (Home, Plans, …) and its 10 px caps labels */
-  .caps {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.07em;
+  /* Caps labels are uppercase; `normal-case` (a utility, so it wins) undoes it for chart axes. */
+  .text-caps {
     text-transform: uppercase;
-    color: var(--og-fg2);
   }
   .no-scrollbar {
     scrollbar-width: none;

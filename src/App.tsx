@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router';
 import { LogoMark } from './components/icons';
 import { ToastProvider } from './components/overlays';
@@ -41,7 +42,10 @@ function Splash() {
   );
 }
 
-const ONBOARDING = ['/welcome', '/install', '/setup', '/settings/import'];
+// 0.1: the component gallery (design/DESIGN.md). Dev builds only; production never loads the chunk.
+const Gallery = import.meta.env.DEV ? lazy(() => import('./screens/dev/Gallery')) : null;
+
+const ONBOARDING = ['/welcome', '/install', '/setup', '/settings/import', '/dev/ui'];
 
 function AppRoutes() {
   const settings = useSettings();
@@ -90,6 +94,16 @@ function AppRoutes() {
       <Route path="welcome" element={<Welcome />} />
       <Route path="install" element={<InstallGuide />} />
       <Route path="setup" element={<Setup />} />
+      {Gallery && (
+        <Route
+          path="dev/ui"
+          element={
+            <Suspense fallback={null}>
+              <Gallery />
+            </Suspense>
+          }
+        />
+      )}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

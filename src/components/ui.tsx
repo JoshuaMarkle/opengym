@@ -59,7 +59,7 @@ export function BarButton({
     <button
       type="button"
       className={cx(
-        'flex h-11 items-center gap-1 rounded-lg px-2 text-[17px] leading-none whitespace-nowrap active:opacity-60 disabled:opacity-35',
+        'flex h-11 items-center gap-1 rounded-sm px-2 text-[17px] leading-none whitespace-nowrap active:opacity-60 disabled:opacity-35',
         kind === 'muted' ? 'font-normal text-fg2' : kind === 'bold' ? 'font-bold text-accent' : 'font-medium text-accent',
         className,
       )}
@@ -398,7 +398,7 @@ export function Tag({ children }: { children: ReactNode }) {
 export function EmptyState({ icon, title, children, className = '' }: { icon: ReactNode; title: string; children?: ReactNode; className?: string }) {
   return (
     <div className={cx('flex flex-col items-center px-6 text-center', className)}>
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl border-[1.5px] border-dashed border-line-strong text-[24px] text-fg3">{icon}</div>
+      <div className="flex h-14 w-14 items-center justify-center rounded-lg border-[1.5px] border-dashed border-line-strong text-[24px] text-fg3">{icon}</div>
       <div className="mt-3.5 text-[19px] font-bold">{title}</div>
       {children && <p className="mt-1.5 text-[14px] leading-normal text-fg2">{children}</p>}
     </div>

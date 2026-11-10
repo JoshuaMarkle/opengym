@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc -b",
     "brand": "node scripts/brand.ts",
-    "screens": "node scripts/screens.ts"
+    "screens": "node scripts/screens.ts",
+    "lint:design": "node scripts/lint-design.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
