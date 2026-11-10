@@ -71,6 +71,8 @@ import { displayWeight, formatNumber, fromDisplay, unitLabel } from '../../lib/u
 import { variationLabels } from '../../lib/variations';
 import { useGiveUp } from '../../hooks/useGiveUp';
 import { ExercisePicker } from '../exercises/ExercisePicker';
+import { VariationsSheet } from '../exercises/popular';
+import { groupTitle, VariationChipRow } from '../exercises/VariationChips';
 import { useVariations } from '../progress/LiftViews';
 import { AllExercises } from './AllExercises';
 import { CardioTable } from './CardioTable';
@@ -92,6 +94,7 @@ export function WorkoutScreen() {
 
 type Overlay =
   | 'options'
+  | 'variations'
   | 'rename'
   | 'start'
   | 'exercise'
@@ -216,6 +219,7 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
 
   const variations = useVariations(ex);
   const varLabels = useMemo(() => variationLabels(variations), [variations]);
+  const sessionsOf = useCallback((id: string) => history.sessionsByExercise.get(id)?.length ?? 0, [history]);
   const routine = useLiveQuery(() => (workout.routineId ? db.routines.get(workout.routineId) : undefined), [workout.routineId]);
 
   const editingMember = editing ? members.find((m) => m.sets.some((s) => s.id === editing.setId)) : undefined;
@@ -670,27 +674,16 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
     </div>
   );
 
+  // B3: this, yours, then the most popular (4 chips); "+N" opens the rest as a switcher (B4).
   const variationChips = cur && ex && variations.length > 1 && (
-    <div className="no-scrollbar -mx-4 mt-2.5 flex gap-1.5 overflow-x-auto px-4" role="radiogroup" aria-label="Variation">
-      {variations.map((v) => {
-        const on = v.id === ex.id;
-        return (
-          <button
-            key={v.id}
-            type="button"
-            role="radio"
-            aria-checked={on}
-            onClick={() => !on && void replaceWorkoutExercise(cur.we.id, v.id)}
-            className={cx(
-              'h-8 flex-none rounded-[8px] border px-3 text-[13px] font-semibold whitespace-nowrap transition-colors',
-              on ? 'border-accent bg-done text-fg' : 'border-line-strong text-fg2',
-            )}
-          >
-            {varLabels.get(v.id)}
-          </button>
-        );
-      })}
-    </div>
+    <VariationChipRow
+      current={ex}
+      members={variations}
+      labels={varLabels}
+      sessions={sessionsOf}
+      onPick={(id) => id !== ex.id && void replaceWorkoutExercise(cur.we.id, id)}
+      onAll={() => setOverlay('variations')}
+    />
   );
 
   const editingCell = (m: ActiveExercise) => (activeEdit && editingMember?.we.id === m.we.id ? { setId: activeEdit.setId, field: activeEdit.field, text: activeEdit.text } : null);
@@ -1144,6 +1137,21 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
           { label: 'Cancel', onClick: () => setOverlay(null) },
         ]}
       />
+
+      {ex && cur && (
+        <VariationsSheet
+          open={overlay === 'variations'}
+          current={ex}
+          members={variations}
+          title="Switch to"
+          note={`${groupTitle(ex, variations.length)}. Tap to switch. Each keeps its own history.`}
+          onClose={() => setOverlay((o) => (o === 'variations' ? null : o))}
+          onPick={(id) => {
+            setOverlay(null);
+            if (id !== ex.id) void replaceWorkoutExercise(cur.we.id, id);
+          }}
+        />
+      )}
 
       <ExerciseMenu
         exercise={ex}

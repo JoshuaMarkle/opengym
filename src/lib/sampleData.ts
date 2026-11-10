@@ -122,7 +122,6 @@ function cardioSegments(kind: CardioKind, rand: () => number, fitness: number): 
 }
 
 export const CUSTOM_SAMPLE_EXERCISES = [
-  { id: 'ex-sample-wide-grip-lat-pulldown', name: 'Wide-Grip Lat Pulldown', muscle: 'back', equipment: 'cable', group: 'vg-pulldown' },
   { id: 'ex-sample-seated-leg-press', name: 'Seated Leg Press', muscle: 'legs', equipment: 'machine', group: 'vg-leg-press' },
 ] as const;
 
@@ -146,7 +145,7 @@ const CURRENT: Plan[] = [
     name: 'Pull',
     exercises: [
       { id: 'ex-lat-pulldown', sets: 'w100x12 145x8 145x6 130x5', vary: 1.1 },
-      { id: 'ex-sample-wide-grip-lat-pulldown', sets: 'w100x12 130x9 130x5 115x8', curve: 1.2 },
+      { id: 'ex-wide-grip-lat-pulldown', sets: 'w100x12 130x9 130x5 115x8', curve: 1.2 },
       { id: 'ex-seated-cable-row', sets: '120x10 120x7 120x6', curve: 0.6, vary: 1.3 },
       { id: 'ex-machine-preacher-curl', sets: '105x8 105x4d85x4', vary: 1.4 },
       { id: 'ex-hammer-curl', sets: '27.5x10 27.5x6', step: 2.5, superset: 'A', vary: 1.5, swap: true },

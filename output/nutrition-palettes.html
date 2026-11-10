@@ -1,0 +1,144 @@
+<div id="og-nutrition-palettes">
+  <div class="viz-controls" aria-label="Saved palettes">
+    <button class="btn" type="button" data-preset="favorite" aria-pressed="true">Blue / Cyan / Gold · favorite</button>
+    <button class="btn" type="button" data-preset="jade" aria-pressed="false">Purple / Jade / Gold</button>
+    <button class="btn" type="button" data-preset="sage" aria-pressed="false">Purple / Sage / Gold</button>
+  </div>
+  <div class="viz-controls" aria-label="Macro color pickers">
+    <label class="form-label" for="og-protein-picker">Protein <input class="form-control form-control-color" id="og-protein-picker" type="color" value="#007AFF" data-color="p"><output id="og-protein-hex">#007AFF</output></label>
+    <label class="form-label" for="og-carbs-picker">Carbs <input class="form-control form-control-color" id="og-carbs-picker" type="color" value="#2DAFC3" data-color="c"><output id="og-carbs-hex">#2DAFC3</output></label>
+    <label class="form-label" for="og-fat-picker">Fat <input class="form-control form-control-color" id="og-fat-picker" type="color" value="#EBC22D" data-color="f"><output id="og-fat-hex">#EBC22D</output></label>
+  </div>
+  <div class="viz-dotted-background" aria-label="Live nutrition preview">
+    <div class="og-stage" aria-label="Day and week nutrition views"></div>
+  </div>
+</div>
+<style>
+#og-nutrition-palettes{--og-bg:#000;--og-text:#fff;--og-muted:#a1a1aa;--og-line:#222;--og-frame:#292929;--og-blue:#007aff;--og-orange:#ff9500;--og-p:#007aff;--og-c:#2dafc3;--og-f:#ff9500;font-family:Arial,Helvetica,sans-serif}
+#og-nutrition-palettes *{box-sizing:border-box}
+#og-nutrition-palettes .og-stage{padding:20px 12px 8px;min-height:1000px}
+#og-nutrition-palettes .og-spectrum{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin:0 auto 24px}
+#og-nutrition-palettes .og-swatch{width:34px;height:6px;border-radius:4px;background:var(--swatch)}
+#og-nutrition-palettes .og-pair{display:grid;grid-template-columns:repeat(2,minmax(0,420px));justify-content:center;gap:36px}
+#og-nutrition-palettes .og-phone{background:var(--og-bg);color:var(--og-text);border:12px solid var(--og-frame);border-radius:57px;min-width:0;height:836px;position:relative;overflow:hidden;font-variant-numeric:tabular-nums;display:flex;flex-direction:column}
+#og-nutrition-palettes .og-status{display:flex;justify-content:space-between;align-items:center;padding:15px 29px 0;height:43px;font-size:16px;font-weight:700;flex-shrink:0}
+#og-nutrition-palettes .og-island{width:116px;height:30px;border-radius:30px;background:var(--og-line);position:absolute;left:50%;top:9px;transform:translateX(-50%)}
+#og-nutrition-palettes .og-dots{letter-spacing:2px;font-size:14px}
+#og-nutrition-palettes .og-main{padding:10px 19px 0;flex:1}
+#og-nutrition-palettes .og-title{display:flex;justify-content:space-between;align-items:center}
+#og-nutrition-palettes h2{font-size:34px;font-weight:700;line-height:1.15;margin:0 0 4px;color:var(--og-text)}
+#og-nutrition-palettes .og-arrows{color:var(--og-blue);font-size:25px;letter-spacing:11px;line-height:1}
+#og-nutrition-palettes .og-sub{color:var(--og-muted);font-size:15px;line-height:22px}
+#og-nutrition-palettes .og-days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin:14px 0 20px;text-align:center}
+#og-nutrition-palettes .og-day{display:flex;flex-direction:column;align-items:center;min-width:0;gap:5px;color:var(--og-muted);font-size:12px}
+#og-nutrition-palettes .og-ring{width:100%;max-width:38px;aspect-ratio:1;height:auto;border:3px solid var(--og-line);border-radius:50%;display:grid;place-items:center;color:var(--og-muted);font-size:15px;font-weight:700}
+#og-nutrition-palettes .og-day.past .og-ring{border-color:var(--og-muted);color:var(--og-text)}
+#og-nutrition-palettes .og-day.over .og-ring{border-color:var(--og-orange);color:var(--og-text)}
+#og-nutrition-palettes .og-day.today .og-ring{border-color:var(--og-text);color:var(--og-text)}
+#og-nutrition-palettes .og-day.future{opacity:.5}
+#og-nutrition-palettes .og-day-dot{height:5px;width:5px;border-radius:50%;background:var(--og-muted)}
+#og-nutrition-palettes .og-day-dot.empty{background:transparent}
+#og-nutrition-palettes .og-calories{display:flex;align-items:baseline;justify-content:space-between;gap:6px;white-space:nowrap}
+#og-nutrition-palettes .og-calories strong{font-size:41px;color:var(--og-orange);letter-spacing:-1px;line-height:1.2}
+#og-nutrition-palettes .og-calories .og-limit{font-size:16px;color:var(--og-muted);font-weight:700;letter-spacing:0}
+#og-nutrition-palettes .og-over{font-size:15px;color:var(--og-orange);font-weight:700}
+#og-nutrition-palettes .og-energy{height:8px;background:var(--og-orange);border-radius:5px;overflow:hidden;margin:9px 0 18px}
+#og-nutrition-palettes .og-energy span{display:block;height:100%;width:94.4%;background:var(--og-text);border-radius:5px}
+#og-nutrition-palettes .og-macros{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+#og-nutrition-palettes .og-label{font-size:12px;font-weight:700;letter-spacing:.35px;color:var(--og-muted)}
+#og-nutrition-palettes .og-macro-value{font-size:19px;font-weight:700;white-space:nowrap;margin-top:4px}
+#og-nutrition-palettes .og-macro-value small{font-size:13px;color:var(--og-muted)}
+#og-nutrition-palettes .og-macro-bar{height:6px;border-radius:5px;background:var(--macro);margin-top:8px}
+#og-nutrition-palettes .og-protein{--macro:var(--og-p)}
+#og-nutrition-palettes .og-carbs{--macro:var(--og-c)}
+#og-nutrition-palettes .og-fat{--macro:var(--og-f)}
+#og-nutrition-palettes .og-check{color:var(--og-p)}
+#og-nutrition-palettes .og-note{font-size:13px;line-height:20px;color:var(--og-muted);margin:14px 0 23px}
+#og-nutrition-palettes .og-section-head{display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--og-line);font-size:13px;font-weight:700;color:var(--og-muted)}
+#og-nutrition-palettes .og-section-head strong{color:var(--og-text);font-size:15px}
+#og-nutrition-palettes .og-food-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--og-line);font-size:16px;font-weight:700;line-height:20px}
+#og-nutrition-palettes .og-food-row small{display:block;font-size:13px;font-weight:400;color:var(--og-muted);line-height:17px}
+#og-nutrition-palettes .og-footer{border-top:1px solid var(--og-line);padding:10px 10px 7px}
+#og-nutrition-palettes .og-nav{display:flex;justify-content:space-between;color:var(--og-muted);gap:3px}
+#og-nutrition-palettes .og-nav-item{font-size:11px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:44px;min-height:44px}
+#og-nutrition-palettes .og-nav-item svg{width:21px;height:21px;stroke-width:3px}
+#og-nutrition-palettes .og-active{color:var(--og-blue)}
+#og-nutrition-palettes .og-homebar{height:5px;width:145px;border-radius:4px;background:var(--og-text);margin:9px auto 0}
+#og-nutrition-palettes .og-stats{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--og-line);border-bottom:1px solid var(--og-line);margin-top:17px;margin-bottom:17px}
+#og-nutrition-palettes .og-stat{padding:10px 9px;border-right:1px solid var(--og-line)}
+#og-nutrition-palettes .og-stat:first-child{padding-left:0}
+#og-nutrition-palettes .og-stat:last-child{border:0}
+#og-nutrition-palettes .og-stat strong{display:block;font-size:21px;line-height:27px;white-space:nowrap}
+#og-nutrition-palettes .og-stat small{font-size:12px;color:var(--og-muted)}
+#og-nutrition-palettes .og-chart{height:227px;position:relative;margin-bottom:6px}
+#og-nutrition-palettes .og-chart svg{width:100%;height:100%;overflow:visible}
+#og-nutrition-palettes .og-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--og-muted);margin-bottom:24px}
+#og-nutrition-palettes .og-legend span{display:flex;align-items:center;gap:6px}
+#og-nutrition-palettes .og-key{width:12px;height:12px;background:var(--macro);border-radius:3px}
+#og-nutrition-palettes .og-target-key{width:14px;height:2px;background:var(--og-text)}
+#og-nutrition-palettes .og-average{display:flex;justify-content:space-between;border-bottom:1px solid var(--og-line);padding:12px 0;font-size:17px;font-weight:700}
+#og-nutrition-palettes .og-average>span{color:var(--macro)}
+#og-nutrition-palettes .og-average small{color:var(--og-muted);font-size:15px;font-weight:400}
+#og-nutrition-palettes .og-caption{display:flex;justify-content:space-between;gap:12px;color:var(--og-muted);font-size:13px;padding:12px 5px 0}
+#og-nutrition-palettes .og-caption strong{color:var(--og-blue);font-weight:500}
+@media(max-width:800px){#og-nutrition-palettes .og-pair{gap:16px}#og-nutrition-palettes .og-main{padding-left:13px;padding-right:13px}#og-nutrition-palettes .og-calories strong{font-size:34px}#og-nutrition-palettes .og-calories .og-limit{font-size:13px}#og-nutrition-palettes .og-over{font-size:13px}#og-nutrition-palettes .og-macros{gap:9px}#og-nutrition-palettes .og-macro-value{font-size:17px}#og-nutrition-palettes .og-macro-value small{font-size:11px}}
+@media(max-width:660px){#og-nutrition-palettes .og-pair{grid-template-columns:minmax(0,390px);gap:22px}#og-nutrition-palettes .og-stage{min-height:1860px;padding:16px 0 8px}#og-nutrition-palettes .og-main{padding-left:18px;padding-right:18px}#og-nutrition-palettes .og-phone{height:836px;border-width:9px}#og-nutrition-palettes .og-caption{font-size:12px}#og-nutrition-palettes .og-spectrum{margin-bottom:18px}}
+</style>
+<script>
+(() => {
+const root=document.getElementById('og-nutrition-palettes');
+const presets={favorite:{p:'#007AFF',c:'#2DAFC3',f:'#EBC22D'},jade:{p:'#8C64F0',c:'#2EC296',f:'#DFC130'},sage:{p:'#8B5CF6',c:'#4CB889',f:'#EACD3E'}};
+
+const footer=()=>`<footer class="og-footer"><div class="og-nav">${[['house','Home'],['calendar-days','Calendar'],['salad','Food'],['chart-no-axes-column-increasing','Progress'],['settings','Settings']].map(([icon,label])=>`<div class="og-nav-item ${label==='Food'?'og-active':''}"><i data-lucide="${icon}" aria-hidden="true"></i>${label}</div>`).join('')}</div><div class="og-homebar"></div></footer>`;
+const phone=(content,subtitle)=>`<div class="og-phone"><div class="og-status"><span>6:42</span><div class="og-island"></div><span class="og-dots">•••</span></div><main class="og-main"><div class="og-title"><h2>Food</h2><span class="og-arrows" aria-hidden="true">‹ ›</span></div><div class="og-sub">${subtitle}</div>${content}</main>${footer()}</div>`;
+const macro=(kind,label,value,target)=>`<div class="og-${kind}"><div class="og-label">${label}${kind==='protein'?' <span class="og-check">✓</span>':''}</div><div class="og-macro-value">${value}<small> / ${target} g</small></div><div class="og-macro-bar"></div></div>`;
+const day=`<div class="og-days">${['S','M','T','W','T','F','S'].map((d,i)=>`<div class="og-day ${i===0?'past':i===1?'over':i===2?'today':'future'}"><span>${d}</span><span class="og-ring">${i+8}</span><span class="og-day-dot ${[1,2,4,5].includes(i)?'':'empty'}"></span></div>`).join('')}</div><div class="og-calories"><div><strong>2,860</strong><span class="og-limit"> / 2,700 kcal</span></div><span class="og-over">160 over</span></div><div class="og-energy"><span></span></div><div class="og-macros">${macro('protein','PROTEIN',201,190)}${macro('carbs','CARBS',306,300)}${macro('fat','FAT',96,80)}</div><p class="og-note">Within 3% counts as on target, so carbs at 306 stay normal. Protein is a floor: going over gets a ✓, never orange. Past days open read-only until you tap Edit.</p><div class="og-section-head"><span>DINNER</span><strong>1,020 kcal</strong></div>${[['Salmon fillet','220 g',450],['Sweet potato, baked','250 g',225],['Olive oil','1 tbsp · 14 g',120],['Dark chocolate 85%','40 g',225]].map(([food,qty,kcal])=>`<div class="og-food-row"><div>${food}<small>${qty}</small></div><span>${kcal}</span></div>`).join('')}`;
+// Same proportions and sample values in every iteration, isolating color decisions.
+const samples=[[700,1000,680],[780,1210,869],[680,1020,710],[740,1100,670],[740,1250,720],[650,930,720],[590,1340,1032]];
+const chart=()=>{
+const scale=190/3100,base=200;
+let marks='';
+samples.forEach((values,i)=>{
+let y=base;const x=9+i*46,w=30,r=6;
+values.forEach((v,j)=>{
+const h=v*scale;y-=h;const fill=`var(--og-${['p','c','f'][j]})`;
+marks+=j===2?`<path d="M ${x} ${y+h} V ${y+r} Q ${x} ${y} ${x+r} ${y} H ${x+w-r} Q ${x+w} ${y} ${x+w} ${y+r} V ${y+h} Z" fill="${fill}"/>`:`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}"/>`;
+});
+if(values.reduce((a,b)=>a+b,0)>2781)marks+=`<circle cx="${x+w/2}" cy="${y-8}" r="3.3" fill="var(--og-orange)"/>`;
+marks+=`<text x="${x+w/2}" y="${base+18}" fill="var(--og-muted)" text-anchor="middle" font-size="12">${'SMTWTFS'[i]}</text>`;
+});
+const edge=326;
+const grid=[0,1000,2000,3000].map(v=>`<line x1="0" x2="${edge}" y1="${base-v*scale}" y2="${base-v*scale}"/>`).join('');
+const guide=2700;
+return `<div class="og-chart"><svg viewBox="0 0 326 227" role="img" aria-label="Daily calories, November 1 to 7, stacked by protein, carbs and fat. White dashed line: target 2,700 kcal."><g stroke="var(--og-line)" stroke-width="1">${grid}</g>${marks}<line x1="0" x2="${edge}" y1="${base-guide*scale}" y2="${base-guide*scale}" stroke="var(--og-text)" stroke-width="2" stroke-dasharray="37 9"/></svg></div>`;
+};
+const week=`<div class="og-stats"><div class="og-stat"><div class="og-label">AVG / DAY</div><strong>2,586</strong></div><div class="og-stat"><div class="og-label">ON TARGET</div><strong>4<small> of 7</small></strong></div><div class="og-stat"><div class="og-label">PROTEIN HIT</div><strong>4<small> of 7</small></strong></div></div>${chart()}<div class="og-legend"><span class="og-protein"><i class="og-key"></i>Protein</span><span class="og-carbs"><i class="og-key"></i>Carbs</span><span class="og-fat"><i class="og-key"></i>Fat</span><span><i class="og-target-key"></i>Target</span></div><div class="og-section-head"><span>AVERAGES</span><span>avg · target</span></div>${[['protein','Protein',179,190],['carbs','Carbs',292,300],['fat','Fat',90,80]].map(([kind,label,value,target])=>`<div class="og-average og-${kind}"><span>${label}</span><div>${value}<small> / ${target} g</small></div></div>`).join('')}`;
+const stage=root.querySelector('.og-stage');
+stage.innerHTML=`<div class="og-pair"><div>${phone(day,'Mon, Nov 9')}<div class="og-caption"><strong>Day · Over target</strong><span>Protein / Carbs / Fat</span></div></div><div>${phone(week,'Nov 1 – 7')}<div class="og-caption"><strong>Week</strong><span id="og-palette-hex" aria-live="polite"></span></div></div></div>`;
+let state={...presets.favorite};
+const valid=value=>value&&['p','c','f'].every(key=>typeof value[key]==='string'&&/^#[0-9a-f]{6}$/i.test(value[key]));
+const restore=value=>{if(valid(value))state={p:value.p.toUpperCase(),c:value.c.toUpperCase(),f:value.f.toUpperCase()}};
+const saved=globalThis.openai?.widgetState?.modelContent;
+if(saved?.version===2)restore(saved.palette);
+const inputs=[...root.querySelectorAll('[data-color]')];
+const buttons=[...root.querySelectorAll('[data-preset]')];
+function render(){
+  for(const key of ['p','c','f'])stage.style.setProperty('--og-'+key,state[key]);
+  for(const input of inputs)input.value=state[input.dataset.color];
+  for(const [key,id] of [['p','og-protein-hex'],['c','og-carbs-hex'],['f','og-fat-hex']])document.getElementById(id).textContent=state[key];
+  document.getElementById('og-palette-hex').textContent=[state.p,state.c,state.f].join(' / ');
+  for(const button of buttons)button.setAttribute('aria-pressed',String(['p','c','f'].every(key=>state[key]===presets[button.dataset.preset][key])));
+}
+function save(){
+  globalThis.openai?.setWidgetState?.({modelContent:{version:2,palette:{...state}},privateContent:null})?.catch(()=>{});
+}
+for(const input of inputs){
+  input.addEventListener('input',()=>{state[input.dataset.color]=input.value.toUpperCase();render()});
+  input.addEventListener('change',save);
+}
+for(const button of buttons)button.addEventListener('click',()=>{state={...presets[button.dataset.preset]};render();save()});
+window.addEventListener('openai:set_globals',event=>{const value=event.detail?.globals?.widgetState?.modelContent;if(value?.version===2)restore(value.palette);render()});
+render();
+if(globalThis.lucide)lucide.createIcons();
+})();
+</script>

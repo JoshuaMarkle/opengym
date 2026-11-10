@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { ChevronRight } from '../../components/icons';
 import { Alert, FullScreen, useToast } from '../../components/overlays';
-import { BackButton, BarButton, Check, cx, EmptyState, LabelAction, Note, Screen, SearchField, SectionLabel, StatRow, Tag, TopBar } from '../../components/ui';
+import { BackButton, BarButton, Check, EmptyState, LabelAction, Note, Screen, SearchField, SectionLabel, StatRow, Tag, TopBar } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { deleteExercise, mergeExercise, routinesUsing, setVariations } from '../../data/exercises';
 import { equipmentLabel, muscleLabel, type Exercise } from '../../db/types';
@@ -15,9 +15,15 @@ import { formatNumber, toDisplay } from '../../lib/units';
 import { variationLabels } from '../../lib/variations';
 import { useVariations } from '../progress/LiftViews';
 import { ExercisePicker } from './ExercisePicker';
+import { groupTitle, VariationChipRow } from './VariationChips';
+import { VariationsSheet } from './popular';
+import { CHIPS_MAX } from '../../lib/popularity';
 import { effortIn1rm } from '../../lib/effort';
 
-/** 8.2: stats, linked variations, where it's used, merge and delete. */
+/**
+ * 8.2: stats, linked variations, where it's used, merge and delete. Variations
+ * (B1): this, yours, then the most popular, up to 4 chips; the rest behind "All N" (B2).
+ */
 export function ExerciseScreen() {
   const { id = '' } = useParams();
   const [params, setParams] = useSearchParams();
@@ -27,6 +33,8 @@ export function ExerciseScreen() {
   const exercise = exerciseMap.get(id);
   const variations = useVariations(exercise);
   const labels = useMemo(() => variationLabels(variations), [variations]);
+  const sessionsOf = (vid: string) => history.sessionsByExercise.get(vid)?.length ?? 0;
+  const [allOpen, setAllOpen] = useState(false);
   const usedIn = useLiveQuery(() => routinesUsing(id), [id]);
   const [merging, setMerging] = useState(false);
   const [mergeInto, setMergeInto] = useState<Exercise | null>(null);
@@ -88,23 +96,35 @@ export function ExerciseScreen() {
         <>
       <SectionLabel action={<LabelAction onClick={() => setLinkOpen(true)}>{variations.length > 1 ? 'Edit links' : 'Link'}</LabelAction>}>Variations</SectionLabel>
       {variations.length > 1 ? (
-        <div className="mt-2.5 flex flex-wrap gap-1.5">
-          {variations.map((v) => (
-            <button
-              key={v.id}
-              type="button"
-              onClick={() => v.id !== exercise.id && navigate(`/exercises/${v.id}`, { replace: true })}
-              className={cx('h-8 rounded-[8px] border px-3 text-[13px] font-semibold', v.id === exercise.id ? 'border-accent bg-done text-fg' : 'border-line-strong text-fg2')}
-            >
-              {labels.get(v.id)}
-              {v.id === exercise.id && <span className="ml-1 font-normal text-fg2">· this</span>}
-            </button>
-          ))}
-        </div>
+        <VariationChipRow
+          current={exercise}
+          members={variations}
+          labels={labels}
+          sessions={sessionsOf}
+          wrap
+          onPick={(vid) => vid !== exercise.id && navigate(`/exercises/${vid}`, { replace: true })}
+          onAll={() => setAllOpen(true)}
+        />
       ) : (
         <p className="mt-2.5 text-[14px] text-fg2">None linked.</p>
       )}
-      <Note>Linked exercises show as buttons when logging. Each keeps its own history.</Note>
+      <Note>{variations.length > CHIPS_MAX ? "Yours first (blue outline = you've logged it), then the most popular. Each keeps its own history." : 'Linked exercises show as buttons when logging. Each keeps its own history.'}</Note>
+      <VariationsSheet
+        open={allOpen}
+        current={exercise}
+        members={variations}
+        title="Variations"
+        note={groupTitle(exercise, variations.length)}
+        onClose={() => setAllOpen(false)}
+        onPick={(vid) => {
+          setAllOpen(false);
+          if (vid !== exercise.id) navigate(`/exercises/${vid}`, { replace: true });
+        }}
+        onEditLinks={() => {
+          setAllOpen(false);
+          setLinkOpen(true);
+        }}
+      />
         </>
       )}
 

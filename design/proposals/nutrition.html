@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>OpenGym · Food tab v4 · Dark</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#000;--surface:#161616;--surface2:#1c1c1c;--raised:#101010;--line:#1f1f1f;--line2:#2c2c2c;--fg:#fff;--fg2:#A1A1AA;--fg3:#555;--keyfn:#2a2a2a;--accent:#007AFF;--accentFill:#0066D6;--tip:#32C66D;--warn:#FF9500;--danger:#FF453A;
+--p:#007AFF;--c:#2DAFC3;--f:#EBC22D;
+--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050505;font-family:var(--font);color:var(--fg);padding:40px 24px 80px;font-variant-numeric:tabular-nums}
+.board{max-width:1100px;margin:0 auto;background:#0a0a0a;border:1px solid #1c1c1c;border-radius:16px;padding:40px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg2);font-weight:600}
+h1{font-size:36px;font-weight:700;letter-spacing:-.02em;margin:6px 0 6px}
+.lead{color:var(--fg2);font-size:15px;max-width:860px;line-height:1.55}
+.lead b{color:var(--fg)}
+.section{margin-top:52px;padding-top:30px;border-top:1px solid var(--line)}
+.stag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;color:#000;background:#fff;border-radius:6px;padding:3px 8px;margin-bottom:10px}
+.section h2{font-size:24px;font-weight:700;margin-bottom:4px}
+.section > p{color:var(--fg2);font-size:14px;max-width:860px;line-height:1.55}
+.section > p b{color:var(--fg)}
+.row{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:26px;align-items:start}
+.cap{width:300px;margin:12px auto 0}
+.cap b{font-size:14px;display:block}
+.cap b em{font-style:normal;color:var(--accent);margin-right:6px}
+.cap p{font-size:12px;color:var(--fg2);line-height:1.5;margin-top:4px}
+.cap p i{font-style:normal;color:var(--fg)}
+.pick{border:1px dashed #333;border-radius:12px;padding:14px 16px;font-size:13px;color:#cfcfcf;line-height:1.6;margin-top:30px}
+.pick b{color:#fff}
+.legendbar{display:flex;flex-wrap:wrap;gap:18px;margin-top:16px;font-size:12px;color:var(--fg2);align-items:center}
+.legendbar span{display:flex;gap:7px;align-items:center}
+.legendbar i{width:12px;height:12px;border-radius:3px;display:inline-block}
+table.spec{border-collapse:collapse;margin-top:16px;font-size:12.5px;width:100%;max-width:960px}
+table.spec td{border-top:1px solid var(--line);padding:8px 10px 8px 0;vertical-align:top;color:var(--fg2);line-height:1.5}
+table.spec td:first-child{color:var(--fg);font-weight:600;white-space:nowrap;width:170px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:#d8d8d8}
+pre{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:#d8d8d8;background:#0f0f0f;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-top:14px;line-height:1.55;overflow:auto;max-width:960px}
+
+/* phone */
+.phone{width:300px;height:620px;margin:0 auto;border-radius:44px;border:10px solid #2a2a2a;background:var(--bg);overflow:hidden;position:relative;display:flex;flex-direction:column;font-size:13px}
+.status{height:34px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:12px;font-weight:600}
+.status .dots{letter-spacing:1px}
+.island{width:84px;height:22px;background:#1a1a1a;border-radius:12px}
+.body{flex:1;overflow:hidden;padding:0 14px;position:relative}
+.body.flush{padding:0}
+.homebar{flex:none;height:5px;width:110px;background:#fff;opacity:.85;border-radius:3px;margin:6px auto 8px;position:relative;z-index:20}
+.tabbar{flex:none;display:flex;justify-content:space-around;border-top:1px solid var(--line);padding:7px 10px 0;background:var(--bg)}
+.tabbar span{font-size:9.5px;font-weight:600;color:var(--fg2);display:flex;flex-direction:column;align-items:center;gap:2px;width:52px}
+.tabbar span svg{width:19px;height:19px}
+.tabbar span.on{color:var(--accent)}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.6);z-index:5}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#101010;border-top-left-radius:18px;border-top-right-radius:18px;border-top:1px solid #262626;z-index:6;display:flex;flex-direction:column;padding:0 14px 0}
+.grab{width:36px;height:5px;border-radius:3px;background:#3a3a3a;margin:8px auto 8px;flex:none}
+
+/* header */
+.hd{display:flex;justify-content:space-between;align-items:flex-start;margin-top:2px}
+.hd .t{font-size:25px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.hd .s{font-size:11px;color:var(--fg2);margin-top:3px}
+.hd .s a{color:var(--accent);text-decoration:none;font-weight:600}
+.hd .acts{display:flex;gap:14px;align-items:center;color:var(--accent);font-size:13px;font-weight:600;margin-top:4px}
+.hd .acts .plus{font-size:24px;font-weight:300;line-height:18px}
+.nav{display:flex;justify-content:space-between;align-items:center;height:40px;border-bottom:1px solid var(--line);margin:0 -14px;padding:0 14px;font-size:13.5px}
+.nav .l{color:var(--fg2)}
+.nav .r{color:var(--accent);font-weight:700}
+.nav .m{font-weight:700}
+.daynav{display:flex;align-items:center;gap:10px;color:var(--fg2);font-size:11px;font-weight:600}
+.daynav i{font-style:normal;color:var(--accent);font-size:17px;font-weight:400}
+.daynav i.off{color:var(--fg3)}
+.seg{display:flex;background:var(--surface);border-radius:8px;padding:2px;margin-top:10px}
+.seg span{flex:1;text-align:center;font-size:11.5px;font-weight:600;color:var(--fg2);height:26px;line-height:26px;border-radius:6px;white-space:nowrap}
+.seg span.on{background:var(--keyfn);color:var(--fg)}
+
+/* week strip */
+.wk{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:10px}
+.wk div{display:flex;flex-direction:column;align-items:center;gap:3px}
+.wk small{font-size:8.5px;font-weight:700;color:var(--fg2)}
+.wk .rg{position:relative;width:30px;height:30px}
+.wk .rg b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.wk .rg svg{position:absolute;inset:0}
+.wk .fut b{color:var(--fg3)}
+.wk .today small{color:var(--fg)}
+.wk .lift{width:4px;height:4px;border-radius:50%;background:var(--fg2)}
+.wk .lift.no{background:transparent}
+
+/* calories */
+.kc{margin-top:14px}
+.kc .top{display:flex;justify-content:space-between;align-items:baseline}
+.kc .big{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1}
+.kc .big span{font-size:13px;color:var(--fg2);font-weight:600;letter-spacing:0;margin-left:3px}
+.kc .left{font-size:12px;color:var(--fg2);font-weight:600}
+.kc .left b{color:var(--fg)}
+.kc .left b.o{color:var(--warn)}
+.track{height:6px;border-radius:3px;background:var(--surface2);margin-top:8px;position:relative;overflow:hidden}
+.track i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--fg)}
+.track.thin{height:4px;margin-top:5px}
+.track .tick{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--bg)}
+.mac{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px}
+.mac small{display:block;font-size:9px;font-weight:700;letter-spacing:.05em;color:var(--fg2)}
+.mac b{font-size:14px;font-weight:700;display:block;margin-top:2px}
+.mac b span{font-size:10.5px;color:var(--fg2);font-weight:600}
+.tr-note{display:flex;align-items:center;gap:8px;margin-top:12px;padding:8px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-size:11px;color:var(--fg2)}
+.tr-note b{color:var(--fg);font-weight:600}
+.tr-note .g{color:var(--tip);font-weight:700}
+.tr-note .dumb{width:18px;height:18px;border-radius:5px;background:var(--surface2);display:flex;align-items:center;justify-content:center;flex:none}
+
+/* labels + rows */
+.lbl{display:flex;justify-content:space-between;align-items:baseline;font-size:9.5px;font-weight:700;letter-spacing:.06em;color:var(--fg2);margin:14px 0 0;text-transform:uppercase;padding-bottom:4px;border-bottom:1px solid var(--line2)}
+.lbl span{color:var(--fg2);letter-spacing:0;font-size:10.5px;text-transform:none;font-weight:600}
+.lbl span b{color:var(--fg)}
+.lbl a{color:var(--accent);text-decoration:none;letter-spacing:0;text-transform:none;font-size:10.5px}
+.fr{display:flex;align-items:center;gap:9px;min-height:40px;border-bottom:1px solid var(--line);padding:5px 0}
+.fr .m{flex:1;min-width:0}
+.fr .m b{display:block;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fr .m span{display:block;font-size:10px;color:var(--fg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.fr .m span.pcf{display:inline;margin:0}
+.fr .k{font-size:12.5px;font-weight:600;flex:none;text-align:right}
+.fr .k small{display:block;font-size:9px;color:var(--fg2);font-weight:600}
+.fr .tm{width:34px;font-size:10px;color:var(--fg2);flex:none}
+.addrow{display:flex;align-items:center;gap:6px;height:36px;color:var(--accent);font-size:12px;font-weight:600}
+.addrow.dim{color:var(--fg2);font-weight:500}
+.addrow b{font-size:16px;font-weight:400}
+.pcf{font-size:10px;color:var(--fg2)}
+.pcf i{font-style:normal;font-weight:700;margin-left:5px}
+.pcf i:first-child{margin-left:0}
+.P{color:var(--p)}.C{color:var(--c)}.F{color:var(--f)}
+.mono .P,.mono .C,.mono .F{color:var(--fg2)}
+
+/* table style */
+.ft{display:grid;grid-template-columns:1fr 40px 26px 26px 26px;column-gap:4px;align-items:center}
+.ft > *{font-size:11.5px}
+.ft .h{font-size:8.5px;font-weight:700;letter-spacing:.05em;color:var(--fg2);text-align:right;padding:8px 0 4px}
+.ft .h:first-child{text-align:left}
+.ft .n{padding:7px 0;border-top:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.ft .n span{font-weight:400;color:var(--fg2);font-size:10px}
+.ft .v{padding:7px 0;border-top:1px solid var(--line);text-align:right;color:var(--fg2)}
+.ft .v.k{color:var(--fg);font-weight:600}
+.ft .mh{grid-column:1/-1;font-size:9.5px;font-weight:700;letter-spacing:.06em;color:var(--fg2);padding:12px 0 3px;display:flex;justify-content:space-between}
+.ft .mh a{color:var(--accent);letter-spacing:0;font-size:10.5px}
+.ft .sum{padding:7px 0;border-top:1px solid var(--line2);font-weight:700;text-align:right;font-size:11.5px}
+.ft .sum:first-of-type{text-align:left}
+.ft .sl{padding:7px 0;border-top:1px solid var(--line2);font-weight:700}
+.ft .tg{padding:0 0 7px;text-align:right;color:var(--fg2);font-size:10px}
+.ft .tl{padding:0 0 7px;color:var(--fg2);font-size:10px}
+
+/* stats */
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid var(--line2);border-bottom:1px solid var(--line2);margin-top:12px}
+.stats div{padding:7px 0}
+.stats div+div{border-left:1px solid var(--line2);padding-left:8px}
+.stats small{display:block;font-size:8.5px;font-weight:700;letter-spacing:.05em;color:var(--fg2)}
+.stats b{font-size:15px;font-weight:700;display:block;margin-top:2px}
+.stats b span{font-size:10px;color:var(--fg2);font-weight:600}
+
+/* ring layout */
+.rl{display:flex;align-items:center;gap:16px;margin-top:14px}
+.rl .ring{position:relative;width:118px;height:118px;flex:none}
+.rl .ring svg{position:absolute;inset:0}
+.rl .ring .ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.rl .ring .ctr b{font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1}
+.rl .ring .ctr small{font-size:9.5px;color:var(--fg2);font-weight:600;margin-top:3px}
+.rl .side{flex:1;display:flex;flex-direction:column;gap:9px}
+.rl .side .mr small{display:flex;justify-content:space-between;font-size:10px;font-weight:700;color:var(--fg2)}
+.rl .side .mr small b{color:var(--fg);font-weight:700}
+
+/* add food */
+.search{display:flex;align-items:center;gap:8px;height:36px;border-radius:10px;background:var(--surface);padding:0 10px;color:var(--fg2);font-size:13px;margin-top:10px}
+.search.on{box-shadow:inset 0 0 0 1.5px var(--accent);color:var(--fg)}
+.search .cur{width:1.5px;height:16px;background:var(--accent);margin-left:-6px}
+.search .bc{margin-left:auto;color:var(--accent);display:flex}
+.chips{display:flex;gap:6px;margin-top:10px;overflow:hidden}
+.chips span{flex:none;height:26px;padding:0 9px;border-radius:13px;background:var(--surface);font-size:11px;font-weight:600;color:var(--fg2);display:flex;align-items:center;gap:4px}
+.chips span.on{background:var(--fg);color:#000}
+.pl{width:26px;height:26px;border-radius:50%;background:var(--surface2);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:400;flex:none}
+.pl.on{background:var(--accent);color:#fff}
+.pin{position:absolute;left:0;right:0;bottom:0;padding:10px 14px 0;background:linear-gradient(to bottom,rgba(0,0,0,0),#000 22%);z-index:4}
+.pinbtn{height:42px;border-radius:12px;background:var(--accent);color:#fff;font-weight:700;font-size:13.5px;display:flex;align-items:center;justify-content:center;gap:8px}
+.pinbtn small{font-weight:600;opacity:.8;font-size:11.5px}
+.pinbtn.g{background:var(--surface2);color:var(--fg)}
+.mealpick{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--fg)}
+.mealpick i{font-style:normal;color:var(--fg2);font-size:10px}
+.bigname{font-size:20px;font-weight:800;letter-spacing:-.01em;line-height:1.15;margin-top:12px}
+.brand{font-size:11px;color:var(--fg2);margin-top:3px}
+.amt{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.box{height:40px;border-radius:9px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;position:relative}
+.box.on{box-shadow:inset 0 0 0 1.5px var(--accent);background:#0d1a2b}
+.box small{font-size:11px;color:var(--fg2);font-weight:600;margin-left:4px}
+.box .dd{position:absolute;right:10px;color:var(--fg2);font-size:10px}
+.boxlbl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;font-size:8.5px;font-weight:700;letter-spacing:.05em;color:var(--fg2);text-align:center}
+.nut{display:grid;grid-template-columns:repeat(4,1fr);margin-top:12px;border-top:1px solid var(--line2);border-bottom:1px solid var(--line2)}
+.nut div{padding:7px 0;text-align:center}
+.nut div+div{border-left:1px solid var(--line2)}
+.nut small{display:block;font-size:8.5px;font-weight:700;letter-spacing:.05em;color:var(--fg2)}
+.nut b{display:block;font-size:15px;font-weight:700;margin-top:2px}
+.nut b span{font-size:10px;color:var(--fg2);font-weight:600}
+.after{font-size:10.5px;color:var(--fg2);margin-top:8px;line-height:1.45}
+.after b{color:var(--fg);font-weight:600}
+.after .g{color:var(--tip);font-weight:700}
+
+/* keypad */
+.kp{position:absolute;left:0;right:0;bottom:0;background:#0b0b0b;border-top:1px solid #222;padding:8px 8px 0;z-index:6}
+.kph{display:flex;align-items:center;gap:6px;margin-bottom:7px}
+.kph .lab{font-size:10.5px;color:var(--fg2);font-weight:600;flex:1;padding-left:4px}
+.kph .tog{display:flex;background:var(--surface);border-radius:7px;padding:2px}
+.kph .tog span{font-size:10.5px;font-weight:700;color:var(--fg2);padding:0 8px;height:24px;line-height:24px;border-radius:5px}
+.kph .tog span.on{background:var(--accent);color:#fff}
+.kph .go{height:28px;padding:0 10px;border-radius:7px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px}
+.keys{display:grid;grid-template-columns:repeat(3,1fr) .75fr;gap:5px}
+.keys span{height:36px;border-radius:7px;background:#1f1f1f;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:17px;line-height:1}
+.keys span.fn{background:var(--keyfn);font-size:14px}
+.keys span small{font-size:7.5px;color:var(--fg2);font-weight:700;margin-top:2px}
+.keys span.off{background:#121212;color:var(--fg3)}
+
+/* camera */
+.cam{position:relative;height:300px;margin:0 -14px;background:radial-gradient(ellipse at 50% 45%,#2a3442 0%,#151a20 55%,#0a0c0f 100%);overflow:hidden}
+.cam .pack{position:absolute;left:46px;right:30px;top:78px;height:150px;border-radius:10px;background:linear-gradient(160deg,#1f4fa8,#163a7d);transform:rotate(-6deg)}
+.cam .pack .lbl2{position:absolute;left:14px;top:12px;font-size:9px;font-weight:800;color:#cfe0ff;letter-spacing:.04em}
+.cam .bars{position:absolute;left:62px;top:52px;width:108px;height:56px;background:#fff;border-radius:3px;padding:6px 7px 12px;display:flex;gap:1.5px}
+.cam .bars i{display:block;background:#111;height:100%}
+.cam .bars em{position:absolute;bottom:2px;left:0;right:0;text-align:center;font-style:normal;font-size:6.5px;color:#111;letter-spacing:.12em}
+.cam .frame{position:absolute;left:50px;right:50px;top:96px;height:110px}
+.cam .frame i{position:absolute;width:22px;height:22px;border-color:#fff;border-style:solid}
+.cam .frame i:nth-child(1){left:0;top:0;border-width:3px 0 0 3px;border-top-left-radius:8px}
+.cam .frame i:nth-child(2){right:0;top:0;border-width:3px 3px 0 0;border-top-right-radius:8px}
+.cam .frame i:nth-child(3){left:0;bottom:0;border-width:0 0 3px 3px;border-bottom-left-radius:8px}
+.cam .frame i:nth-child(4){right:0;bottom:0;border-width:0 3px 3px 0;border-bottom-right-radius:8px}
+.cam .scan{position:absolute;left:58px;right:58px;top:150px;height:2px;background:var(--tip);box-shadow:0 0 10px var(--tip)}
+.cam .camtop{position:absolute;left:14px;right:14px;top:8px;display:flex;justify-content:space-between;font-size:13px;color:#fff;font-weight:600}
+.cam .hint{position:absolute;left:0;right:0;top:250px;text-align:center;font-size:11px;color:rgba(255,255,255,.8)}
+
+/* week chart */
+.wchart{margin-top:12px}
+.legend{display:flex;gap:12px;font-size:10px;color:var(--fg2);margin-top:8px}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend i{width:9px;height:9px;border-radius:2px;display:inline-block}
+
+/* form */
+.form .fl{display:flex;justify-content:space-between;align-items:center;min-height:38px;border-bottom:1px solid var(--line);font-size:12.5px}
+.form .fl span{color:var(--fg2)}
+.form .fl b{font-weight:600}
+.form .fl b.ph{color:var(--fg3);font-weight:500}
+.form .fl.ind{padding-left:14px}
+.form .fl.ind span{font-size:11.5px}
+.form .fl .in{min-width:64px;height:28px;border-radius:7px;background:var(--surface2);display:flex;align-items:center;justify-content:flex-end;padding:0 9px;font-weight:600}
+.form .fl .in.on{box-shadow:inset 0 0 0 1.5px var(--accent);background:#0d1a2b}
+.form .fl .in.ph{color:var(--fg3);font-weight:500}
+.note{font-size:10px;color:var(--fg2);line-height:1.45;margin-top:8px}
+.empty{text-align:center;color:var(--fg2);font-size:12px;line-height:1.5;margin-top:26px;padding:0 10px}
+.empty b{color:var(--fg);display:block;font-size:15px;margin-bottom:4px}
+.cta{display:inline-flex;height:34px;padding:0 16px;border-radius:17px;background:var(--accent);color:#fff;font-weight:700;font-size:12.5px;align-items:center;margin-top:12px}
+.cta.g{background:var(--surface2);color:var(--fg)}
+.qa{display:flex;gap:8px;margin-top:12px}
+.qa span{flex:1;height:52px;border-radius:10px;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:10.5px;font-weight:600;color:var(--fg)}
+.qa span svg{color:var(--accent)}
+.goalrow{display:flex;align-items:center;gap:10px;min-height:44px;border-bottom:1px solid var(--line)}
+.goalrow .m{flex:1}
+.goalrow .m b{display:block;font-size:13px;font-weight:600}
+.goalrow .m span{font-size:10px;color:var(--fg2)}
+.goalrow .v{font-size:13px;font-weight:700}
+.goalrow .v span{color:var(--fg2);font-size:10.5px;font-weight:600}
+.tag{display:inline-block;font-size:8.5px;font-weight:800;letter-spacing:.04em;padding:2px 5px;border-radius:4px;background:var(--surface2);color:var(--fg2);vertical-align:middle;margin-left:4px}
+.tag.b{background:rgba(46,139,255,.16);color:var(--accent)}
+.tag.g{background:rgba(46,230,107,.14);color:var(--tip)}
+.ovr{color:var(--warn)!important}
+
+.pinbtn{background:var(--accentFill)}.pl.on{background:var(--accent)}
+.mcard{display:flex;align-items:center;gap:12px;margin-top:12px;padding:12px 0;border-top:1px solid var(--line2);border-bottom:1px solid var(--line2)}
+.mring{position:relative;flex:none}.mring svg{display:block}
+.mring .ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.mring .ctr b{font-size:19px;font-weight:800;line-height:1;letter-spacing:-.01em}
+.mring .ctr small{font-size:9.5px;color:var(--fg2);font-weight:600;margin-top:3px}
+.mcols{flex:1;display:grid;grid-template-columns:repeat(3,1fr);text-align:center}
+.mcols em{font-style:normal;font-size:10.5px;font-weight:700;display:block}
+.mcols b{font-size:17px;font-weight:700;display:block;margin-top:3px;line-height:1}
+.mcols b span{font-size:11px;color:var(--fg2);font-weight:600;margin-left:1px}
+.mcols small{font-size:10px;color:var(--fg2);display:block;margin-top:3px}
+.mf{display:flex;align-items:center;gap:7px;height:42px;border-bottom:1px solid var(--line2)}
+.mf .cv{width:14px;color:var(--fg2);display:flex;align-items:center}
+.mf b{font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--fg2)}
+.mf.open b{color:var(--fg)}
+.mf .n{font-size:11px;color:var(--fg3);font-weight:700}
+.mf .k{margin-left:auto;font-size:12.5px;font-weight:600}
+.mf .k span{color:var(--fg2);font-size:10.5px;font-weight:600}
+.fr.ind{padding-left:21px}
+.addrow.ind{padding-left:21px;border-bottom:1px solid var(--line);height:34px}
+.nt .r{display:flex;justify-content:space-between;align-items:center;min-height:29px;border-bottom:1px solid var(--line);font-size:12px}
+.nt .r b{font-weight:700}
+.nt .r em{font-style:normal;color:var(--fg)}
+.nt .r.ind{padding-left:14px}.nt .r.ind>span:first-child{color:var(--fg2)}
+.nt .r .dv{color:var(--fg2);font-size:11.5px}
+.rlab{position:absolute;transform:translate(-50%,-50%);font-size:11px;font-weight:800;text-align:center;line-height:1.1}
+.rlab span{display:block;font-size:9.5px;color:var(--fg2);font-weight:600}
+.steps{display:flex;gap:4px;margin-top:8px}.steps i{flex:1;height:3px;border-radius:2px;background:var(--surface2)}.steps i.on{background:var(--accent)}
+.miniseg{display:flex;background:var(--surface);border-radius:7px;padding:2px}.miniseg i{font-style:normal;font-size:11px;font-weight:600;color:var(--fg2);padding:0 10px;height:24px;line-height:24px;border-radius:5px}.miniseg i.on{background:var(--keyfn);color:var(--fg)}
+.goalrow .v2{font-size:10.5px;color:var(--fg2);font-weight:600;margin-right:4px}
+.goalrow .m span.o{color:var(--warn)}
+.calc{display:flex;justify-content:space-between;font-size:11.5px;color:var(--fg2);padding:6px 0;border-bottom:1px solid var(--line)}
+.calc b{color:var(--fg);font-weight:700}
+.sbar{display:flex;gap:3px;position:relative;margin-top:4px}
+.sbar i{display:block;border-radius:7px}
+.sbar u{position:absolute;top:-5px;bottom:-5px;width:6px;margin-left:-3px;background:#fff;border-radius:3px;box-shadow:0 0 0 2px #000}
+.sblab{display:flex;font-size:12px;font-weight:800;margin-top:12px}.sblab span{text-align:center}
+.sblab.g{font-size:11px;color:var(--fg2);font-weight:600;margin-top:8px}
+.tog2{width:40px;height:24px;border-radius:12px;background:var(--surface2);position:relative;flex:none}.tog2:after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#888}
+.mrow{padding:10px 0;border-bottom:1px solid var(--line)}
+.mrow .top{display:flex;align-items:center;gap:8px;font-size:12.5px}
+.mrow .top b{font-weight:700}.mrow .top>span:nth-child(2){color:var(--fg2);font-size:11.5px;margin-left:auto}
+.mrow .top>span:nth-child(2) b{color:var(--fg)}
+.step{display:flex;gap:4px}.step i{font-style:normal;width:28px;height:26px;border-radius:7px;background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:15px}
+.pr.ind{padding-left:21px}
+.pr{display:flex;align-items:center;gap:10px;min-height:44px;border-bottom:1px solid var(--line)}
+.pr .m{flex:1;min-width:0}.pr .m b{display:block;font-size:12.5px;font-weight:600}.pr .m span{display:block;font-size:10px;color:var(--fg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.sbtn{flex:none;height:26px;padding:0 11px;border-radius:13px;background:var(--accentFill);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center}
+.toast{position:absolute;left:14px;right:14px;bottom:30px;height:40px;border-radius:11px;background:#262626;display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-size:12px;font-weight:600;z-index:8}
+.toast b{color:var(--accent)}
+.lbl span b,.empty b{color:var(--fg)}
+.mcard.nb{border-top:none}
+.pl.cur{background:#3a3a3a;color:#A1A1AA}
+.mstep{display:flex;justify-content:center;gap:5px;margin-top:6px}.mstep i{font-style:normal;width:30px;height:26px;border-radius:7px;background:var(--surface2);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:500}
+.pr .m b span.tag{display:inline-block;margin:0 0 0 4px;font-size:8px;color:var(--fg2)}
+</style></head><body><div class="board">
+<div class="eyebrow">OpenGym · Prototype, not approved yet · Food tab v4 · Dark</div>
+<h1>Food v4: thinner ring, one Targets screen</h1>
+<p class="lead"><b>v4</b> after the review of <code>nutrition-v3.html</code>. <b>Week chart:</b> only the top of each bar is rounded, and the scale moved to the left (1k · 2k · 3k). <b>Ring:</b> thinner everywhere, and the inspector keeps F1 with the amount and meal boxes moved under the ring card (C2 matches). <b>Setup:</b> activity choices show rough daily steps, and the result has more room around the number. <b>Targets:</b> one screen, the ring and breakdown on top and a Diets folder under it; the active diet moves to the top with a grey check. <b>Custom</b> adds ± under each macro (+2% to it, −1% from each of the others). Everything else is as in v3. Colors: protein blue · carbs cyan · fat gold.</p>
+<div class="legendbar">
+<span><i style="background:var(--fg)"></i>Calories #FFFFFF</span>
+<span><i style="background:var(--p)"></i>Protein · Blue #007AFF</span>
+<span><i style="background:var(--c)"></i>Carbs · Cyan #2DAFC3</span>
+<span><i style="background:var(--f)"></i>Fat · Gold #EBC22D</span>
+<span><i style="background:var(--warn)"></i>Calorie overage · Orange #FF9500</span>
+<span><i style="background:var(--tip)"></i>Success · Green #32C66D</span>
+</div>
+
+<div class="section"><span class="stag">A · DAY PAGE</span><h2>Meals fold, and the right one is open</h2><p>Each meal is a folder row: chevron, name, number of foods, total kcal. Tapping the row opens or closes it; nothing else happens on that tap. When the page opens, the meal for the time of day is open and the rest are closed: <b>Breakfast until 11:00, Lunch until 4:00 pm, Dinner after that</b>. Snacks never open by themselves. Whatever you open or close by hand stays that way until the next meal window starts. A meal with nothing logged shows <b>+ Add</b> under its row, open or closed.</p>
+<div class="row" id="rowA"></div>
+<div class="row" id="rowA2"></div></div>
+
+<div class="section"><span class="stag">F · FOOD INSPECTOR</span><h2>Looking at one food</h2><p>Opened by tapping a logged food. The top is a <b>ring card</b>: calories in the middle, the ring split by where those calories come from, each segment with rounded ends and a small gap. Beside it, protein · carbs · fat with the share in its color, grams large, and the name under. Under that, the full nutrients with % of daily value. F1 was the pick; F2 and F3 are dropped. The same card is used on C2, C3, D4 and S4.</p>
+<div class="row" id="rowF"></div></div>
+
+<div class="section"><span class="stag">S · SETUP</span><h2>About you, goal, pace, result</h2><p>First open of the Food tab, and later from Targets → Recalculate. Four steps with a thin step bar at the top. Numbers are typed on the usual keypad. Estimates use Mifflin-St Jeor for resting calories, times an activity factor that takes how often you lift from your history.</p>
+<div class="row" id="rowS"></div>
+<div class="row" id="rowS2"></div></div>
+
+<div class="section"><span class="stag">T · TARGETS</span><h2>One Targets screen: ring on top, diets below</h2><p>One calorie target, then the split. Diets: <b>Lifter (default)</b> 28 / 45 / 27 · Balanced 30 / 40 / 30 · High protein 40 / 35 / 25 · Low carb 35 / 25 / 40 · Keto 25 / 5 / 70 · Endurance 20 / 55 / 25 · Custom. Shares are of calories (protein / carbs / fat); grams follow from 2,700 kcal.</p>
+<div class="row" id="rowT"></div>
+</div>
+
+<div class="section"><span class="stag">C · ADD FOOD</span><h2>Find it, set the amount, log it</h2><p>C1 is unchanged except the colors. C2 has a short subtitle, the ring card instead of the four numbers, and no "After this" line. C3 uses the ring card in its result sheet.</p>
+<div class="row" id="rowC"></div></div>
+
+<div class="section"><span class="stag">D · ADD FOOD, OTHER WAYS</span><h2>Saved meals and the Meals tab</h2><p>D4 uses the ring card for the meal's totals. D5: tapping <b>+</b> logs the meal right away and the button turns into a blue <b>✓</b>; tapping ✓ takes it back off and returns to +. No bottom button. A short toast confirms, with Undo.</p>
+<div class="row" id="rowD"></div></div>
+
+<div class="section"><span class="stag">E · RULES</span><h2>What changed in the rules</h2>
+<table class="spec">
+<tr><td>Meal folders</td><td>Breakfast · Lunch · Dinner · Snacks. Auto-open windows: Breakfast before 11:00, Lunch 11:00–4:00 pm, Dinner from 4:00 pm. Snacks only open by hand. Open/closed state is kept per day until the next window starts. Past days open with every meal closed. Empty meals always show + Add.</td></tr>
+<tr><td>Setup</td><td>Sex (for the estimate only), age, height, weight, daily activity. Lifting days per week come from the last 4 weeks of history. Goal: Lose fat · Maintain · Build muscle · Just log. Pace: lose 0.25 / 0.5 / 1 / 1.5 lb a week (−125 / −250 / −500 / −750 kcal), gain 0.25 / 0.5 lb a week (+125 / +250). A goal weight is optional and only used for the date estimate.</td></tr>
+<tr><td>Split presets</td><td>Lifter (default): protein 1 g per lb of bodyweight, fat 27%, carbs the rest. Others are fixed shares of calories. Custom keeps the last numbers typed. Shares always add to 100%; changing one moves carbs unless carbs is the one changed, then fat moves.</td></tr>
+<tr><td>Ring card</td><td>Segments are each macro's share of calories (4 / 4 / 9 kcal per g), in protein → carbs → fat order clockwise from the top. Round caps, 3 px visual gap. A macro at 0 g has no segment. The center is kcal for the amount shown.</td></tr>
+<tr><td>Meals tab</td><td>+ logs the whole meal into the chosen meal slot at once (each food as its own row). ✓ on the same screen removes exactly what that tap added. After leaving the screen, remove from the day page instead.</td></tr>
+</table>
+<div class="pick"><b>Open.</b> Should the Diets folder start closed once a diet is picked (the top block already says which one)? And should Custom keep a "Reset to Lifter" link?</div>
+</div>
+</div>
+<script>
+const ICON={
+home:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.8 21 10.3V20a1.2 1.2 0 0 1-1.2 1.2H14.6v-6.2H9.4v6.2H4.2A1.2 1.2 0 0 1 3 20v-9.7z"/></svg>',
+history:'<svg viewBox="0 0 24 24"><g fill="currentColor"><path d="M5 4h14a2 2 0 0 1 2 2v1a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-1a2 2 0 0 1 2 -2z"/><path d="M4.2 11.0h2.6a1.2 1.2 0 0 1 1.2 1.2v1.6a1.2 1.2 0 0 1 -1.2 1.2h-2.6a1.2 1.2 0 0 1 -1.2 -1.2v-1.6a1.2 1.2 0 0 1 1.2 -1.2z M4.2 16.2h2.6a1.2 1.2 0 0 1 1.2 1.2v1.6a1.2 1.2 0 0 1 -1.2 1.2h-2.6a1.2 1.2 0 0 1 -1.2 -1.2v-1.6a1.2 1.2 0 0 1 1.2 -1.2z M10.7 11.0h2.6a1.2 1.2 0 0 1 1.2 1.2v1.6a1.2 1.2 0 0 1 -1.2 1.2h-2.6a1.2 1.2 0 0 1 -1.2 -1.2v-1.6a1.2 1.2 0 0 1 1.2 -1.2z M10.7 16.2h2.6a1.2 1.2 0 0 1 1.2 1.2v1.6a1.2 1.2 0 0 1 -1.2 1.2h-2.6a1.2 1.2 0 0 1 -1.2 -1.2v-1.6a1.2 1.2 0 0 1 1.2 -1.2z M17.2 11.0h2.6a1.2 1.2 0 0 1 1.2 1.2v1.6a1.2 1.2 0 0 1 -1.2 1.2h-2.6a1.2 1.2 0 0 1 -1.2 -1.2v-1.6a1.2 1.2 0 0 1 1.2 -1.2z M17.2 16.2h2.6a1.2 1.2 0 0 1 1.2 1.2v1.6a1.2 1.2 0 0 1 -1.2 1.2h-2.6a1.2 1.2 0 0 1 -1.2 -1.2v-1.6a1.2 1.2 0 0 1 1.2 -1.2z"/></g></svg>',
+food:'<svg viewBox="0 0 24 24"><g fill="currentColor"><path d="M2.6 11.4h18.8a1 1 0 0 1 1 1.1A10.4 10.4 0 0 1 15.6 20.6v.4a1 1 0 0 1-1 1H9.4a1 1 0 0 1-1-1v-.4A10.4 10.4 0 0 1 1.6 12.5a1 1 0 0 1 1-1.1z"/><circle cx="7.6" cy="8.1" r="2.5"/><circle cx="12.4" cy="6.2" r="3.1"/><circle cx="17.1" cy="8.3" r="2.3"/></g></svg>',
+progress:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M4.7 14h2.1a1.2 1.2 0 0 1 1.2 1.2v4.6a1.2 1.2 0 0 1 -1.2 1.2h-2.1a1.2 1.2 0 0 1 -1.2 -1.2v-4.6a1.2 1.2 0 0 1 1.2 -1.2z M10.95 9.5h2.1a1.2 1.2 0 0 1 1.2 1.2v9.1a1.2 1.2 0 0 1 -1.2 1.2h-2.1a1.2 1.2 0 0 1 -1.2 -1.2v-9.1a1.2 1.2 0 0 1 1.2 -1.2z M17.2 4h2.1a1.2 1.2 0 0 1 1.2 1.2v14.6a1.2 1.2 0 0 1 -1.2 1.2h-2.1a1.2 1.2 0 0 1 -1.2 -1.2v-14.6a1.2 1.2 0 0 1 1.2 -1.2z"/></svg>',
+settings:'<svg viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M19.42 10.34 L21.92 10.70 L21.92 13.30 L19.42 13.66 L18.42 16.07 L19.93 18.09 L18.09 19.93 L16.07 18.42 L13.66 19.42 L13.30 21.92 L10.70 21.92 L10.34 19.42 L7.930 18.42 L5.91 19.93 L4.07 18.09 L5.58 16.07 L4.58 13.66 L2.08 13.30 L2.08 10.70 L4.58 10.34 L5.58 7.93 L4.07 5.91 L5.91 4.07 L7.93 5.58 L10.34 4.58 L10.70 2.08 L13.30 2.08 L13.66 4.58 L16.07 5.58 L18.09 4.07 L19.93 5.91 L18.42 7.93z M8.8 12a3.2 3.2 0 1 0 6.4 0a3.2 3.2 0 1 0 -6.4 0z"/></svg>'};
+const CHECK='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const MAG='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20"/></svg>';
+const BAR='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8v8M10 8v8M13 8v8M17 8v8" stroke-width="1.6"/></svg>';
+const BOLT='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/></svg>';
+const PENCIL='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>';
+const STACK='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="16" height="5" rx="1.5"/><rect x="4" y="11" width="16" height="4" rx="1.5"/><path d="M6 19h12"/></svg>';
+const CV_D='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+const CV_R='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+
+const fmt=n=>n.toLocaleString('en-US');
+const status=(t='6:42')=>`<div class="status"><span>${t}</span><span class="island"></span><span class="dots">●●●</span></div>`;
+const tabbar=(on='Food')=>`<div class="tabbar">${[['home','Home'],['history','Calendar'],['food','Food'],['progress','Progress'],['settings','Settings']].map(([k,l])=>`<span class="${l===on?'on':''}">${ICON[k]}${l}</span>`).join('')}</div>`;
+const phone=(inner,{tabs=true,overlay='',time='6:42',on='Food'}={})=>`<div class="phone">${status(time)}<div class="body">${inner}</div>${overlay}${tabs?tabbar(on):''}<div class="homebar"></div></div>`;
+const cap=(id,title,text)=>`<div class="cap"><b><em>${id}</em>${title}</b><p>${text}</p></div>`;
+const put=(rowId,items)=>{document.getElementById(rowId).innerHTML=items.map(([p,c])=>`<div>${p}${c}</div>`).join('')};
+const track=(pct,color='var(--fg)',cls='')=>`<div class="track ${cls}"><i style="width:${Math.min(pct,100)}%;background:${color}"></i></div>`;
+function ring(pct,size,sw,color,trk='var(--surface2)'){const r=(size-sw)/2,c=2*Math.PI*r,d=c*Math.min(pct,100)/100;return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${trk}" stroke-width="${sw}"/>${pct>0?`<circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${d} ${c}" transform="rotate(-90 ${size/2} ${size/2})"/>`:''}</svg>`}
+const COL={p:'#007AFF',c:'#2DAFC3',f:'#EBC22D'};
+// segmented ring with round caps; parts = calories per macro
+function segRing(parts,size,sw,gap=3){const r=(size-sw)/2,C=2*Math.PI*r,h=size/2;const tot=parts.reduce((a,p)=>a+p.v,0);const nz=parts.filter(p=>p.v>0);
+ let s=`<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;let a=0;
+ parts.forEach(p=>{const seg=p.v/tot*C;if(p.v<=0)return;
+  if(nz.length===1){s+=`<circle cx="${h}" cy="${h}" r="${r}" fill="none" stroke="${p.col}" stroke-width="${sw}"/>`;}
+  else{const draw=Math.max(seg-sw-gap,0.01);const start=a+(sw+gap)/2;s+=`<circle cx="${h}" cy="${h}" r="${r}" fill="none" stroke="${p.col}" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${draw} ${C}" stroke-dashoffset="${-start}" transform="rotate(-90 ${h} ${h})"/>`}
+  a+=seg});return s+'</svg>'}
+const macroParts=(p,c,f)=>[{v:p*4,col:COL.p},{v:c*4,col:COL.c},{v:f*9,col:COL.f}];
+const pctOf=(p,c,f)=>{const t=p*4+c*4+f*9;let a=[p*4/t,c*4/t,f*9/t].map(x=>Math.round(x*100));return a};
+const g=v=>Number.isInteger(v)?v:v.toFixed(1);
+function ringCard(k,p,c,f,{size=86,sw=6,label='kcal',cls='',fs=''}={}){const pc=pctOf(p,c,f);
+ return `<div class="mcard ${cls}"><div class="mring" style="width:${size}px;height:${size}px">${segRing(macroParts(p,c,f),size,sw)}<div class="ctr"><b style="${fs?'font-size:'+fs+'px':''}">${fmt(k)}</b><small>${label}</small></div></div>
+ <div class="mcols">${[['Protein',p,pc[0],'P'],['Carbs',c,pc[1],'C'],['Fat',f,pc[2],'F']].map(([n,v,pp,cl])=>`<div><em class="${cl}">${pp}%</em><b>${g(v)}<span>g</span></b><small>${n}</small></div>`).join('')}</div></div>`}
+const pcf=(p,c,f)=>`<span class="pcf"><i class="P">P</i> ${p} <i class="C">C</i> ${c} <i class="F">F</i> ${f}</span>`;
+
+// ---------- data
+const T={kcal:2700,p:190,c:300,f:80};
+const MEALS={
+ Breakfast:[['Greek yogurt, 2%','1 cup · 245 g',190,20,9,5],['Rolled oats','60 g',230,8,40,4],['Peanut butter','2 tbsp · 32 g',190,7,7,16],['Blueberries','75 g',43,1,11,0]],
+ Lunch:[['Chicken breast, grilled','200 g',330,62,0,7],['White rice, cooked','1.5 cup · 280 g',310,6,67,1],['Broccoli, steamed','150 g',51,4,10,1]],
+ Dinner:[],
+ Snacks:[['Protein bar, chocolate','1 bar · 60 g',210,20,22,7],['Banana','1 medium · 118 g',105,1,27,0],['Whey shake','1.5 scoop · 45 g',180,36,5,2]]};
+const sum=items=>items.reduce((a,i)=>[a[0]+i[2],a[1]+i[3],a[2]+i[4],a[3]+i[5]],[0,0,0,0]);
+
+const WEEK=(today)=>[['S',8,2380,0],['M',9,2860,1],['T',10,today,1,'today'],['W',11,0,0,'fut'],['T',12,0,1,'fut'],['F',13,0,1,'fut'],['S',14,0,0,'fut']];
+const weekStrip=(today)=>`<div class="wk">${WEEK(today).map(([d,n,e,l,s=''])=>{const over=e>2700*1.03;return `<div class="${s}"><small>${d}</small><span class="rg">${ring(e/2700*100,30,2.6,over?'var(--warn)':(s==='today'?'var(--fg)':'var(--fg2)'),s==='today'?'var(--line2)':'var(--surface2)')}<b>${n}</b></span><span class="lift ${l?'':'no'}"></span></div>`}).join('')}</div>`;
+const macroBlock=(v)=>`<div class="mac">${[['PROTEIN',v[1],T.p,'var(--p)'],['CARBS',v[2],T.c,'var(--c)'],['FAT',v[3],T.f,'var(--f)']].map(([l,x,t,c])=>`<div><small>${l}</small><b>${x}<span> / ${t} g</span></b>${track(x/t*100,c,'thin')}</div>`).join('')}</div>`;
+// meal folder: state 'open' | 'closed'
+function folder(name,items,open,{max=9}={}){const t=sum(items);
+ let s=`<div class="mf ${open?'open':''}"><span class="cv">${open?CV_D:CV_R}</span><b>${name.toUpperCase()}</b>${items.length?`<span class="n">${items.length}</span>`:''}<span class="k">${items.length?`${fmt(t[0])}<span> kcal</span>`:'<span>—</span>'}</span></div>`;
+ if(open&&items.length) s+=items.slice(0,max).map(i=>`<div class="fr ind"><div class="m"><b>${i[0]}</b><span>${i[1]}</span></div><div class="k">${fmt(i[2])}</div></div>`).join('');
+ if(open||!items.length) s+=`<div class="addrow ind"><b>+</b> Add</div>`;
+ return s}
+function day({time,sub,meals,open,today}){const all=meals.flatMap(m=>MEALS[m]);const d=sum(all);
+ return phone(`<div class="hd"><div><div class="t">Food</div><div class="s">${sub}</div></div><div class="acts"><span class="plus">+</span></div></div>
+ ${weekStrip(d[0])}
+ <div class="kc"><div class="top"><div class="big">${fmt(d[0])}<span>/ ${fmt(T.kcal)} kcal</span></div><div class="left"><b>${fmt(T.kcal-d[0])}</b> left</div></div>${track(d[0]/T.kcal*100)}</div>
+ ${macroBlock(d)}
+ <div style="height:4px"></div>
+ ${['Breakfast','Lunch','Dinner','Snacks'].map(m=>folder(m,meals.includes(m)?MEALS[m]:[],open.includes(m))).join('')}`,{time})}
+
+const A1=day({time:'12:40',sub:'Tue, Nov 10',meals:['Breakfast','Lunch'],open:['Lunch']});
+const A2=day({time:'6:42',sub:'Tue, Nov 10',meals:['Breakfast','Lunch','Snacks'],open:['Dinner']});
+const A3=day({time:'8:15',sub:'Tue, Nov 10',meals:['Breakfast','Lunch','Snacks'],open:['Breakfast']});
+put('rowA',[
+[A1,cap('A1','Lunchtime, 12:40','Lunch is open because it\'s lunchtime; Breakfast is closed with its total. Dinner and Snacks have nothing yet, so each shows + Add under its row. Tapping the BREAKFAST row opens it in place; tapping again closes it.')],
+[A2,cap('A2','Evening, 6:42 pm','Dinner is the meal now, so it\'s open, and since it\'s empty the open state is just + Add. Breakfast, Lunch and Snacks sit closed with counts and totals, so the day reads in four lines.')],
+[A3,cap('A3','Opened by hand','Same evening, after tapping BREAKFAST. Dinner was empty so it still shows + Add even though it isn\'t open. The choice holds until the next window, so the page doesn\'t jump around while you look back at the morning.')]]);
+
+// over + week + home
+const Y=[2860,201,306,96];
+const A4=phone(`
+<div class="hd"><div><div class="t">Food</div><div class="s">Mon, Nov 9</div></div><div class="acts"><span class="daynav"><i>‹</i><i>›</i></span></div></div>
+${weekStrip(1839)}
+<div class="kc"><div class="top"><div class="big ovr">${fmt(Y[0])}<span>/ 2,700 kcal</span></div><div class="left"><b class="o">160</b> over</div></div><div class="track"><i style="width:94.4%;background:var(--fg)"></i><i style="left:94.4%;width:5.6%;background:var(--warn);border-radius:0 3px 3px 0"></i><span class="tick" style="left:94.4%"></span></div></div>
+<div class="mac">${[['PROTEIN',Y[1],190,'var(--p)'],['CARBS',Y[2],300,'var(--c)'],['FAT',Y[3],80,'var(--f)']].map(([l,v,t,c])=>{const over=l!=='PROTEIN'&&v>t*1.03;return `<div><small>${l}${l==='PROTEIN'?' <span style="color:var(--tip)">✓</span>':''}</small><b class="${over?'ovr':''}">${v}<span> / ${t} g</span></b>${track(v/t*100,over?'var(--warn)':c,'thin')}</div>`}).join('')}</div>
+<div style="height:4px"></div>
+${folder('Breakfast',MEALS.Breakfast,false)}${folder('Lunch',MEALS.Lunch,false)}
+<div class="mf"><span class="cv">${CV_R}</span><b>DINNER</b><span class="n">4</span><span class="k">1,020<span> kcal</span></span></div>
+${folder('Snacks',MEALS.Snacks,false)}
+`);
+function weekChart(){const days=[['S',2380,182,262,78],['M',2860,201,306,96],['T',2410,176,268,85],['W',2510,190,290,80],['T',2690,188,320,82],['F',2300,165,240,86],['S',2950,150,350,120]];
+ const W=252,H=150,max=3200,bw=22,L=20,gap=(W-L-bw*7)/7;let s=`<svg width="${W}" height="${H+18}" viewBox="0 0 ${W} ${H+18}">`;
+ [1000,2000,3000].forEach(v=>{const y=H-v/max*H;s+=`<line x1="${L}" x2="${W}" y1="${y}" y2="${y}" stroke="#1f1f1f"/><text x="0" y="${y+3}" fill="#A1A1AA" font-size="9" font-weight="600">${v/1000}k</text>`});
+ s+=`<line x1="${L}" x2="${W}" y1="${H}" y2="${H}" stroke="#2c2c2c"/>`;
+ const ty=H-2700/max*H;s+=`<line x1="${L}" x2="${W}" y1="${ty}" y2="${ty}" stroke="#fff" stroke-width="1.2" stroke-dasharray="4 3"/>`;
+ days.forEach(([d,k,p,c,f],i)=>{const x=L+i*(bw+gap)+gap/2;const tot=p*4+c*4+f*9;const sc=k/tot;let y=H;[[p*4,COL.p],[c*4,COL.c],[f*9,COL.f]].forEach(([v,col],j)=>{const h=v*sc/max*H;y-=h;if(j===2){const r=3;s+=`<path d="M${x} ${y+h}V${y+r}Q${x} ${y} ${x+r} ${y}H${x+bw-r}Q${x+bw} ${y} ${x+bw} ${y+r}V${y+h}Z" fill="${col}"/>`}else s+=`<rect x="${x}" y="${y}" width="${bw}" height="${h}" fill="${col}"/>`});
+  if(k>2700*1.03)s+=`<circle cx="${x+bw/2}" cy="${H-k/max*H-6}" r="2.5" fill="#FF9500"/>`;
+  s+=`<text x="${x+bw/2}" y="${H+12}" fill="#A1A1AA" font-size="9" font-weight="700" text-anchor="middle">${d}</text>`});
+ return s+'</svg>'}
+const A5=phone(`
+<div class="hd"><div><div class="t">Food</div><div class="s">Nov 1 – 7</div></div><div class="acts"><span class="daynav"><i>‹</i><i>›</i></span></div></div>
+<div class="stats"><div><small>AVG / DAY</small><b>2,586</b></div><div><small>ON TARGET</small><b>4<span> of 7</span></b></div><div><small>PROTEIN HIT</small><b>4<span> of 7</span></b></div></div>
+<div class="wchart">${weekChart()}</div>
+<div class="legend"><span><i style="background:var(--p)"></i>Protein</span><span><i style="background:var(--c)"></i>Carbs</span><span><i style="background:var(--f)"></i>Fat</span><span><i style="background:#fff;height:2px"></i>Target</span></div>
+<div class="lbl">Averages<span>avg · target</span></div>
+<div class="fr" style="min-height:32px"><div class="m"><b class="P">Protein</b></div><div class="k">179 <span style="color:var(--fg2);font-weight:500">/ 190 g</span></div></div>
+<div class="fr" style="min-height:32px"><div class="m"><b class="C">Carbs</b></div><div class="k">292 <span style="color:var(--fg2);font-weight:500">/ 300 g</span></div></div>
+<div class="fr" style="min-height:32px"><div class="m"><b class="F">Fat</b></div><div class="k ovr">90 <span style="color:var(--fg2);font-weight:500">/ 80 g</span></div></div>
+`);
+const A6=phone(`
+<div class="hd"><div><div class="t">Today</div><div class="s">Tue, Nov 10</div></div></div>
+<div class="lbl">Next up<span></span></div>
+<div class="fr"><div class="m"><b>Push A</b><span>5 exercises · Bench, Incline DB, Lateral…</span></div><span class="sbtn">▶ Start</span></div>
+<div class="lbl">Food<span></span></div>
+<div style="padding:10px 0;border-bottom:1px solid var(--line)">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:17px">1,839 <span style="font-size:11px;color:var(--fg2);font-weight:600">/ 2,700 kcal</span></b><span style="font-size:11px;color:var(--fg2)"><b style="color:#fff">861</b> left</span></div>${track(68)}
+<div style="display:flex;gap:14px;margin-top:8px;font-size:10.5px;color:var(--fg2)"><span><b class="P">P</b> 165/190</span><span><b class="C">C</b> 198/300</span><span><b class="F">F</b> 43/80</span></div></div>
+<div class="addrow"><b>+</b> Log food</div>
+<div style="height:110px;margin-top:10px;border:1px dashed #2a2a2a;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--fg3);font-size:10.5px">The rest of Home, unchanged (3.1)</div>
+`,{on:'Home'});
+put('rowA2',[
+[A4,cap('A4','Past day, over target','Kept from v2. Past days open with every meal closed, so the four rows act as a summary of the day. Monday went 160 over: orange number and the part of the bar past the target. Protein is a floor, so over is a green ✓.')],
+[A5,cap('A5','Week','Scale on the left (1k · 2k · 3k) so the bars sit further left; only the top of each bar (fat) is rounded. Single dashed target line. No Day / Week switch; the way in is still open.')],
+[A6,cap('A6','On Home','Kept from v2: the Food block sits under Next up, with the rest of Home unchanged. Tapping the block opens the Food tab.')]]);
+
+// ---------- F inspector
+const nut=(rows)=>`<div class="nt"><div class="lbl" style="margin-top:12px">Nutrients<span>% daily value</span></div>${rows.map(([n,v,dv,ind])=>`<div class="r ${ind?'ind':''}"><span>${ind?n:`<b>${n}</b>`} <em>${v}</em></span><span class="dv">${dv}</span></div>`).join('')}</div>`;
+const F1=phone(`
+<div class="nav"><span class="l">‹ Lunch</span><span class="m"></span><span class="r">☆ &nbsp;•••</span></div>
+<div class="bigname">Chicken breast, grilled</div>
+<div class="brand">Your food</div>
+${ringCard(330,62,0,7)}
+<div class="boxlbl"><span>AMOUNT</span><span>MEAL</span></div>
+<div class="amt" style="margin-top:4px"><div class="box">200<small>g</small></div><div class="box" style="font-size:13px">Lunch<span class="dd">▾</span></div></div>
+${nut([['Total fat','7 g','9%'],['Saturated','2 g','10%',1],['Total carbs','0 g','0%'],['Fiber','0 g','0%',1],['Sugar','0 g','',1],['Protein','62 g','124%'],['Cholesterol','170 mg','57%'],['Sodium','148 mg','6%']])}
+`,{tabs:false});
+
+
+// ---------- S setup
+const steps=(n)=>`<div class="steps">${[1,2,3,4].map(i=>`<i class="${i<=n?'on':''}"></i>`).join('')}</div>`;
+const S1=phone(`
+<div class="nav"><span class="l">Cancel</span><span class="m">About you</span><span class="r" style="opacity:0">.</span></div>
+${steps(1)}
+<div class="note" style="margin-top:10px">Used only to estimate your calories. It stays on this phone.</div>
+<div class="form" style="margin-top:6px">
+<div class="fl"><span>Sex</span><span class="miniseg"><i class="on">Male</i><i>Female</i></span></div>
+<div class="fl"><span>Age</span><span class="in">29</span></div>
+<div class="fl"><span>Height</span><span class="in">5 ft 11 in</span></div>
+<div class="fl"><span>Weight</span><span class="in on">190 lb</span></div>
+</div>
+<div class="lbl">Day to day<span style="font-weight:400">outside the gym</span></div>
+<div class="goalrow"><div class="m"><b>Mostly sitting</b><span>desk job · under 5k steps</span></div><span class="pl"></span></div>
+<div class="goalrow"><div class="m"><b>Light</b><span>some walking · 5–8k steps</span></div><span class="pl"></span></div>
+<div class="goalrow"><div class="m"><b>On your feet</b><span>standing, walking a lot · 8–12k steps</span></div><span class="pl on">${CHECK}</span></div>
+<div class="goalrow"><div class="m"><b>Physical work</b><span>labor all day · 12k+ steps</span></div><span class="pl"></span></div>
+<div class="note">Lifting: <b style="color:#fff">4 days a week</b> from your last 4 weeks.</div>
+`,{tabs:false,overlay:`<div class="pin" style="bottom:19px"><div class="pinbtn">Next</div></div>`});
+const S2=phone(`
+<div class="nav"><span class="l">‹ Back</span><span class="m">Goal</span><span class="r" style="opacity:0">.</span></div>
+${steps(2)}
+<div class="empty" style="margin-top:14px"><b>What are you going for?</b></div>
+<div class="goalrow"><div class="m"><b>Lose fat</b><span>eat a little under, keep strength</span></div><span class="pl on">${CHECK}</span></div>
+<div class="goalrow"><div class="m"><b>Maintain</b><span>stay the same weight</span></div><span class="pl"></span></div>
+<div class="goalrow"><div class="m"><b>Build muscle</b><span>eat a little over</span></div><span class="pl"></span></div>
+<div class="goalrow"><div class="m"><b>Just log, no target</b><span>see totals only</span></div><span class="pl"></span></div>
+<div class="form" style="margin-top:14px"><div class="fl"><span>Goal weight <span style="color:var(--fg3)">· optional</span></span><span class="in">180 lb</span></div></div>
+`,{tabs:false,overlay:`<div class="pin" style="bottom:19px"><div class="pinbtn">Next</div></div>`});
+const S3=phone(`
+<div class="nav"><span class="l">‹ Back</span><span class="m">Pace</span><span class="r" style="opacity:0">.</span></div>
+${steps(3)}
+<div class="empty" style="margin-top:14px"><b>How fast?</b>Slower keeps more strength.</div>
+<div class="goalrow"><div class="m"><b>0.25 lb a week</b><span>−125 kcal a day</span></div><span class="v2">Mar 2028</span><span class="pl"></span></div>
+<div class="goalrow"><div class="m"><b>0.5 lb a week</b><span>−250 kcal a day · <span style="color:var(--accent);font-weight:700">suggested</span></span></div><span class="v2">Mar 30</span><span class="pl on">${CHECK}</span></div>
+<div class="goalrow"><div class="m"><b>1 lb a week</b><span>−500 kcal a day</span></div><span class="v2">Jan 19</span><span class="pl"></span></div>
+<div class="goalrow"><div class="m"><b>1.5 lb a week</b><span class="o">−750 kcal · strength may drop</span></div><span class="v2">Dec 27</span><span class="pl"></span></div>
+<div class="note">Dates are when you'd reach 180 lb. Estimates only: real weight moves around day to day.</div>
+`,{tabs:false,overlay:`<div class="pin" style="bottom:19px"><div class="pinbtn">Next</div></div>`});
+const S4=phone(`
+<div class="nav"><span class="l">‹ Back</span><span class="m">Your targets</span><span class="r" style="opacity:0">.</span></div>
+${steps(4)}
+<div style="text-align:center;margin:34px 0 26px"><div style="font-size:40px;font-weight:800;letter-spacing:-.02em;line-height:1">2,700</div><div style="font-size:11px;color:var(--fg2);margin-top:4px;font-weight:600">kcal a day</div></div>
+<div class="calc"><span>Maintenance (estimated)</span><b>2,950</b></div>
+<div class="calc"><span>Lose 0.5 lb a week</span><b>−250</b></div>
+${ringCard(2700,190,300,80,{size:80,sw:6,label:'kcal',fs:15,cls:'nb'})}
+<div class="goalrow"><div class="m"><b>Split · Lifter</b><span>protein 1 g per lb, fat 27%, rest carbs</span></div><span style="color:var(--accent);font-size:12px;font-weight:600">Change ›</span></div>
+<div class="note">Everything here can be changed later in Targets.</div>
+`,{tabs:false,overlay:`<div class="pin" style="bottom:19px"><div class="pinbtn">Start logging</div></div>`});
+put('rowS',[
+[S1,cap('S1','About you','Sex (for the estimate only, as a two-way switch), age, height, weight. Weight is focused first; numbers use the keypad, height in ft/in or cm by units. Activity outside the gym as four choices with rough daily steps, so it is easy to place yourself; lifting days come from your history, so it isn\'t asked.')],
+[S2,cap('S2','Goal','The four goals from v2 with clearer wording. An optional goal weight, only used to show dates on the next step. "Just log" skips to the end with no targets.')],
+[S3,cap('S3','Pace','Weekly rate with what it means per day and when you\'d reach the goal weight. The suggested pace is marked; the fastest gets an orange note. For Build muscle the options are 0.25 and 0.5 lb a week. Maintain skips this step.')]]);
+put('rowS2',[
+[S4,cap('S4','Result','More room around the daily number; the line above the ring is gone. Below: how it was worked out (maintenance minus the deficit), the ring card for the default split, and a way into Targets to pick a different split.')],
+['',''],['','']]);
+
+// ---------- T targets
+const PRE=[['Lifter','default',28,45,27,'Protein 1 g per lb, fat ~¼, rest carbs'],['Balanced','',30,40,30,'Even split, easy to follow'],['High protein','',40,35,25,'For cutting, keeps you full'],['Low carb','',35,25,40,'Fewer carbs, more fat'],['Keto','',25,5,70,'Under ~35 g carbs a day'],['Endurance','',20,55,25,'For lots of cardio']];
+const grams=(pp,cc,ff)=>[Math.round(2700*pp/100/4),Math.round(2700*cc/100/4),Math.round(2700*ff/100/9)];
+const gramsL=[190,300,80];
+const tHead=`<div class="nav"><span class="l">‹ Food</span><span class="m">Targets</span><span class="r">Done</span></div>
+<div class="goalrow"><div class="m"><b>Calories</b><span>Lose 0.5 lb a week · <span style="color:var(--accent)">Recalculate</span></span></div><div class="v">2,700 <span>kcal</span></div></div>`;
+const tring=(name,sub,pp,cc,ff)=>`<div style="display:flex;justify-content:center;margin-top:12px"><div class="mring" style="width:118px;height:118px">${segRing([{v:pp,col:COL.p},{v:cc,col:COL.c},{v:ff,col:COL.f}],118,8)}<div class="ctr"><b style="font-size:${name.length>8?12.5:15}px">${name}</b><small>${sub}</small></div></div></div>`;
+const tcols=(pp,cc,ff,step=false)=>{const gm=name=>0;const gr=pp===28&&cc===45?[190,300,80]:[Math.round(2700*pp/400),Math.round(2700*cc/400),Math.round(2700*ff/900)];return `<div class="mcols" style="margin-top:10px;border-top:1px solid var(--line2);border-bottom:1px solid var(--line2);padding:8px 0">${[['Protein',gr[0],pp,'P'],['Carbs',gr[1],cc,'C'],['Fat',gr[2],ff,'F']].map(([n,v,p,cl])=>`<div><em class="${cl}">${p}%</em><b>${v}<span>g</span></b><small>${n}</small>${step?'<div class="mstep"><i>−</i><i>+</i></div>':''}</div>`).join('')}</div>`};
+const dietRow=(p,cur)=>`<div class="pr ind"><div class="mring" style="width:28px;height:28px">${segRing([{v:p[2],col:COL.p},{v:p[3],col:COL.c},{v:p[4],col:COL.f}],28,4,2)}</div><div class="m"><b>${p[0]}</b><span>${p[2]} / ${p[3]} / ${p[4]} · ${p[5]}</span></div>${cur?`<span class="pl cur">${CHECK}</span>`:'<span class="pl"></span>'}</div>`;
+const CUSTOM=['Custom','',30,42,28,'your own split'];
+const dietList=(curName)=>{const all=[...PRE,CUSTOM];const cur=all.find(p=>p[0]===curName);const rest=all.filter(p=>p[0]!==curName);
+ return `<div class="mf open"><span class="cv">${CV_D}</span><b>DIETS</b><span class="n">${all.length}</span><span class="k"><span>protein / carbs / fat</span></span></div>${dietRow(cur,true)}${rest.map(p=>dietRow(p,false)).join('')}`};
+const T1=phone(`${tHead}${tring('Lifter','28 / 45 / 27',28,45,27)}${tcols(28,45,27)}${dietList('Lifter')}`,{tabs:false});
+const T2=phone(`${tHead}${tring('High protein','40 / 35 / 25',40,35,25)}${tcols(40,35,25)}${dietList('High protein')}`,{tabs:false});
+const T3=phone(`${tHead}${tring('Custom','30 / 42 / 28',30,42,28)}${tcols(30,42,28,true)}<div class="note">+ adds 2% to that macro and takes 1% from each of the other two; − does the opposite.</div>${dietList('Custom')}`,{tabs:false});
+put('rowT',[
+[T1,cap('T1','Targets','The ring and breakdown from v3\'s T1 on top, then a Diets folder (like the meal folders) with every diet as a row with a mini ring and one line on what it\'s for. The active diet sits at the top with a grey check; nothing else at the bottom.')],
+[T2,cap('T2','Picked another diet','After tapping High protein: it moves to the top with the grey check, Lifter drops back into the list, and the ring, shares and grams above update to 40 / 35 / 25.')],
+[T3,cap('T3','Custom','Same screen with ± under each macro. + adds 2% to it and takes 1% from each of the others (− the reverse), so the total stays 100%. Grams update as you tap. Typing a number in a column also works.')]]);
+// ---------- C add food
+const RECENT=[['Chicken breast, grilled','200 g · usual',330,62,0,7],['White rice, cooked','1.5 cup',310,6,67,1],['Whey shake','1.5 scoop',180,36,5,2],['Greek yogurt, 2%','1 cup',190,20,9,5],['Salmon fillet','220 g',450,48,0,28],['Sweet potato, baked','250 g',225,5,52,0]];
+const addHdr=(meal='Dinner')=>`<div class="nav"><span class="l">Cancel</span><span class="mealpick">${meal} <i>▾</i></span><span class="r" style="opacity:0">Done</span></div>`;
+const foodRow=(i,on=false)=>`<div class="fr"><div class="m"><b>${i[0]}</b><span>${i[1]} · ${i[2]} kcal · ${pcf(i[3],i[4],i[5])}</span></div><span class="pl ${on?'on':''}">${on?CHECK:'+'}</span></div>`;
+const C1=phone(`
+${addHdr()}
+<div class="search">${MAG}<span>Search foods</span><span class="bc">${BAR}</span></div>
+<div class="qa"><span>${BAR}Scan</span><span>${BOLT}Quick add</span><span>${STACK}Meals</span><span>${PENCIL}New food</span></div>
+<div class="chips"><span class="on">Recent</span><span>Saved</span><span>My foods</span><span>Meals</span></div>
+<div class="lbl" style="border-bottom:none;padding-bottom:0">Usually at dinner<span></span></div>
+${RECENT.slice(4,6).map(i=>foodRow(i)).join('')}
+<div class="lbl" style="border-bottom:none;padding-bottom:0">Recent<span></span></div>
+${RECENT.slice(0,4).map(i=>foodRow(i)).join('')}
+`,{tabs:false});
+const C2=phone(`
+<div class="nav"><span class="l">‹ Back</span><span class="m"></span><span class="r">☆</span></div>
+<div class="bigname">Chicken breast, grilled</div>
+<div class="brand">Your food</div>
+${ringCard(330,62,0,7,{size:78,sw:6})}
+<div class="amt"><div class="box on">200<small>g</small></div><div class="box" style="font-size:13px">Dinner<span class="dd">▾</span></div></div>
+`,{tabs:false,overlay:`<div class="kp" style="bottom:19px"><div class="kph"><span class="lab">Amount</span><span class="tog"><span class="on">g</span><span>serv</span><span>oz</span></span><span class="go">${CHECK} Log</span></div>
+<div class="keys"><span>1</span><span>2</span><span>3</span><span class="fn">⌄</span><span>4</span><span>5</span><span>6</span><span class="fn">+<small>10 g</small></span><span>7</span><span>8</span><span>9</span><span class="fn">−<small>10 g</small></span><span>½</span><span>0</span><span>.</span><span class="fn">⌫</span></div></div>`});
+const C3=phone(`
+<div class="cam"><div class="camtop"><span>Cancel</span><span>Dinner ▾</span><span>⚡︎</span></div>
+<div class="pack"><span class="lbl2">PROTEIN CRISP · 20G</span></div>
+<div style="position:absolute;left:30px;top:78px;transform:rotate(-6deg)"><div class="bars">${Array.from({length:30},(_,i)=>`<i style="width:${[1,2,1,3,1,1,2,1,3,2][i%10]}px"></i>`).join('')}<em>0 41570 12345 8</em></div></div>
+<div class="frame"><i></i><i></i><i></i><i></i></div><div class="scan"></div></div>
+`,{tabs:false,overlay:`<div class="sheet" style="bottom:19px;padding-bottom:12px"><div class="grab"></div>
+<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:15px;font-weight:700">Protein Crisp bar</div><div style="font-size:10.5px;color:var(--fg2);margin-top:2px">Open Food Facts · 1 bar = 58 g</div></div><span class="tag g">MATCH</span></div>
+${ringCard(220,20,21,8,{size:72,sw:5})}
+<div style="display:flex;gap:8px;margin-top:10px"><div class="box" style="flex:1;height:38px;font-size:14px">1<small>bar</small></div><div class="pinbtn" style="flex:1.4;height:38px">${CHECK} Log</div></div>
+<div style="text-align:center;font-size:10.5px;color:var(--accent);margin-top:9px;font-weight:600">Wrong food? Fix the numbers</div></div>`});
+put('rowC',[
+[C1,cap('C1','Search and recents','Unchanged apart from colors. Tapping a row (not +) opens C2.')],
+[C2,cap('C2','Amount','Short subtitle, the ring card (updates as you type), then the Amount and Meal boxes right above the keypad. No "After this" line.')],
+[C3,cap('C3','Scan','The result sheet uses a smaller ring card, so a scanned food looks the same as one you open from search.')]]);
+
+put('rowF',[
+[F1,cap('F1','Food inspector','Name, then the ring card straight away: kcal in the middle, a thinner ring (6 px at 86 px) with rounded, gapped segments, and the share · grams · name columns. Amount and meal boxes sit under it; tapping Amount opens the keypad. Then nutrients with % daily value. ••• has Move to meal / Duplicate / Delete.')],
+[C2,cap('C2','Amount (same layout)','The add screen follows the inspector: ring card first, then the Amount and Meal boxes, which now sit right above the keypad, so the thumb and the number being typed are close together.')],
+['','']]);
+// ---------- D
+const D4=phone(`
+<div class="nav"><span class="l">Cancel</span><span class="m">Saved meal</span><span class="r">Save</span></div>
+<div class="bigname">Post-workout shake</div>
+${ringCard(545,50,52,17,{size:80,sw:6})}
+<div class="lbl">Foods<span>4</span></div>
+<div class="fr"><span style="color:var(--fg3);font-size:14px">≡</span><div class="m"><b>Whey protein</b><span>1.5 scoop · 45 g</span></div><div class="k">180</div></div>
+<div class="fr"><span style="color:var(--fg3);font-size:14px">≡</span><div class="m"><b>Whole milk</b><span>300 ml</span></div><div class="k">185</div></div>
+<div class="fr"><span style="color:var(--fg3);font-size:14px">≡</span><div class="m"><b>Banana</b><span>1 large · 136 g</span></div><div class="k">121</div></div>
+<div class="fr"><span style="color:var(--fg3);font-size:14px">≡</span><div class="m"><b>Peanut butter</b><span>½ tbsp · 8 g</span></div><div class="k">59</div></div>
+<div class="addrow"><b>+</b> Add food</div>
+`,{tabs:false});
+const D5=phone(`
+${addHdr('Lunch')}
+<div class="search">${MAG}<span>Search foods</span><span class="bc">${BAR}</span></div>
+<div class="chips"><span>Recent</span><span>Saved</span><span>My foods</span><span class="on">Meals</span></div>
+<div class="fr"><div class="m"><b>Post-workout shake</b><span>4 foods · 545 kcal · ${pcf(50,52,17)}</span></div><span class="pl">+</span></div>
+<div class="fr"><div class="m"><b>Usual breakfast</b><span>4 foods · 653 kcal · ${pcf(36,67,25)}</span></div><span class="pl">+</span></div>
+<div class="fr"><div class="m"><b>Chicken rice bowl</b><span>3 foods · 691 kcal · ${pcf(72,77,9)}</span></div><span class="pl on">${CHECK}</span></div>
+<div class="fr"><div class="m"><b>Pre-workout snack</b><span>2 foods · 315 kcal · ${pcf(21,49,7)}</span></div><span class="pl">+</span></div>
+<div class="lbl" style="border-bottom:none;padding-bottom:0">Copy a day<span></span></div>
+<div class="fr"><div class="m"><b>Yesterday's lunch</b><span>Mon · 3 foods · 705 kcal</span></div><span class="pl">+</span></div>
+<div class="fr"><div class="m"><b>All of yesterday</b><span>Mon · 14 foods · 2,860 kcal</span></div><span style="color:var(--fg2)">›</span></div>
+`,{tabs:false,overlay:`<div class="toast">Added to Lunch · 691 kcal<b>Undo</b></div>`});
+const D5b=phone(`
+${addHdr('Lunch')}
+<div class="search">${MAG}<span>Search foods</span><span class="bc">${BAR}</span></div>
+<div class="chips"><span>Recent</span><span>Saved</span><span>My foods</span><span class="on">Meals</span></div>
+<div class="fr"><div class="m"><b>Post-workout shake</b><span>4 foods · 545 kcal · ${pcf(50,52,17)}</span></div><span class="pl">+</span></div>
+<div class="fr"><div class="m"><b>Usual breakfast</b><span>4 foods · 653 kcal · ${pcf(36,67,25)}</span></div><span class="pl">+</span></div>
+<div class="fr"><div class="m"><b>Chicken rice bowl</b><span>3 foods · 691 kcal · ${pcf(72,77,9)}</span></div><span class="pl">+</span></div>
+<div class="fr"><div class="m"><b>Pre-workout snack</b><span>2 foods · 315 kcal · ${pcf(21,49,7)}</span></div><span class="pl">+</span></div>
+<div class="lbl" style="border-bottom:none;padding-bottom:0">Copy a day<span></span></div>
+<div class="fr"><div class="m"><b>Yesterday's lunch</b><span>Mon · 3 foods · 705 kcal</span></div><span class="pl">+</span></div>
+<div class="fr"><div class="m"><b>All of yesterday</b><span>Mon · 14 foods · 2,860 kcal</span></div><span style="color:var(--fg2)">›</span></div>
+`,{tabs:false,overlay:`<div class="toast">Removed Chicken rice bowl<b>Undo</b></div>`});
+put('rowD',[
+[D4,cap('D4','Saved meal','Totals as the ring card, same as the inspector and Amount. Foods below, built like a routine.')],
+[D5,cap('D5','Meals: tapped +','Tapping + on Chicken rice bowl logged its three foods into Lunch at once. The button is now a blue ✓, and a toast confirms with Undo. No bottom button.')],
+[D5b,cap('D5b','Meals: tapped ✓','Tapping the ✓ took those three foods back off and the button returned to +. Same toast pattern, so either tap can be undone.')]]);
+</script>
+</body></html>

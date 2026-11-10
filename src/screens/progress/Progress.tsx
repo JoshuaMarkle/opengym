@@ -5,7 +5,8 @@ import { CheckGlyph, ChevronDown, ProgressIcon, WarnGlyph } from '../../componen
 import { Sheet, SheetOption } from '../../components/overlays';
 import { cx, EmptyState, LabelAction, LargeHeader, Screen, SectionLabel, Segmented } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
-import { defaultPinned, hasEnoughForProgress, liftPoints, liftTrend } from '../../data/lifts';
+import { hasEnoughForProgress, liftPoints, liftTrend, loggedLifts } from '../../data/lifts';
+import { pickFocus, popularityOf } from '../../lib/popularity';
 import type { Exercise, Units } from '../../db/types';
 import { COMPOUND_IDS } from '../../db/seedExercises';
 import { CHART_RANGES, RANGE_WORDS, type ChartRange } from '../../lib/chart';
@@ -41,6 +42,8 @@ function loadRange(): ChartRange {
 /**
  * Focus lifts (the pinned lifts), in your order. By default the 4 most-logged
  * compound lifts, topped up with your most frequent others (training-logic §21).
+ * Sessions are weighted by popularity (0.6 + 0.04 × score) and a variation
+ * group gets one slot (exercise-popularity §C).
  */
 export function usePinned(): Exercise[] {
   const { settings, history, exerciseMap } = useData();
@@ -52,9 +55,14 @@ export function usePinned(): Exercise[] {
     let ids: string[];
     if (settings.pinnedCustomized) ids = settings.pinnedExerciseIds.filter(live);
     else {
-      const all = defaultPinned(history, live, (id) => exerciseMap.get(id)?.type, settings.oneRmFormula, Infinity);
-      const compound = all.filter((id) => COMPOUND_IDS.has(id)).slice(0, FOCUS_DEFAULT);
-      ids = [...compound, ...all.filter((id) => !compound.includes(id))].slice(0, FOCUS_DEFAULT);
+      const all = loggedLifts(history, live, (id) => exerciseMap.get(id)?.type, settings.oneRmFormula).map((l) => {
+        const e = exerciseMap.get(l.id)!;
+        return { id: l.id, sessions: l.count, last: l.last, popularity: popularityOf(e), group: e.variationGroupId };
+      });
+      const compound = pickFocus(all.filter((c) => COMPOUND_IDS.has(c.id)), FOCUS_DEFAULT);
+      const taken = new Set(compound.map((id) => exerciseMap.get(id)?.variationGroupId).filter((g): g is string => !!g));
+      const rest = pickFocus(all.filter((c) => !compound.includes(c.id)), FOCUS_DEFAULT - compound.length, taken);
+      ids = [...compound, ...rest];
     }
     return ids.map((id) => exerciseMap.get(id)!).filter(Boolean);
   }, [settings.pinnedCustomized, settings.pinnedExerciseIds, settings.oneRmFormula, history, exerciseMap]);

@@ -30,7 +30,8 @@ The app calls `navigator.storage.persist()` at setup, and holds a Wake Lock duri
 
 ```ts
 Exercise        { name, type: 'weight'|'bodyweight'|'bodyweight_plus'|'assisted'|'cardio', muscle, equipment,
-                  variationGroupId?, isCustom, archived, cardioColumns?, distanceUnit?, isRun?, barLb?, platePad? }
+                  variationGroupId?, popularity?, area?: 'forearms'|'lower back', isCustom, archived,
+                  cardioColumns?, distanceUnit?, isRun?, barLb?, platePad? }
 Folder          { name, order, active, archived, schedule? }   // exactly one non-archived folder is active
 Routine         { name, folderId?, order, notes?, code? }
 RoutineExercise { routineId, exerciseId, order, supersetGroup? }
@@ -44,14 +45,20 @@ Settings        { units, theme, weekStart, weightStep, barWeight, dropPercent, k
                   pinnedExerciseIds, pinnedCustomized, lastBackupAt?, historyView,
                   effort: 'off'|'rpe'|'rir', effortAsk: 'every'|'last'|'tap', effortIn1rm, effortExplained?, onboarded,
                   suggestMode: 'off'|'suggest'|'auto', effortTarget, failureLastSetOnly, trainEverything,
-                  experience?, phase?, dismissedTips, suggestOnlyIds?, latelySeen? }
+                  experience?, phase?, dismissedTips, suggestOnlyIds?, librarySeed?, latelySeen? }
 ```
 
 `WorkoutExercise.suggestion`, `gapAnswer`, `Goal` and the settings on the last two lines belong to Training (§13). Goals were added in Dexie schema version 2.
 
 - **Weights by type:** bodyweight stores no weight; BW + added stores only the added weight; assisted stores the assist as a negative number.
 - **Variations:** exercises sharing a `variationGroupId` (Flat / Incline / DB Bench) are variations of each other. Each keeps its own history.
-- **Built-in library:** about 160 exercises in `src/db/seedExercises.ts`, ids `ex-<slug>`, variation groups `vg-…`.
+- **Built-in library:** 209 exercises in `src/db/seedExercises.ts`, ids `ex-<slug>`, variation groups `vg-…`. A launch adds missing built-ins (unless a live exercise already has the name), copies each built-in's `popularity` and `area` from the seed, and applies regrouping once per library version (`Settings.librarySeed`), only to built-ins the user hasn't linked elsewhere.
+- **Popularity** (`design/proposals/exercise-popularity.html`, `src/lib/popularity.ts`): every built-in has a hand-set score 0–10, how many lifters you'd expect to have it in a log; custom exercises count as 6. It is **never shown**: it only decides order, hiding and focus-lift ties.
+  - **Hidden:** score ≤ 3 is left out of the Library and picker lists and of variation chips. It still shows when searched (dimmed, under Rarely used), whenever you've logged it or it's in a routine, in a group's All list, and with Show hidden. Derived, never stored.
+  - **Order:** Library (8.1) and picker (2.5) open on Popular: You do (your 4 most-logged), then Most popular. A–Z is one tap away and remembered on the device. Search: matches you've logged first, then by score, then rarely used ones. Muscle chips filter; Cardio is the last one.
+  - **Area:** Forearms / Lower back add a word to the meta line ("Arms · Forearms · dumbbell") and to search, never a chip.
+  - **Variation chips** (8.2, 4.1): this one, the ones you've logged (most sessions first, always a chip), then the most popular, up to 4. The rest sit behind "All N" (8.8) or "+N" while logging (4.36). Labels come from the whole group.
+  - **Not built yet:** Farmer's Carry and its weight × time type (ROADMAP).
 
 ## 4. Core rules
 
@@ -191,7 +198,7 @@ The rules, constants and worked examples are in `design/training-logic.html` (re
 - **Gaps (§11, 4.32–4.33).** 21+ days since a lift: "Back after N weeks?" — a break (start at 90%, 80% after 42 days, and ramp back over 3 sessions) or sessions that weren't logged (normal suggestions). Answer stored as `WorkoutExercise.gapAnswer`. Ramp sessions stay out of trends. The Coming back phase answers it for every lift. **Off for now** (hidden setting `askAboutGaps`, no UI): asked per lift, it fired on a variation you'd rotated back to while logging its sibling every week. Unasked, a gap gets normal suggestions; the Coming back phase still ramps every lift.
 - **Effort target (§4).** Asked in setup (1.5), editable in Settings (9.11): RIR 0–1, 0–2 (default), 1–3, 2–4, plus "Only the last set to failure".
 - **Status (§15).** Per lift over the last 8 weeks, from set 1's effort-adjusted est. 1RM (reps for bodyweight, weight for assisted): Climbing, Holding, Steady (a slow lift), Slipping (a real drop with most recent sessions under the trend), Maintained, or Not sure yet (< 6 sessions). Judged against each lift's own wobble and pace (blended with a prior by lift type and experience); a new status needs two evaluations in a row. Shown on Progress (7.1) and the trend screen (7.13–7.14) with milestones and, for slipping, "What changed" from the log only.
-- **Focus lifts and Train everything (§21, 7.5).** Up to 5 focus lifts (the pinned lifts; default the 4 most-logged compound lifts) go first and feed Home "Lately". Train everything (on) gives every lift logged in the last 8 weeks a status; off, other lifts collapse to one row.
+- **Focus lifts and Train everything (§21, 7.5).** Up to 5 focus lifts (the pinned lifts; default the 4 most-logged compound lifts, ranked by sessions × (0.6 + 0.04 × popularity), at most one per variation group) go first and feed Home "Lately". The same weighting orders the other lifts on 7.1 and 7.5; with nothing logged, 7.5 lists compound lifts by score. Train everything (on) gives every lift logged in the last 8 weeks a status; off, other lifts collapse to one row.
 - **Goals (§17–§18, 7.12, 7.16–7.19, 5.5).** `Goal { exerciseId, weight, reps, by?, startE1rm, startedAt, startRate, startTau, ownRate?, doneAt? }`, converted to an est. 1RM target so every set counts. Projection follows E₀ + r₀·τ·(1 − e^(−t/τ)) with a slow–fast band; verdicts Ready / Likely / Stretch / Unlikely. Only projected when the last 12 weeks look like a trend; otherwise you pick a pace. Behind = below the "should be here" tick for 2 weeks and not Likely, which offers a later date, a lighter target or keep it. A goal is done when a finished workout has a set at or above it; the summary shows it once with a Likely and a Stretch next step. Deleting a goal confirms first.
 - **Milestones (§19).** Plate numbers per equipment (barbell 135–495 × 1/5/10, …): the last 2 reached and the next 3, the highest "Ready" one when the est. 1RM covers it. Milestones are only a ladder to look at: they never prompt on Home. Goal turns one into a goal, and a milestone that already is a goal links to it (`goalForMilestone`).
 - **Phase (§20, 9.10).** Building, Maintaining (topped-out sets keep their weight, Holding reads Maintained, slip threshold × 5/3, goal dates can pause) or Coming back, with an optional end date.

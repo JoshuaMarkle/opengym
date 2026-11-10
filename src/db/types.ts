@@ -16,6 +16,8 @@ export type CardioColumn = 'distance' | 'speed' | 'incline' | 'level' | 'calorie
 /** How a cardio exercise's distance is shown: follow the units setting (mi / km), or meters (rowers). */
 export type DistanceUnit = 'auto' | 'm';
 export type Muscle = 'chest' | 'back' | 'legs' | 'shoulders' | 'arms' | 'core' | 'other';
+/** A finer area inside a muscle: a word on the meta line and in search, never a filter chip. */
+export type ExerciseArea = 'forearms' | 'lower back';
 export type Equipment = 'barbell' | 'dumbbell' | 'machine' | 'cable' | 'bodyweight' | 'other';
 export type SetKind = 'warmup' | 'working' | 'drop';
 export type RoutineSetKind = 'warmup' | 'working';
@@ -32,6 +34,9 @@ export interface Exercise extends BaseRecord {
   muscle: Muscle;
   equipment: Equipment;
   variationGroupId?: string;
+  /** Built-ins only: 0–10, copied from the seed on every launch. Custom = unset (counts as 6). Never shown. */
+  popularity?: number;
+  area?: ExerciseArea;
   isCustom: boolean;
   archived: boolean;
   deletedAt?: number;
@@ -248,6 +253,8 @@ export interface Settings {
   askAboutGaps?: boolean;
   /** The Previous column also shows today's target, "185 × 8 → 190 × 8" (4.27). Unset = on. */
   showNext?: boolean;
+  /** Library updates already applied to existing rows (regrouping, seed.ts). Unset = 0. */
+  librarySeed?: number;
   /** Home "Lately" lines already shown (so slipping shows once). */
   latelySeen?: string[];
   createdAt: number;
@@ -336,5 +343,6 @@ export const EXERCISE_TYPES: { id: ExerciseType; label: string; hint: string; ex
   { id: 'cardio', label: 'Cardio', hint: 'Time plus up to two columns', example: '20:00 · 1.7 mi' },
 ];
 
+export const areaLabel = (a: ExerciseArea) => (a === 'forearms' ? 'Forearms' : 'Lower back');
 export const muscleLabel = (m: Muscle) => MUSCLES.find((x) => x.id === m)?.label ?? 'Other';
 export const equipmentLabel = (e: Equipment) => EQUIPMENT.find((x) => x.id === e)?.label ?? 'Other';

@@ -54,6 +54,23 @@ export function liftTrend(points: LiftPoint[], range: ChartRange, now = Date.now
   return { values, current, baseline: base, change, pct };
 }
 
+/** Logged lifts with how many sessions produce a trend number, and the latest of them. */
+export function loggedLifts(
+  history: HistoryIndex,
+  isLive: (id: string) => boolean,
+  typeOf: (id: string) => ExerciseType | undefined = () => 'weight',
+  formula: OneRmFormula = 'epley',
+): { id: string; count: number; last: number }[] {
+  return [...history.sessionsByExercise.entries()]
+    .filter(([id]) => isLive(id) && typeOf(id) !== 'cardio')
+    .map(([id, sessions]) => {
+      const type = typeOf(id) ?? 'weight';
+      const counted = sessions.filter((s) => sessionMetric(s.sets, type, formula));
+      return { id, count: counted.length, last: Math.max(0, ...counted.map((s) => s.date)) };
+    })
+    .filter((x) => x.count > 0);
+}
+
 /**
  * Pinned lifts: your choice, or by default your 6 most frequent exercises.
  * Only sessions that produce a trend number count (a lateral raise done for 15s
@@ -66,14 +83,7 @@ export function defaultPinned(
   formula: OneRmFormula = 'epley',
   n = 6,
 ): string[] {
-  return [...history.sessionsByExercise.entries()]
-    .filter(([id]) => isLive(id) && typeOf(id) !== 'cardio')
-    .map(([id, sessions]) => {
-      const type = typeOf(id) ?? 'weight';
-      const counted = sessions.filter((s) => sessionMetric(s.sets, type, formula));
-      return { id, count: counted.length, last: Math.max(0, ...counted.map((s) => s.date)) };
-    })
-    .filter((x) => x.count > 0)
+  return loggedLifts(history, isLive, typeOf, formula)
     .sort((a, b) => b.count - a.count || b.last - a.last)
     .slice(0, n)
     .map((x) => x.id);

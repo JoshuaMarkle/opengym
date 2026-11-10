@@ -9,6 +9,8 @@ import { useData } from '../../data/DataProvider';
 import { goalView, type GoalView } from '../../data/goals';
 import { liftTraining, recentLifts, type LiftTraining } from '../../data/training';
 import type { Exercise, Goal, Units } from '../../db/types';
+import type { HistoryIndex } from '../../data/history';
+import { focusWeight, popularityOf } from '../../lib/popularity';
 import { fmtMonthDay, monthShort } from '../../lib/dates';
 import { goalForMilestone, STATUS_LABEL, WEEK, type MilestoneRow, type Status, type TrendResult, type Verdict, VERDICT_LABEL } from '../../lib/training';
 import { formatNumber, formatWeight, toDisplay, unitLabel } from '../../lib/units';
@@ -79,18 +81,27 @@ export function VerdictTag({ v, className }: { v: Verdict; className?: string })
 
 // ───────────────────────────── data
 
-/** Focus lifts first, then (with Train everything on) every other lift logged in the last 8 weeks. */
+/**
+ * Focus lifts first, then (with Train everything on) every other lift logged in
+ * the last 8 weeks, ordered like automatic focus lifts: sessions weighted by
+ * popularity (exercise-popularity §C), ties A–Z.
+ */
 export function useLiftTrainings(focus: Exercise[]): { focus: LiftTraining[]; others: LiftTraining[] } {
   const { history, settings, exerciseMap } = useData();
   return useMemo(() => {
     const ids = new Set(focus.map((e) => e.id));
-    const others = recentLifts(history, exerciseMap).filter((e) => !ids.has(e.id));
+    const others = recentLifts(history, exerciseMap)
+      .filter((e) => !ids.has(e.id))
+      .sort((a, b) => focusScore(history, b) - focusScore(history, a) || a.name.localeCompare(b.name));
     return {
       focus: focus.filter((e) => e.type !== 'cardio').map((e) => liftTraining(history, e, settings)),
       others: others.map((e) => liftTraining(history, e, settings)),
     };
   }, [focus, history, settings, exerciseMap]);
 }
+
+/** Sessions × (0.6 + 0.04 × popularity): how Progress and 7.5 order lifts that aren't focus lifts. */
+export const focusScore = (history: HistoryIndex, e: Exercise) => (history.sessionsByExercise.get(e.id)?.length ?? 0) * focusWeight(popularityOf(e));
 
 /** Live goals with where each stands today; done goals last. */
 export function useGoalViews(goals: Goal[] | undefined): GoalView[] {

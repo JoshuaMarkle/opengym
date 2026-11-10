@@ -50,8 +50,8 @@ export const CATALOG: Section[] = [
       ['2.2', '"+" menu', 'New routine (into the active folder), new folder, or a blank workout.'],
       ['2.3', 'Routine builder', 'Each exercise with its set rows. LBS "last" reuses last session\'s weight; REPS is a number, a range or empty. Drag ≡ to reorder; swipe a set to delete it.'],
       ['2.4', 'Keypad, reps', 'The logging keypad. On reps the bottom-left key is the range dash (6 – 8) and the decimal is off.'],
-      ['2.5', 'Exercise picker', 'In this routine (untick to remove), Added (in the order ticked), then A–Z. Muscle and Cardio chips filter.'],
-      ['2.6', 'Picker, searching', 'While searching, "In this routine" folds away.'],
+      ['2.5', 'Exercise picker', 'In this routine (untick to remove), Added (in the order ticked), then Popular: You do (your 4 most-logged), then Most popular. A–Z is one tap away. Muscle chips filter, Cardio last.'],
+      ['2.6', 'Picker, searching', 'While searching, "In this routine" folds away. Matches you\'ve logged first, then the most popular, then rarely used ones dimmed.'],
       ['2.7', 'Routines, edit mode', 'Drag routines within or between folders, drag folder headers to reorder. Red − deletes a routine; its history is kept.'],
       ['2.8', 'Hold a routine', 'Long-press shortcuts: start, edit, duplicate, move, delete.'],
       ['2.9', 'Folder options', 'Rename, make active, archive or delete. Deleting a folder never deletes its routines.'],
@@ -75,6 +75,7 @@ export const CATALOG: Section[] = [
       ['PH3.4', 'History', 'The third view tab: search completed workouts within the merged Calendar tab.'],
       ['PH3.5', 'Routines', 'The second view tab: reusable templates, code-only schedule strips, and library actions.'],
       ['PH3.6', 'Calendar, today', 'Today\'s planned workout uses the same compact blue Start pill as Home, including its play glyph, spacing, and label alignment.'],
+      ['4.36', 'Switch variation', 'From +N on the variation chips: every variation, most popular first, yours in blue, rarely used ones dimmed at the end. Tap to switch.'],
       ['4.35', 'Logging a missed workout', 'The header shows the chosen past date while the active timer runs normally.'],
       ['PH3.7', 'Missed day', 'Log a missed routine late, or keep it skipped.'],
       ['PH3.8', 'Future day', 'View a planned routine or change one day; no retrospective stats.'],
@@ -107,7 +108,7 @@ export const CATALOG: Section[] = [
     title: 'During a workout',
     blurb: 'Logging sets. No tab bar; Prev / Next move between exercises.',
     screens: [
-      ['4.1', 'Logging', 'Previous = last time\'s set at the same position; D = you dropped after it. Variation chips appear when variations are linked. On the first exercise the left button becomes All exercises. The grey keyboard button floating bottom-right opens the keypad on the next open set.'],
+      ['4.1', 'Logging', 'Previous = last time\'s set at the same position; D = you dropped after it. Variation chips appear when variations are linked: this one, yours, then the most popular, up to 4, with +N pinned at the end (4.36). On the first exercise the left button becomes All exercises. The grey keyboard button floating bottom-right opens the keypad on the next open set.'],
       ['4.2', 'Keypad', '123 | Plates on the left, lbs | reps and one blue ✓ on the right: it moves to the next box, and on the last box completes the set. No text cursor; the blue outline marks the box. ± steps by the weight step.'],
       ['4.3', 'Drop sets', '"+ Drop" adds a row under the last completed set, prefilled 25% lighter (Settings).'],
       ['4.4', 'Swipes', 'Swipe right → warm-up (moves to the top as W). Swipe left → delete with 5 s Undo.'],
@@ -179,7 +180,7 @@ export const CATALOG: Section[] = [
       ['7.2', 'Lift: est. 1RM', 'Epley from the best working set per session (no warm-ups, drops, or sets over 12 reps). White dots = new all-time highs.'],
       ['7.3', 'Lift: top set', 'The weight actually lifted, reps on each point.'],
       ['7.4', 'Lift: records', 'Best weight at each rep count, with dates. Blue = last 30 days.'],
-      ['7.5', 'Focus lifts', 'Up to 5 lifts that go first and get the Home lines; by default the 4 most-logged compound lifts. Train everything off: only these get statuses, milestones and goals.'],
+      ['7.5', 'Focus lifts', 'Up to 5 lifts that go first and get the Home lines; by default the 4 most-logged compound lifts, nudged toward common lifts and one per variation group. Train everything off: only these get statuses, milestones and goals.'],
       ['7.6', 'Progress, empty', 'Until an exercise has two sessions.'],
       ['7.7', 'Cardio', 'How much, not how fast: minutes, miles or sessions per week. Ranges hide without enough history.'],
       ['7.8', 'Machine detail', 'The weekly chart for one machine, then recent sessions.'],
@@ -201,8 +202,10 @@ export const CATALOG: Section[] = [
     title: 'Exercises',
     blurb: 'The library, from Settings.',
     screens: [
-      ['8.1', 'Library', 'Built-in and custom exercises with how often you\'ve done them.'],
-      ['8.2', 'Exercise screen', 'Stats, linked variations, where it\'s used. Merge fixes duplicates.'],
+      ['8.1', 'Library', 'Popular by default: You do (your 4 most-logged), then the most popular. Rarely used ones are hidden until you search. A–Z is one tap away and remembered.'],
+      ['8.7', 'Library, Arms', 'Forearm exercises are Arms tagged Forearms. The footer counts what\'s hidden and offers Show hidden.'],
+      ['8.2', 'Exercise screen', 'Stats, linked variations (this, yours, then the most popular; the rest behind All N), where it\'s used. Merge fixes duplicates.'],
+      ['8.8', 'All variations', 'Every variation in the group, most popular first, yours with sessions in blue, rarely used ones dimmed under Rarely used.'],
       ['8.3', 'New / edit exercise', 'Name, type (sets the logging columns), muscle, equipment.'],
       ['8.4', 'Link variations', 'Linked exercises become the variation chips in 4.1 and the switch in Progress.'],
       ['8.5', 'Cardio setup', 'Time plus up to two columns, in order; the preview shows the row.'],
@@ -490,7 +493,7 @@ scene('sample', '2.16 2.17 2.18 2.19 3.4 2.15 2.14 2.20 2.21 2.23 2.24 3.5', asy
   await shot('2.24');
 });
 
-scene('sample', '4.1 4.2 4.15 4.16 4.17 4.18 4.3 4.5 4.4 4.6 4.8 4.9 4.10 4.12 4.13 4.19 4.20 4.21 4.22 4.11 4.14 4.7 5.4 3.2 3.3 5.1 5.2 5.3', async ({ p, go, shot, dismiss }) => {
+scene('sample', '4.1 4.36 4.2 4.15 4.16 4.17 4.18 4.3 4.5 4.4 4.6 4.8 4.9 4.10 4.12 4.13 4.19 4.20 4.21 4.22 4.11 4.14 4.7 5.4 3.2 3.3 5.1 5.2 5.3', async ({ p, go, shot, dismiss }) => {
   await go('/');
   await p.click('Start Push', 1500);
   await p.click('Complete set W');
@@ -534,6 +537,10 @@ scene('sample', '4.1 4.2 4.15 4.16 4.17 4.18 4.3 4.5 4.4 4.6 4.8 4.9 4.10 4.12 4
 
   await p.click('Exercise options');
   await shot('4.6');
+  await dismiss();
+
+  await p.click('All 6 variations');
+  await shot('4.36');
   await dismiss();
 
   await p.click('History, charts and records');
@@ -657,9 +664,22 @@ scene('sample', '7.1 7.2 7.3 7.4 7.5 7.7 7.8 7.9', async ({ p, go, shot }) => {
   await shot('7.9');
 });
 
-scene('sample', '8.1 8.2 8.4 8.3 8.5 8.6', async ({ p, go, shot }) => {
+scene('sample', '8.1 8.7 8.8 8.2 8.4 8.3 8.5 8.6', async ({ p, go, shot, dismiss }) => {
+  await p.eval(`localStorage.removeItem('og-exercise-sort')`);
   await go('/exercises');
   await shot('8.1');
+  await p.click({ sel: 'button', text: 'Arms', nth: 0 });
+  await p.find('Show hidden');
+  await p.eval(`[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Show hidden')?.scrollIntoView({ block: 'end' })`);
+  await sleep(400);
+  await shot('8.7');
+  await go('/settings');
+  await go('/exercises');
+  await p.click({ sel: 'button', text: 'Lat Pulldown', start: true, nth: 0 });
+  await p.click('All 8 variations');
+  await shot('8.8');
+  await dismiss();
+  await go('/exercises');
   await p.click({ sel: 'button', text: 'Bench Press', start: true, nth: 0 });
   await shot('8.2');
   await p.click('Edit links');

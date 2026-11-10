@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import { ChevronRight } from '../../components/icons';
 import { Sheet, SheetOption } from '../../components/overlays';
-import { Radio } from '../../components/ui';
+import { cx, Radio } from '../../components/ui';
+import { useData } from '../../data/DataProvider';
+import { variationList } from '../../lib/popularity';
 import type { Exercise } from '../../db/types';
 import { muscleLabel } from '../../db/types';
 import { variationLabels } from '../../lib/variations';
@@ -35,6 +37,12 @@ export function ExerciseMenu({
   const [variationsOpen, setVariationsOpen] = useState(false);
   const variations = useVariations(exercise);
   const labels = useMemo(() => variationLabels(variations), [variations]);
+  const { history } = useData();
+  // Most popular first; rare ones you haven't logged trail, dimmed (B2).
+  const { switchList, rare } = useMemo(() => {
+    const l = variationList(variations, (id) => history.sessionsByExercise.get(id)?.length ?? 0);
+    return { switchList: [...l.main, ...l.rare], rare: new Set(l.rare.map((e) => e.id)) };
+  }, [variations, history]);
   if (!exercise) return null;
   const hasVariations = variations.length > 1;
   const label = hasVariations ? labels.get(exercise.id) : undefined;
@@ -101,7 +109,7 @@ export function ExerciseMenu({
         title="Switch variation"
         subtitle="Each variation keeps its own history. Unticked sets refill from the new one's last session."
       >
-        {variations.map((v) => (
+        {switchList.map((v) => (
           <button
             key={v.id}
             type="button"
@@ -110,7 +118,7 @@ export function ExerciseMenu({
               onClose();
               if (v.id !== exercise.id) onSwitch(v.id);
             }}
-            className="flex min-h-[52px] w-full items-center gap-3 border-b border-line text-left"
+            className={cx('flex min-h-[52px] w-full items-center gap-3 border-b border-line text-left', rare.has(v.id) && 'opacity-55')}
           >
             <Radio on={v.id === exercise.id} />
             <span className="min-w-0 flex-1">

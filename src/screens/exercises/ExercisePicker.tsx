@@ -1,11 +1,13 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { FullScreen } from '../../components/overlays';
-import { BarButton, Check, Chips, cx, Screen, SearchField, Tag, TopBar } from '../../components/ui';
+import { BarButton, Check, Chips, cx, Screen, SearchField, Segmented, Tag, TopBar } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
-import { equipmentLabel, MUSCLES, muscleLabel, type Exercise, type Muscle } from '../../db/types';
+import { areaLabel, equipmentLabel, MUSCLES, muscleLabel, type Exercise, type Muscle } from '../../db/types';
 import { columnsLabel } from '../../lib/cardio';
 import { TYPE_TAG } from '../../lib/sets';
+import { isShown, rankPopular, visibleAZ } from '../../lib/popularity';
 import { ExerciseFormView } from './ExerciseFormView';
+import { exerciseMeta, HiddenFooter, sessionsText, useExerciseSort, useInRoutines } from './popular';
 
 export interface PickerCurrent {
   exerciseId: string;
@@ -16,11 +18,11 @@ export interface PickerCurrent {
 
 export type MuscleFilter = Muscle | 'all' | 'cardio';
 
-/** All, Cardio, then the muscles (8.6). */
+/** All, the muscles, then Cardio last (8.6, popularity A1). */
 export const FILTER_CHIPS: { value: MuscleFilter; label: string }[] = [
   { value: 'all', label: 'All' },
-  { value: 'cardio', label: 'Cardio' },
   ...MUSCLES.map((m) => ({ value: m.id as MuscleFilter, label: m.label })),
+  { value: 'cardio', label: 'Cardio' },
 ];
 
 export function searchExercises(list: Exercise[], query: string, muscle: MuscleFilter): Exercise[] {
@@ -30,7 +32,8 @@ export function searchExercises(list: Exercise[], query: string, muscle: MuscleF
     if (e.archived) return false;
     if (muscle === 'cardio' ? e.type !== 'cardio' : muscle !== 'all' && (e.muscle !== muscle || e.type === 'cardio')) return false;
     if (!tokens.length) return true;
-    const hay = (e.type === 'cardio' ? `${e.name} cardio` : `${e.name} ${muscleLabel(e.muscle)} ${equipmentLabel(e.equipment)}`).toLowerCase();
+    // Area words ("forearms", "lower back") make search find them without a chip.
+    const hay = (e.type === 'cardio' ? `${e.name} cardio` : `${e.name} ${muscleLabel(e.muscle)} ${e.area ? areaLabel(e.area) : ''} ${equipmentLabel(e.equipment)}`).toLowerCase();
     return tokens.every((t) => hay.includes(t));
   });
   if (!q) return filtered;
@@ -43,7 +46,8 @@ export function searchExercises(list: Exercise[], query: string, muscle: MuscleF
 
 /**
  * The exercise picker (2.5, 2.6, 4.14). Multi: "In this routine/workout" (untick
- * to remove), "Added" in tick order, then A–Z. Single: tap one to pick it.
+ * to remove), "Added" in tick order, then Popular (You do, Most popular) or
+ * A–Z; searching ranks yours first and dims rare matches (A2). Single: tap one to pick it.
  */
 export function ExercisePicker({
   open,
@@ -112,11 +116,20 @@ function PickerBody({
   const [creating, setCreating] = useState(false);
 
   const currentIds = useMemo(() => new Set(current.map((c) => c.exerciseId)), [current]);
-  const hidden = useMemo(() => new Set([...currentIds, ...added, ...excludeIds]), [currentIds, added, excludeIds]);
+  const skip = useMemo(() => new Set([...currentIds, ...added, ...excludeIds]), [currentIds, added, excludeIds]);
   const searching = query.trim().length > 0;
-  const results = useMemo(() => searchExercises(exercises, query, muscle).filter((e) => !hidden.has(e.id)), [exercises, query, muscle, hidden]);
-
+  const results = useMemo(() => searchExercises(exercises, query, muscle).filter((e) => !skip.has(e.id)), [exercises, query, muscle, skip]);
+  const inRoutines = useInRoutines();
+  const [sort, setSort] = useExerciseSort();
+  const [showHidden, setShowHidden] = useState(false);
   const sessions = (id: string) => history.sessionsByExercise.get(id)?.length ?? 0;
+  const keep = (id: string) => inRoutines.has(id);
+  // Popular (A2): yours, then most popular, rare matches dimmed under Rarely used. A–Z hides the same ones.
+  const ranked = useMemo(
+    () => (searching || sort === 'popular' ? rankPopular(results, { sessions, keep, searching, showHidden }) : null),
+    [results, searching, sort, showHidden, history, inRoutines], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const az = useMemo(() => (ranked ? null : visibleAZ(results, { sessions, keep, showHidden })), [ranked, results, showHidden, history, inRoutines]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const tick = (id: string) => {
     if (mode === 'single') {
@@ -144,13 +157,13 @@ function PickerBody({
     );
   }
 
-  const row = (e: Exercise, opts: { on?: boolean; struck?: boolean; locked?: boolean; sub?: ReactNode; onClick: () => void }) => (
+  const row = (e: Exercise, opts: { on?: boolean; struck?: boolean; locked?: boolean; dim?: boolean; sub?: ReactNode; onClick: () => void }) => (
     <button
       key={e.id}
       type="button"
       onClick={opts.onClick}
       disabled={opts.locked}
-      className="grid min-h-[52px] w-full grid-cols-[1fr_28px] items-center gap-3 border-b border-line text-left"
+      className={cx('grid min-h-[52px] w-full grid-cols-[1fr_28px] items-center gap-3 border-b border-line text-left', opts.dim && 'opacity-55')}
     >
       <span className="min-w-0 py-1.5">
         <b className={cx('block truncate text-[16px] font-semibold', opts.struck && 'text-fg3 line-through')}>
@@ -172,8 +185,8 @@ function PickerBody({
 
   // A–Z with letter headers.
   const letters: { letter: string; items: Exercise[] }[] = [];
-  if (!searching) {
-    for (const e of results) {
+  if (az) {
+    for (const e of az.items) {
       const l = e.name[0].toUpperCase();
       const last = letters[letters.length - 1];
       if (last?.letter === l) last.items.push(e);
@@ -184,9 +197,10 @@ function PickerBody({
   const sub = (e: Exercise) => {
     const n = sessions(e.id);
     if (e.type === 'cardio') return columnsLabel(e, settings.units);
-    const base = searching ? `${muscleLabel(e.muscle)} · ${equipmentLabel(e.equipment).toLowerCase()}` : muscleLabel(e.muscle);
-    return n ? `${base} · ${n} ${n === 1 ? 'session' : 'sessions'}` : base;
+    const base = exerciseMeta(e, settings.units, !searching);
+    return n ? `${base} · ${sessionsText(n)}` : base;
   };
+  const pick = (e: Exercise, dim = false) => row(e, { sub: sub(e), dim, onClick: () => tick(e.id) });
 
   return (
     <Screen
@@ -215,6 +229,17 @@ function PickerBody({
               value={muscle}
               onChange={setMuscle}
             />
+            {!searching && (
+              <Segmented
+                className="mt-2.5"
+                options={[
+                  { value: 'popular', label: 'Popular' },
+                  { value: 'az', label: 'A–Z' },
+                ]}
+                value={sort}
+                onChange={setSort}
+              />
+            )}
           </div>
         </>
       }
@@ -254,23 +279,41 @@ function PickerBody({
         </>
       )}
 
-      {searching ? (
+      {ranked && (
         <>
-          {groupLabel(`Results for "${query.trim()}"`, results.length)}
-          {results.map((e) => row(e, { sub: sub(e), onClick: () => tick(e.id) }))}
-          {!results.length && <p className="py-6 text-center text-[14px] text-fg2">No exercise called "{query.trim()}" yet.</p>}
+          {ranked.youDo.length > 0 && (
+            <>
+              {groupLabel('You do', undefined, 'accent')}
+              {ranked.youDo.map((e) => pick(e))}
+            </>
+          )}
+          {ranked.popular.length > 0 && (
+            <>
+              {groupLabel('Most popular', ranked.popular.length)}
+              {ranked.popular.map((e) => pick(e))}
+            </>
+          )}
+          {ranked.rare.length > 0 && (
+            <>
+              {groupLabel('Rarely used', ranked.rare.length)}
+              {ranked.rare.map((e) => pick(e, true))}
+            </>
+          )}
+          {searching && !results.length && <p className="py-6 text-center text-[14px] text-fg2">No exercise called "{query.trim()}" yet.</p>}
         </>
-      ) : (
+      )}
+      {az && (
         <>
           {groupLabel('A – Z')}
           {letters.map((g) => (
             <div key={g.letter}>
               <div className="sticky top-0 z-[1] bg-bg pt-2 pb-0.5 text-[12px] font-bold text-fg2">{g.letter}</div>
-              {g.items.map((e) => row(e, { sub: sub(e), onClick: () => tick(e.id) }))}
+              {g.items.map((e) => pick(e, !isShown(e, sessions, keep)))}
             </div>
           ))}
         </>
       )}
+      {!searching && <HiddenFooter count={ranked?.hiddenCount ?? az?.hiddenCount ?? 0} shown={showHidden} onToggle={() => setShowHidden((v) => !v)} />}
 
       <button type="button" onClick={() => setCreating(true)} className="flex h-[52px] w-full items-center gap-2.5 text-[16px] font-semibold text-accent">
         <span className="flex h-[24px] w-[24px] items-center justify-center rounded-full bg-accent text-[17px] leading-none text-white">+</span>

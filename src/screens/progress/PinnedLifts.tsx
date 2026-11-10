@@ -8,10 +8,13 @@ import { BarButton, Check, cx, Screen, SearchField, TopBar } from '../../compone
 import { useData } from '../../data/DataProvider';
 import { updateSettings } from '../../data/settings';
 import type { Exercise } from '../../db/types';
+import { COMPOUND_IDS } from '../../db/seedExercises';
+import { byPopularity, isRare } from '../../lib/popularity';
 import { ToggleRow } from '../settings/Training';
+import { focusScore } from './TrainingViews';
 import { FOCUS_MAX, usePinned } from './Progress';
 
-/** 7.5 (F1): focus lifts go first in Progress and get the Home lines. Up to 5. */
+/** 7.5 (F1, popularity C1): focus lifts go first in Progress and get the Home lines. Up to 5. */
 export function PinnedLifts() {
   const navigate = useNavigate();
   const { exercises, history, settings } = useData();
@@ -21,11 +24,17 @@ export function PinnedLifts() {
   const full = pinned.length >= FOCUS_MAX;
   const sessions = (id: string) => history.sessionsByExercise.get(id)?.length ?? 0;
 
+  // Your lifts by sessions weighted by popularity (§C). Nothing logged yet: compound lifts by score.
   const others = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const fresh = !q && !exercises.some((e) => sessions(e.id) > 0);
     return exercises
-      .filter((e) => e.type !== 'cardio' && !pinnedIds.includes(e.id) && (q ? e.name.toLowerCase().includes(q) : sessions(e.id) > 0))
-      .sort((a, b) => sessions(b.id) - sessions(a.id) || a.name.localeCompare(b.name));
+      .filter((e) => {
+        if (e.type === 'cardio' || pinnedIds.includes(e.id)) return false;
+        if (q) return e.name.toLowerCase().includes(q);
+        return fresh ? COMPOUND_IDS.has(e.id) && !isRare(e) : sessions(e.id) > 0;
+      })
+      .sort((a, b) => focusScore(history, b) - focusScore(history, a) || byPopularity(a, b));
   }, [exercises, pinnedIds.join(','), query, history]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const save = (ids: string[]) => void updateSettings({ pinnedExerciseIds: ids, pinnedCustomized: true });
@@ -62,8 +71,11 @@ export function PinnedLifts() {
           ? 'Focus lifts go first in Progress and get the Home lines. Up to 5.'
           : 'Only focus lifts get trends, milestones and goals. Skipping legs is fine: every lift still gets workout suggestions and records.'}
       </p>
+      {!settings.pinnedCustomized && pinned.length > 0 && (
+        <p className="mt-2 text-[13px] leading-snug text-fg2">Picked for you: the compound lifts you log most, nudged toward common lifts, one per variation group. Drag or tick to choose your own.</p>
+      )}
       <div className="mt-4 flex justify-between pb-1 text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase">
-        <span>Focus · drag to order</span>
+        <span>{settings.pinnedCustomized ? 'Focus · drag to order' : 'Focus · automatic'}</span>
         <span className="font-semibold tracking-normal">
           {pinned.length} of {FOCUS_MAX}
         </span>

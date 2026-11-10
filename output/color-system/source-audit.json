@@ -1,0 +1,470 @@
+[
+  {
+    "file": "src/components/TabLayout.tsx",
+    "line": 60,
+    "colors": [
+      "#2e8bff"
+    ],
+    "source": "className=\"anim-fade mx-2.5 mb-1.5 flex h-12 flex-none items-center justify-between rounded-[13px] border border-accent/50 bg-[color-mix(in_srgb,#2e8bff_14%,var(--og-bg))] px-3.5 text-left active:opacity-80\""
+  },
+  {
+    "file": "src/components/charts.tsx",
+    "line": 112,
+    "colors": [
+      "#2e8bff"
+    ],
+    "source": "stroke=\"#2e8bff\""
+  },
+  {
+    "file": "src/components/charts.tsx",
+    "line": 126,
+    "colors": [
+      "#2e8bff"
+    ],
+    "source": "<circle cx={x(points[points.length - 1].date)} cy={y(points[points.length - 1].value)} r=\"5.5\" fill=\"#2e8bff\" stroke=\"var(--og-bg)\" strokeWidth=\"2\" />"
+  },
+  {
+    "file": "src/components/charts.tsx",
+    "line": 136,
+    "colors": [
+      "#2e8bff"
+    ],
+    "source": "<circle cx={x(p.date)} cy={y(p.value)} r=\"3.6\" fill={i === points.length - 1 ? '#2e8bff' : 'var(--og-fg)'} />"
+  },
+  {
+    "file": "src/components/charts.tsx",
+    "line": 167,
+    "colors": [
+      "#2e8bff"
+    ],
+    "source": "<polyline points={pts.join(' ')} fill=\"none\" stroke=\"#2e8bff\" strokeWidth=\"1.8\" strokeLinejoin=\"round\" strokeLinecap=\"round\" />"
+  },
+  {
+    "file": "src/components/charts.tsx",
+    "line": 218,
+    "colors": [
+      "#2e8bff"
+    ],
+    "source": "return <rect key={i} x={padL + slot * i + (slot - bw) / 2} y={padT + ih - h} width={bw} height={h} rx={Math.min(3, bw / 3)} fill={i === values.length - 1 ? '#2e8bff' : 'var(--og-bar)'} />;"
+  },
+  {
+    "file": "src/components/gestures.tsx",
+    "line": 165,
+    "colors": [
+      "#4a4a4a",
+      "#2e2e2e"
+    ],
+    "source": "<div className={cx('absolute inset-0 flex items-center pl-4 text-[14px] font-bold text-white transition-colors', armed ? 'bg-[#4a4a4a]' : 'bg-[#2e2e2e]')}>"
+  },
+  {
+    "file": "src/data/DataProvider.tsx",
+    "line": 55,
+    "colors": [
+      "#ffffff",
+      "#000000"
+    ],
+    "source": "document.querySelector('meta[name=\"theme-color\"]')?.setAttribute('content', t === 'light' ? '#ffffff' : '#000000');"
+  },
+  {
+    "file": "src/index.css",
+    "line": 6,
+    "colors": [
+      "#000000"
+    ],
+    "source": "--og-bg: #000000;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 7,
+    "colors": [
+      "#3a3a3a"
+    ],
+    "source": "--og-logo-bar: #3a3a3a;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 8,
+    "colors": [
+      "#161616"
+    ],
+    "source": "--og-surface: #161616;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 9,
+    "colors": [
+      "#1c1c1c"
+    ],
+    "source": "--og-surface-2: #1c1c1c;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 10,
+    "colors": [
+      "#101010"
+    ],
+    "source": "--og-raised: #101010;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 11,
+    "colors": [
+      "#1f1f1f"
+    ],
+    "source": "--og-line: #1f1f1f;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 12,
+    "colors": [
+      "#2c2c2c"
+    ],
+    "source": "--og-line-strong: #2c2c2c;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 13,
+    "colors": [
+      "#ffffff"
+    ],
+    "source": "--og-fg: #ffffff;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 14,
+    "colors": [
+      "#8e8e8e"
+    ],
+    "source": "--og-fg2: #8e8e8e;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 15,
+    "colors": [
+      "#555555"
+    ],
+    "source": "--og-fg3: #555555;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 16,
+    "colors": [
+      "#0d0d0d"
+    ],
+    "source": "--og-kp-bg: #0d0d0d;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 17,
+    "colors": [
+      "#1e1e1e"
+    ],
+    "source": "--og-key: #1e1e1e;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 18,
+    "colors": [
+      "#2a2a2a"
+    ],
+    "source": "--og-key-fn: #2a2a2a;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 20,
+    "colors": [
+      "#2ee66b"
+    ],
+    "source": "--og-tip: #2ee66b;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 21,
+    "colors": [
+      "#0b1a2e"
+    ],
+    "source": "--og-input-edit: #0b1a2e;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 22,
+    "colors": [
+      "#1c1c1c"
+    ],
+    "source": "--og-chart-grid: #1c1c1c;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 23,
+    "colors": [
+      "#4a4a4a"
+    ],
+    "source": "--og-chart-dot: #4a4a4a;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 24,
+    "colors": [
+      "#3a3a3a"
+    ],
+    "source": "--og-bar: #3a3a3a;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 30,
+    "colors": [
+      "#ffffff"
+    ],
+    "source": "--og-bg: #ffffff;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 31,
+    "colors": [
+      "#c8c8c8"
+    ],
+    "source": "--og-logo-bar: #c8c8c8;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 32,
+    "colors": [
+      "#f5f5f5"
+    ],
+    "source": "--og-surface: #f5f5f5;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 33,
+    "colors": [
+      "#ececec"
+    ],
+    "source": "--og-surface-2: #ececec;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 34,
+    "colors": [
+      "#ffffff"
+    ],
+    "source": "--og-raised: #ffffff;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 35,
+    "colors": [
+      "#e5e5e5"
+    ],
+    "source": "--og-line: #e5e5e5;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 36,
+    "colors": [
+      "#d4d4d4"
+    ],
+    "source": "--og-line-strong: #d4d4d4;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 37,
+    "colors": [
+      "#000000"
+    ],
+    "source": "--og-fg: #000000;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 38,
+    "colors": [
+      "#6b6b6b"
+    ],
+    "source": "--og-fg2: #6b6b6b;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 39,
+    "colors": [
+      "#a8a8a8"
+    ],
+    "source": "--og-fg3: #a8a8a8;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 40,
+    "colors": [
+      "#e4e4e7"
+    ],
+    "source": "--og-kp-bg: #e4e4e7;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 41,
+    "colors": [
+      "#ffffff"
+    ],
+    "source": "--og-key: #ffffff;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 42,
+    "colors": [
+      "#d1d1d6"
+    ],
+    "source": "--og-key-fn: #d1d1d6;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 44,
+    "colors": [
+      "#12a344"
+    ],
+    "source": "--og-tip: #12a344;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 45,
+    "colors": [
+      "#e8f2ff"
+    ],
+    "source": "--og-input-edit: #e8f2ff;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 46,
+    "colors": [
+      "#ececec"
+    ],
+    "source": "--og-chart-grid: #ececec;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 47,
+    "colors": [
+      "#c4c4c4"
+    ],
+    "source": "--og-chart-dot: #c4c4c4;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 48,
+    "colors": [
+      "#c8c8c8"
+    ],
+    "source": "--og-bar: #c8c8c8;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 69,
+    "colors": [
+      "#2e8bff"
+    ],
+    "source": "--color-accent: #2e8bff;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 70,
+    "colors": [
+      "#ff8c1a"
+    ],
+    "source": "--color-warn: #ff8c1a;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 71,
+    "colors": [
+      "#ff3b3b"
+    ],
+    "source": "--color-danger: #ff3b3b;"
+  },
+  {
+    "file": "src/index.css",
+    "line": 72,
+    "colors": [
+      "#2e8bff"
+    ],
+    "source": "--color-done: color-mix(in srgb, #2e8bff 14%, var(--og-bg));"
+  },
+  {
+    "file": "src/index.css",
+    "line": 74,
+    "colors": [
+      "#2e8bff"
+    ],
+    "source": "--color-effort: color-mix(in srgb, #2e8bff 45%, var(--og-bg));"
+  },
+  {
+    "file": "src/index.css",
+    "line": 76,
+    "colors": [
+      "#2e8bff"
+    ],
+    "source": "--color-effort-glow: color-mix(in srgb, #2e8bff 55%, transparent);"
+  },
+  {
+    "file": "src/index.css",
+    "line": 79,
+    "colors": [
+      "#2e8bff"
+    ],
+    "source": "--color-accent-soft: color-mix(in srgb, #2e8bff 12%, transparent);"
+  },
+  {
+    "file": "src/index.css",
+    "line": 122,
+    "colors": [
+      "#2e8bff"
+    ],
+    "source": "outline: 2px solid #2e8bff;"
+  },
+  {
+    "file": "src/lib/logo.ts",
+    "line": 24,
+    "colors": [
+      "#000000",
+      "#3A3A3A"
+    ],
+    "source": "dark: { bg: '#000000', bar: '#3A3A3A' },"
+  },
+  {
+    "file": "src/lib/logo.ts",
+    "line": 25,
+    "colors": [
+      "#FFFFFF",
+      "#C8C8C8"
+    ],
+    "source": "light: { bg: '#FFFFFF', bar: '#C8C8C8' },"
+  },
+  {
+    "file": "src/lib/logo.ts",
+    "line": 26,
+    "colors": [
+      "#2E8BFF"
+    ],
+    "source": "plate: '#2E8BFF',"
+  },
+  {
+    "file": "src/screens/home/Home.tsx",
+    "line": 134,
+    "colors": [
+      "#2e8bff"
+    ],
+    "source": "isToday && (live ? 'shadow-[inset_0_0_0_2px_var(--og-tip)]' : done ? 'shadow-[0_0_0_2px_var(--og-bg),0_0_0_4px_#2e8bff]' : 'shadow-[inset_0_0_0_2px_var(--og-fg)]'),"
+  },
+  {
+    "file": "src/screens/workout/Ring.tsx",
+    "line": 20,
+    "colors": [
+      "#2e8bff"
+    ],
+    "source": "{frac > 0 && <circle cx={size / 2} cy={size / 2} r={r} fill=\"none\" stroke=\"#2e8bff\" strokeWidth=\"2.5\" strokeDasharray={`${c * frac} ${c}`} strokeLinecap=\"round\" />}"
+  },
+  {
+    "file": "src/screens/workout/Summary.tsx",
+    "line": 130,
+    "colors": [
+      "#ff3b3b"
+    ],
+    "source": "r.cmp.direction === 'down' && 'bg-[color-mix(in_srgb,#ff3b3b_18%,var(--og-bg))] text-danger',"
+  }
+]

@@ -1,0 +1,93 @@
+[
+  {
+    "role": "Primary text",
+    "foreground": "#FFFFFF",
+    "background": "#000000",
+    "ratio": 21.0,
+    "minimum": 4.5
+  },
+  {
+    "role": "Secondary text",
+    "foreground": "#A1A1AA",
+    "background": "#000000",
+    "ratio": 8.19,
+    "minimum": 4.5
+  },
+  {
+    "role": "Secondary on surface",
+    "foreground": "#A1A1AA",
+    "background": "#1C1C1C",
+    "ratio": 6.65,
+    "minimum": 4.5
+  },
+  {
+    "role": "Blue text",
+    "foreground": "#007AFF",
+    "background": "#000000",
+    "ratio": 5.23,
+    "minimum": 4.5
+  },
+  {
+    "role": "Blue on done",
+    "foreground": "#007AFF",
+    "background": "#001124",
+    "ratio": 4.73,
+    "minimum": 4.5
+  },
+  {
+    "role": "Cyan text",
+    "foreground": "#2DAFC3",
+    "background": "#000000",
+    "ratio": 8.03,
+    "minimum": 4.5
+  },
+  {
+    "role": "Gold text",
+    "foreground": "#EBC22D",
+    "background": "#000000",
+    "ratio": 12.29,
+    "minimum": 4.5
+  },
+  {
+    "role": "Success text",
+    "foreground": "#32C66D",
+    "background": "#000000",
+    "ratio": 9.43,
+    "minimum": 4.5
+  },
+  {
+    "role": "Warning text",
+    "foreground": "#FF9500",
+    "background": "#000000",
+    "ratio": 9.55,
+    "minimum": 4.5
+  },
+  {
+    "role": "Danger text",
+    "foreground": "#FF453A",
+    "background": "#000000",
+    "ratio": 6.16,
+    "minimum": 4.5
+  },
+  {
+    "role": "Primary button",
+    "foreground": "#FFFFFF",
+    "background": "#0066D6",
+    "ratio": 5.42,
+    "minimum": 4.5
+  },
+  {
+    "role": "Destructive button",
+    "foreground": "#FFFFFF",
+    "background": "#C9342B",
+    "ratio": 5.24,
+    "minimum": 4.5
+  },
+  {
+    "role": "Control outline",
+    "foreground": "#71717A",
+    "background": "#1C1C1C",
+    "ratio": 3.53,
+    "minimum": 3
+  }
+]

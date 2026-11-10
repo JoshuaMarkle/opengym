@@ -19,6 +19,8 @@ These touch principle 1, logging is the product.
 
 5. **Bring back the gap question, smarter.** "Back after N weeks?" (4.32) is off (`Settings.askAboutGaps`). It looked at one lift alone, so Cable Fly asked "Back after 71 weeks?" mid-block while DB Fly, its variation sibling, was logged weekly; after a real break every lift would ask in turn. Before turning it back on: count the variation group (and probably any training at all) as recent activity, and ask once per workout, or once on Home, when the whole log has the gap. `src/data/training.ts`.
 
+6. **Weight × time exercises (Farmer's Carry).** The popularity proposal (`design/proposals/exercise-popularity.html` §D, §H) adds Farmer's Carry with a new `weight_time` type: LBS and TIME columns, skipped by est. 1RM and records, Progress charts the heaviest weight with time as the tiebreak. Everything else in that proposal shipped; this was left out because the type touches the set table, keypad, Previous, routines, history, records, training and import. Add the seed entry (popularity 5, area forearms) when the type exists. Timed holds (dead hang, plank) could reuse it.
+
 ## 3. Progress that agrees with itself
 
 1. **Status and % can contradict.** Rows on 7.1 read "Lat Pulldown · Holding" next to a green "▲ +14%": the status covers 8 weeks, the % follows the range picker (3M). The lift screen (7.2) has the same pair: "Holding ±0% · 8 wk" above "▲ 34 lb (22%) in 6 months". Show the range next to the % ("+14% · 3M"), or grey the % out when the status disagrees with it.
