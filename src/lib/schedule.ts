@@ -117,6 +117,7 @@ export function planDays(input: PlanInput): PlanDay[] {
   let vi = -1;
   let v: ScheduleVersion | undefined;
   let p = 0;
+  let cycleDelay = 0;
   let carry: { routineId: string; origin: PlanDay }[] = [];
 
   for (let ts = startTs; ts <= toTs; ts = addDays(ts, 1)) {
@@ -124,6 +125,7 @@ export function planDays(input: PlanInput): PlanDay[] {
     while (vi + 1 < versions.length && versions[vi + 1].from <= key) {
       v = versions[++vi];
       p = startIndex(v);
+      cycleDelay = 0;
       carry = [];
     }
     const doneIds = trained.get(key) ?? [];
@@ -145,10 +147,13 @@ export function planDays(input: PlanInput): PlanDay[] {
       day.cycleDay = p % n;
       base = slot(v.days[p % n]);
     } else {
-      day.cycleDay = mod(daysBetween(parseDayKey(v.anchor ?? v.from), ts), n);
+      day.cycleDay = mod(daysBetween(parseDayKey(v.anchor ?? v.from), ts) - cycleDelay, n);
       base = slot(v.days[day.cycleDay]);
     }
 
+    // PH3.14: a delay changes later cycle dates too, even without individual overrides.
+    // Keep this derived from the schedule so live views and reloaded views agree.
+    if (v.kind === 'cycle' && mod(cycleDelay, n) !== 0) day.changed = true;
     const ov = schedule.overrides[key];
     let planned = base;
     let movedOut = false;
@@ -180,10 +185,12 @@ export function planDays(input: PlanInput): PlanDay[] {
       if (v.kind === 'weekly' && v.onMiss === 'rest' && !skipped.has(key)) carry.push({ routineId: planned, origin: day });
     }
 
+    if (v.kind === 'cycle' && ov?.cycleAction === 'delay') cycleDelay++;
     if (waits) {
       const cur = slot(v.days[p % n]);
       const did = isPast ? didTrain : true; // today and later: assume you train as planned
-      if (ov) {
+      if (ov?.cycleAction === 'skip') p++;
+      else if (ov) {
         // A one-off change only moves the cycle on if it was the cycle's own workout.
         if (ov.routineId !== null && ov.routineId === cur && did) p++;
       } else if (cur === null) {
@@ -239,12 +246,30 @@ export function resetDayPatch(schedule: PlanSchedule, key: string): OverridePatc
   const ov = schedule.overrides[key];
   const patch: OverridePatch = { [key]: undefined };
   if (ov?.pair && schedule.overrides[ov.pair]?.pair === key) patch[ov.pair] = undefined;
+  const delayFrom = ov?.delayFrom;
+  if (delayFrom) for (const [k, other] of Object.entries(schedule.overrides)) {
+    if (other.delayFrom === delayFrom) patch[k] = undefined;
+  }
   return patch;
 }
 
 /** Replace a day's workout with another routine (or rest), just for that day. */
 export function setDayPatch(key: string, routineId: ScheduleSlot): OverridePatch {
   return { [key]: { routineId } };
+}
+
+/** PH3.12: skip a cycle slot without holding it, including Wait for me cycles. */
+export function skipDayPatch(key: string): OverridePatch {
+  return { [key]: { routineId: null, cycleAction: 'skip' } };
+}
+
+/** PH3.12: insert rest days before a cycle workout, shifting the whole remaining cycle. */
+export function delayCyclePatch(from: string, to: string): OverridePatch {
+  const patch: OverridePatch = {};
+  for (let key = from; key < to; key = addDayKey(key, 1)) {
+    patch[key] = { routineId: null, cycleAction: 'delay', delayFrom: from };
+  }
+  return patch;
 }
 
 /** Move a day's workout to another day. The target's own workout, if any, is replaced. */

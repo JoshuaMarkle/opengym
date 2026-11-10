@@ -31,12 +31,15 @@ export function EffortBadge({
   onPress,
   inset,
   done,
+  historyEdit = false,
 }: {
   text?: string;
   tone: BadgeTone;
   label: string;
   onPress?: () => void;
   inset?: boolean;
+  /** 6.7: lower badge with a page-colored cut-out and neutral logged state. */
+  historyEdit?: boolean;
   /** The set is done: a logged badge turns blue and the cut-out ring takes the done row's colour. */
   done?: boolean;
 }) {
@@ -46,7 +49,7 @@ export function EffortBadge({
   const ring =
     tone === 'active' || tone === 'add' || (tone === 'logged' && done) ? 'var(--color-accent)' : 'var(--color-fg3)';
   // Inside the box the cut-out ring would just repeat the box's fill, so it's left clear.
-  const ground = inset ? 'transparent' : done ? 'var(--color-done)' : 'var(--color-bg)';
+  const ground = historyEdit ? 'var(--color-bg)' : inset ? 'transparent' : done ? 'var(--color-done)' : 'var(--color-bg)';
   const lift = tone === 'active' ? '0 0 10px var(--color-effort-glow)' : '0 3px 8px var(--color-badge-shadow)';
   const pill = (
     <span
@@ -76,7 +79,7 @@ export function EffortBadge({
       )}
     </span>
   );
-  const place = inset ? 'right-[4px] bottom-[3px]' : 'right-[-8px] bottom-0 translate-y-1/2';
+  const place = historyEdit ? 'right-[4px] bottom-[-4px]' : inset ? 'right-[4px] bottom-[3px]' : 'right-[-8px] bottom-0 translate-y-1/2';
   if (!onPress)
     return (
       <span aria-hidden className={cx('pointer-events-none absolute z-[2] flex', place)}>

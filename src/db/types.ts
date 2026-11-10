@@ -78,6 +78,10 @@ export interface ScheduleVersion {
 
 /** A one-off change to a single day (2.21). */
 export interface DayOverride {
+  /** Explicit cycle action: skip advances, delay holds the cycle for this day. */
+  cycleAction?: 'skip' | 'delay';
+  /** Shared origin for undoing all days of a cycle delay. */
+  delayFrom?: string;
   routineId: ScheduleSlot;
   /** Part of a move or swap (shown grey-outlined; a moved-out day shows →). */
   moved?: boolean;

@@ -59,22 +59,23 @@ export function BarButton({
     <button
       type="button"
       className={cx(
-        'flex h-11 items-center gap-1 rounded-lg px-2 text-[17px] whitespace-nowrap active:opacity-60 disabled:opacity-35',
+        'flex h-11 items-center gap-1 rounded-lg px-2 text-[17px] leading-none whitespace-nowrap active:opacity-60 disabled:opacity-35',
         kind === 'muted' ? 'font-normal text-fg2' : kind === 'bold' ? 'font-bold text-accent' : 'font-medium text-accent',
         className,
       )}
       {...rest}
     >
-      {children}
+      {typeof children === 'string' ? <span className="translate-y-[2px]">{children}</span> : children}
     </button>
   );
 }
 
-export function BackButton({ label, onClick }: { label: string; onClick: () => void }) {
+export function BackButton({ label, onClick, className = '', iconSize = 17 }: { label: string; onClick: () => void; className?: string; iconSize?: number }) {
   return (
-    <BarButton onClick={onClick} className="pl-1" aria-label={`Back to ${label}`}>
-      <ChevronLeft size={17} className="mr-0.5" />
-      {label}
+    <BarButton onClick={onClick} className={cx('gap-3 pl-1', className)} aria-label={`Back to ${label}`}>
+      <ChevronLeft size={iconSize} className="mr-0.5" />
+      {/* 6.6 / 2.11: optically align the text with the centered chevron. */}
+      <span className="translate-y-[2px]">{label}</span>
     </BarButton>
   );
 }

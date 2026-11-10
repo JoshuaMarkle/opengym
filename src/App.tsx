@@ -13,7 +13,6 @@ import { Home } from './screens/home/Home';
 import { InstallGuide } from './screens/onboarding/InstallGuide';
 import { Setup } from './screens/onboarding/Setup';
 import { Welcome } from './screens/onboarding/Welcome';
-import { PlanCalendar } from './screens/plans/PlanCalendar';
 import { Plans } from './screens/plans/Plans';
 import { PlanScreen } from './screens/plans/PlanScreen';
 import { RoutineBuilder } from './screens/plans/RoutineBuilder';
@@ -78,7 +77,7 @@ function AppRoutes() {
       <Route path="history/:id/edit" element={<EditWorkout />} />
       <Route path="plan/:id" element={<PlanScreen />} />
       <Route path="plan/:id/schedule" element={<ScheduleEditor />} />
-      <Route path="plan/:id/calendar" element={<PlanCalendar />} />
+      <Route path="plan/:id/calendar" element={<ScheduleEditor />} />
       <Route path="routine/new" element={<RoutineBuilder key="new" />} />
       <Route path="routine/:id" element={<RoutineScreen />} />
       <Route path="routine/:id/edit" element={<RoutineBuilder />} />

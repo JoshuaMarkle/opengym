@@ -134,10 +134,10 @@ export function NewFolderSheet({ open, onClose, onCreated }: { open: boolean; on
     onCreated?.(id);
   };
   return (
-    <Sheet open={open} onClose={onClose} title="New folder" subtitle="A program or a group of routines, like PPL or Upper / Lower.">
-      <TextField value={name} onChange={setName} autoFocus placeholder="Folder name" onEnter={() => void submit()} />
+    <Sheet open={open} onClose={onClose} title="Add routine" subtitle="A program or a group of workouts, like PPL or Upper / Lower.">
+      <TextField value={name} onChange={setName} autoFocus placeholder="Routine name" onEnter={() => void submit()} />
       <Button className="mt-4" disabled={!name.trim()} onClick={() => void submit()}>
-        Create folder
+        Create routine
       </Button>
     </Sheet>
   );
@@ -207,7 +207,7 @@ export function FolderSheet({ folder, count, onClose }: { folder: Folder | null;
             }}
             detail={<ChevronRight size={12} />}
           >
-            New routine in this folder
+            Add workout to this routine
           </SheetOption>
           <SheetOption tone="danger" onClick={() => setConfirm(true)} detail="keeps its routines">
             Delete folder…

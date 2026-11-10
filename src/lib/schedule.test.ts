@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { PlanSchedule, ScheduleSlot, ScheduleVersion } from '../db/types';
 import {
   addDayKey,
+  delayCyclePatch,
+  skipDayPatch,
   applyOverrides,
   currentVersion,
   describeSchedule,
@@ -325,4 +327,29 @@ describe('descriptions', () => {
     expect(describeSchedule(cycle('wait')).detail).toBe('4 days · 3 workouts · 1 rest day');
     expect(describeSchedule(undefined).title).toBe('No schedule');
   });
+});
+
+
+describe('explicit cycle skip and move (PH3.12)', () => {
+  for (const policy of ['wait', 'stick'] as const) {
+    it(`${policy}: skipping advances past the workout, delaying shifts the full cycle`, () => {
+      const original = sched(cycle(policy, TODAY));
+      const skipped = run(applyOverrides(original, skipDayPatch(TODAY)), new Map(), TODAY, '2026-11-12');
+      expect(skipped.slice(0, 3).map(d => d.planned)).toEqual([null, 'pullA', 'legs']);
+      const delayed = applyOverrides(original, delayCyclePatch(TODAY, '2026-11-07'));
+      const days = run(delayed, new Map(), TODAY, '2026-11-12');
+      expect(days.map(d => d.planned)).toEqual([null, null, 'pushA', 'pullA', 'legs', null, 'pushA', 'pullA']);
+      expect(days.every(d => d.changed)).toBe(true);
+      // Loading a later window must still account for the earlier delay.
+      expect(run(delayed, new Map(), '2026-11-08', '2026-11-12').map(d => d.planned)).toEqual(days.slice(3).map(d => d.planned));
+      expect(applyOverrides(delayed, resetDayPatch(delayed, '2026-11-06')).overrides).toEqual({});
+    });
+    it(`${policy}: a delay remains effective after the inserted rest days are in the past`, () => {
+      const delayed = applyOverrides(sched(cycle(policy, TODAY)), delayCyclePatch(TODAY, '2026-11-07'));
+      const days = run(delayed, new Map(), TODAY, '2026-11-09', '2026-11-07');
+      expect(at(days, '2026-11-07').planned).toBe('pushA');
+      expect(at(days, '2026-11-08').planned).toBe('pullA');
+      expect(at(days, '2026-11-08').changed).toBe(true);
+    });
+  }
 });

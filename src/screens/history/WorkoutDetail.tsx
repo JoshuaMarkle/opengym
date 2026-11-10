@@ -43,7 +43,7 @@ export function WorkoutDetail() {
 
   if (!hw)
     return (
-      <Screen header={<TopBar left={<BackButton label="History" onClick={() => navigate('/history')} />} />}>
+      <Screen header={<TopBar left={<BackButton iconSize={14} label="History" onClick={() => navigate('/history')} />} />}>
         <EmptyState icon="?" title="Workout not found" className="pt-20">
           It may have been deleted.
         </EmptyState>
@@ -61,8 +61,9 @@ export function WorkoutDetail() {
       header={
         <TopBar
           border={false}
-          left={<BackButton label="History" onClick={back} />}
-          right={<BarButton onClick={() => navigate(`/history/${id}/edit`)}>Edit</BarButton>}
+          // 6.6: center History and Edit with the chevron, with a wider back-label gap.
+          left={<BackButton iconSize={14} label="History" onClick={back} className="gap-3 leading-none" />}
+          right={<BarButton className="leading-none" onClick={() => navigate(`/history/${id}/edit`)}>Edit</BarButton>}
         />
       }
       footer={

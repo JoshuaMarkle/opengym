@@ -30,8 +30,11 @@ async function updateSchedule(folderId: string, fn: (s: PlanSchedule | undefined
 }
 
 /** 2.16–2.18 Save: the new schedule applies from today on. */
-export async function saveSchedule(folderId: string, draft: ScheduleDraft): Promise<void> {
-  await updateSchedule(folderId, (s) => withScheduleFrom(s, draft, todayKey()));
+export async function saveSchedule(folderId: string, draft: ScheduleDraft, overrides?: OverridePatch): Promise<void> {
+  await updateSchedule(folderId, (s) => {
+    const schedule = withScheduleFrom(s, draft, todayKey());
+    return schedule && overrides ? applyOverrides(schedule, overrides) : schedule;
+  });
 }
 
 /** 2.21 / 3.5: change single days without touching the schedule. */

@@ -321,7 +321,8 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
             </SwipeRow>
           ))}
         </div>
-        <AddButton onClick={() => addSet(e.key)} className="mt-2 w-full">
+        {/* 6.7: 12 px above and below the segment button, including section padding. */}
+        <AddButton onClick={() => addSet(e.key)} className="mt-3 mb-1 w-full">
           + Segment
         </AddButton>
       </section>
@@ -331,6 +332,7 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
   return (
     <div className="flex h-full flex-col">
       <TopBar
+        border={false}
         left={
           <BarButton kind="muted" onClick={() => (dirty ? setOverlay('discard') : leave())}>
             Cancel
@@ -344,22 +346,22 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
         }
       />
       <div className="scroll-y min-h-0 flex-1 px-4 pb-8">
-        <div className="mt-3 flex items-baseline gap-3 border-b border-line-strong pb-1.5">
+        <div className="mt-1 flex items-baseline gap-3">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             onFocus={() => setEditing(null)}
             maxLength={60}
             placeholder="Workout name"
-            className="min-w-0 flex-1 bg-transparent text-[24px] font-bold outline-none placeholder:text-fg3"
+            className="min-w-0 flex-1 bg-transparent text-[30px] leading-tight font-bold tracking-[-0.02em] outline-none placeholder:text-fg3"
           />
         </div>
-        <button type="button" onClick={() => setOverlay('time')} className="flex h-10 w-full items-center justify-between text-[14px] text-fg2">
+        <button type="button" onClick={() => setOverlay('time')} className="-mb-3 flex h-11 w-full items-start justify-between pt-1 text-[13px] text-fg2">
           <span>
             {fmtDay(startedAt)} · {fmtTime(startedAt)}
             {endedAt ? ` – ${fmtTime(endedAt)}` : ''}
           </span>
-          <ChevronRight size={11} />
+          <ChevronRight size={11} className="mt-1" />
         </button>
 
         {blocks.map((b) => {
@@ -370,7 +372,7 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
           const showW = hasWeightColumn(ex.type);
           const cols = showW ? 'grid-cols-[34px_1fr_1fr]' : 'grid-cols-[34px_1fr]';
           return (
-            <section key={e.key} className="border-b border-line pt-3 pb-2">
+            <section key={e.key} className="border-b border-line pt-3 pb-6">
               <div className="flex items-center gap-2">
                 <TagPill tag={tags.get(e.key)} on />
                 <b className="min-w-0 flex-1 truncate text-[16px] font-semibold">
@@ -405,9 +407,9 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
                   const mode = settings.effort;
                   const badge =
                     mode === 'off' || s.kind !== 'working' ? null : editE ? (
-                      <EffortBadge inset tone="active" text={s.rpe != null ? effortBadge(s.rpe, mode) : '+'} label="Picking effort" />
+                      <EffortBadge inset historyEdit tone="active" text={s.rpe != null ? effortBadge(s.rpe, mode) : '+'} label="Picking effort" />
                     ) : s.rpe != null ? (
-                      <EffortBadge inset done tone="logged" text={effortBadge(s.rpe, mode)} label={`${effortSpoken(s.rpe, mode)}. Change effort`} onPress={() => startEdit(e.key, s, 'effort', ex)} />
+                      <EffortBadge inset historyEdit tone="logged" text={effortBadge(s.rpe, mode)} label={`${effortSpoken(s.rpe, mode)}. Change effort`} onPress={() => startEdit(e.key, s, 'effort', ex)} />
                     ) : null;
                   const wText = editW ? weightEditDisplay(editing!.text, ex) : weightCellText(s.weight, ex, units);
                   return (

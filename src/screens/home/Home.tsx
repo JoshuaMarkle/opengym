@@ -49,7 +49,7 @@ export function Home() {
 
       {/* With a schedule, the plan's week (2.15): what's planned, done and missed. Otherwise the days you trained. */}
       {scheduled && folder && weekView?.days.length ? (
-        <PlanStrip days={weekView.days} codes={weekView.codes} today={weekView.today} dense dateClassName="text-fg" onTap={(d) => navigate(`/calendar?day=${d.key}`)} className="mt-3" />
+        <PlanStrip days={weekView.days} codes={weekView.codes} today={weekView.today} dense hideDates unfilled labelClassName="text-fg2" onTap={(d) => navigate(`/calendar?day=${d.key}`)} className="mt-3" />
       ) : (
         <WeekStrip now={now} weekStart={settings.weekStart} trained={trained} live={!!active} onOpen={() => navigate('/calendar')} />
       )}
@@ -302,7 +302,8 @@ function HomeDayRow({
       <button type="button" {...hold} onClick={onOpen} className="no-select flex min-w-0 flex-1 items-center gap-3 py-2 text-left active:opacity-70">
         <span className={cx('w-[52px] flex-none text-center', day.key === today ? 'text-accent' : 'text-fg2')}>
           <small className="block text-[10.5px] font-bold uppercase">{dayLabel(day, today, false)}</small>
-          <b className="text-[19px]">{new Date(day.ts).getDate()}</b>
+          {/* PH3.1: routine dates stay bright, with today in blue. */}
+          <b className={cx('text-[19px]', day.key === today ? 'text-accent' : 'text-fg')}>{new Date(day.ts).getDate()}</b>
         </span>
         <span className="min-w-0 flex-1">
           <b className="block truncate text-[16px] font-semibold">{name}</b>

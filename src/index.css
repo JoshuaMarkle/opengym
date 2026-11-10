@@ -60,6 +60,7 @@
   --color-fg: var(--og-fg);
   --color-fg2: var(--og-fg2);
   --color-fg3: var(--og-fg3);
+  --color-plan-code: color-mix(in srgb, var(--og-fg2) 65%, var(--og-fg));
   --color-kp: var(--og-kp-bg);
   --color-key: var(--og-key);
   --color-key-fn: var(--og-key-fn);

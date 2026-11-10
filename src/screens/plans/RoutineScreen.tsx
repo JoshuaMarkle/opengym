@@ -86,20 +86,17 @@ export function RoutineScreen() {
         <TopBar
           border={false}
           left={<BackButton label="Routines" onClick={back} />}
-          right={
-            <>
-              <BarButton onClick={() => navigate(`/routine/${id}/edit`)}>Edit</BarButton>
-              <BarButton aria-label="More" onClick={() => setMenu(true)} className="font-bold tracking-[1px]">
-                •••
-              </BarButton>
-            </>
-          }
+          right={<BarButton onClick={() => navigate(`/routine/${id}/edit`)}>Edit</BarButton>}
         />
       }
       footer={
-        <div className="flex-none border-t border-line px-4 pt-2.5 pb-[max(12px,env(safe-area-inset-bottom))]">
-          <Button onClick={() => start.startRoutine(routine.id, routine.name)} disabled={!draft.exercises.length}>
+        <div className="grid flex-none grid-cols-[1fr_50px] gap-2 border-t border-line px-4 pt-2.5 pb-[max(12px,env(safe-area-inset-bottom))]">
+          <Button size="md" onClick={() => start.startRoutine(routine.id, routine.name)} disabled={!draft.exercises.length}>
             Start workout
+          </Button>
+          {/* 2.11: match the History detail footer (6.6). */}
+          <Button size="md" kind="secondary" aria-label="More" onClick={() => setMenu(true)} className="tracking-[1px]">
+            •••
           </Button>
         </div>
       }
@@ -206,6 +203,12 @@ export function RoutineScreen() {
       })}
 
       <Sheet open={menu} onClose={() => setMenu(false)} title={routine.name}>
+        <SheetOption onClick={() => {
+          setMenu(false);
+          navigate(`/routine/${id}/edit`);
+        }}>
+          Edit routine
+        </SheetOption>
         <SheetOption
           onClick={() => {
             setMenu(false);

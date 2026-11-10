@@ -1,76 +1,48 @@
 import { closestCenter, DndContext, DragOverlay, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { useLongPress } from '../../components/gestures';
 import { CalendarIcon, ListIcon, ChevronRight, Handle } from '../../components/icons';
 import { Alert, Sheet, SheetOption, useToast } from '../../components/overlays';
 import { BarButton, cx, EmptyState, LargeHeader, Pill, Screen } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
-import { importRoutinesFromBackup, readBackup } from '../../data/backup';
 import { deleteRoutine, saveLayout } from '../../data/routines';
 import { usePlanView } from '../../data/schedule';
 import { usePlans, type PlansData } from '../../data/usePlans';
 import type { Folder, Routine } from '../../db/types';
-import { useStartWorkout } from '../../hooks/StartWorkout';
 import { dayKey, startOfWeek } from '../../lib/dates';
 import { addDayKey, currentVersion, describeWhen } from '../../lib/schedule';
 import { CalendarView, ListView } from '../history/History';
+import { ScheduleWeek } from './PlanParts';
 import { PlanHistoryCalendar } from './PlanHistoryCalendar';
 import { FolderSheet, NewFolderSheet, useRoutineActions } from './RoutineActions';
-
-const COLLAPSE_KEY = 'og-collapsed-folders';
-function loadCollapsed(): Set<string> {
-  try {
-    return new Set(JSON.parse(localStorage.getItem(COLLAPSE_KEY) ?? '[]'));
-  } catch {
-    return new Set();
-  }
-}
 
 /** 2.1 Plans: folders of routines. Active folder first, archived collapsed at the bottom. */
 export function Plans() {
   const plans = usePlans();
   const navigate = useNavigate();
-  const start = useStartWorkout();
-  const toast = useToast();
   const actions = useRoutineActions(plans);
   const [editing, setEditing] = useState(false);
   const [plusOpen, setPlusOpen] = useState(false);
   const [newFolder, setNewFolder] = useState(false);
   const [folderSheet, setFolderSheet] = useState<Folder | null>(null);
-  const [collapsed, setCollapsed] = useState<Set<string>>(loadCollapsed);
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const [params, setParams] = useSearchParams();
   const tab = params.get('view') === 'routines' ? 'routines' : params.get('view') === 'history' ? 'history' : 'calendar';
   const setTab = (view: string) => {
     setEditing(false);
     setParams(view === 'calendar' ? {} : { view }, { replace: true });
   };
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const toggle = (id: string) =>
     setCollapsed((c) => {
       const n = new Set(c);
       if (n.has(id)) n.delete(id);
       else n.add(id);
-      try {
-        localStorage.setItem(COLLAPSE_KEY, JSON.stringify([...n]));
-      } catch {
-        /* ignore */
-      }
       return n;
     });
-
-  const importFile = async (file: File) => {
-    try {
-      const backup = await readBackup(file);
-      const n = await importRoutinesFromBackup(backup);
-      toast({ message: n ? `Imported ${n} ${n === 1 ? 'routine' : 'routines'}` : 'No new routines in that backup' });
-    } catch (e) {
-      toast({ message: e instanceof Error ? e.message : "Couldn't read that file" });
-    }
-  };
 
   const activeFolder = plans?.activeFolder;
   const empty = plans && !plans.routines.length && !plans.folders.length;
@@ -153,8 +125,8 @@ export function Plans() {
               <span className="text-[12px] font-bold text-fg2 uppercase">Your library</span>
               <div className="flex">
                 <BarButton onClick={() => setEditing(true)}>Edit</BarButton>
-                <BarButton aria-label="New" className="text-[30px] font-normal" onClick={() => setPlusOpen(true)}>
-                  +
+                <BarButton aria-label="New" className="font-normal" onClick={() => setPlusOpen(true)}>
+                  <span className="translate-y-[1px] text-[26px] leading-none">+</span>
                 </BarButton>
               </div>
             </div>
@@ -177,10 +149,9 @@ export function Plans() {
             setPlusOpen(false);
             navigate('/routine/new');
           }}
-          tone="accent"
           detail={activeFolder ? `in ${activeFolder.name}` : undefined}
         >
-          New routine
+          Add workout
         </SheetOption>
         <SheetOption
           onClick={() => {
@@ -188,37 +159,9 @@ export function Plans() {
             setNewFolder(true);
           }}
         >
-          New folder
-        </SheetOption>
-        <SheetOption
-          onClick={() => {
-            setPlusOpen(false);
-            start.startBlank();
-          }}
-        >
-          Start a blank workout
-        </SheetOption>
-        <SheetOption
-          onClick={() => {
-            setPlusOpen(false);
-            fileRef.current?.click();
-          }}
-          detail="from an OpenGym backup"
-        >
-          Import routines
+          Add routine
         </SheetOption>
       </Sheet>
-      <input
-        ref={fileRef}
-        type="file"
-        accept=".json,application/json"
-        className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          e.target.value = '';
-          if (f) void importFile(f);
-        }}
-      />
       <NewFolderSheet open={newFolder} onClose={() => setNewFolder(false)} />
       <FolderSheet
         folder={folderSheet ? (plans?.folders.find((f) => f.id === folderSheet.id) ?? null) : null}
@@ -253,12 +196,12 @@ function ViewLayout({
   return (
     <div>
       {ordered.map((f) => (
-        <FolderGroup key={f.id} plans={plans} folder={f} collapsed={collapsed.has(f.id)} onToggle={() => onToggle(f.id)} onHold={onHold} onFolderMenu={() => onFolderMenu(f)} />
+        <FolderGroup key={f.id} plans={plans} folder={f} collapsed={f.active ? collapsed.has(f.id) : !collapsed.has(`i:${f.id}`)} onToggle={() => onToggle(f.active ? f.id : `i:${f.id}`)} onHold={onHold} onFolderMenu={() => onFolderMenu(f)} />
       ))}
       {unfiled.length > 0 && (
         <>
-          <FolderHeader title="No folder" count={unfiled.length} collapsed={collapsed.has('none')} onToggle={() => onToggle('none')} />
-          {!collapsed.has('none') && unfiled.map((r) => <RoutineRow key={r.id} plans={plans} routine={r} onHold={onHold} />)}
+          <FolderHeader title="No folder" count={unfiled.length} collapsed={!collapsed.has('none')} onToggle={() => onToggle('none')} />
+          {collapsed.has('none') && unfiled.map((r) => <RoutineRow key={r.id} plans={plans} routine={r} onHold={onHold} />)}
         </>
       )}
       {archived.map((f) => {
@@ -312,24 +255,9 @@ function FolderGroup({
   return (
     <div>
       <FolderHeader title={folder.name} count={list.length} active={folder.active} collapsed={collapsed} onToggle={onToggle} onOpen={openPlan} onHold={onFolderMenu} />
-      {/* PH3.5: code-only strip for every scheduled group; codes always mean the plan. */}
-      {!collapsed && scheduled && view && (
-        <div className="grid grid-cols-7 gap-1 border-b border-line py-3 text-center">
-          {view.days.map((d) => (
-            <button key={d.key} type="button" onClick={openPlan} aria-label={`${view.routineName(d.planned)} · Edit plan`} className="min-h-11">
-              <small className="mb-2 block text-[11px] font-bold text-fg2">{new Date(d.ts).toLocaleDateString('en', { weekday: 'narrow' })}</small>
-              <span
-                className={cx(
-                  'flex h-11 items-center justify-center rounded-[9px] text-[12px] font-bold',
-                  d.planned ? 'border border-line-strong text-fg2' : 'text-fg3',
-                  d.key === view.today && 'ring-1 ring-inset ring-fg',
-                )}
-              >
-                {d.planned ? view.codes.get(d.planned) : 'R'}
-              </span>
-            </button>
-          ))}
-        </div>
+      {/* PH3.5: the same base-split strip as the routine detail page (2.15). */}
+      {!collapsed && scheduled && view && version && (
+        <ScheduleWeek days={view.days} version={version} codes={view.codes} onOpen={openPlan} className="py-5" />
       )}
       {!collapsed &&
         list.map((r) => <RoutineRow key={r.id} plans={plans} routine={r} onHold={onHold} when={scheduled ? (describeWhen(version, r.id, settings.weekStart) ?? 'Not scheduled') : undefined} />)}
@@ -520,7 +448,7 @@ function EditLayout({ plans, onFolderMenu, onNewFolder }: { plans: PlansData; on
       {ids.length <= 1 && <p className="py-4 text-[13px] text-fg2">Nothing to arrange yet.</p>}
       <button type="button" onClick={onNewFolder} className="mt-2 flex h-12 w-full items-center gap-2.5 border-b border-line text-[16px] font-semibold text-accent">
         <span className="flex h-[24px] w-[24px] items-center justify-center rounded-full bg-accent text-[17px] text-white">+</span>
-        New folder
+        Add routine
       </button>
       <p className="mt-4 text-[12.5px] leading-normal text-fg2">
         Drag ≡ to reorder routines or move them between folders. Drag a folder to reorder folders. − deletes a routine; its workouts stay in History.

@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router';
-import { ChevronRight } from '../../components/icons';
+import { CheckGlyph, ChevronRight } from '../../components/icons';
 import { cx, SectionLabel } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { goalView, useGoals } from '../../data/goals';
@@ -99,7 +99,7 @@ export function Lately({ now }: { now: number }) {
 function LatelyRow({ glyph, tone, text, onClick }: { glyph: string; tone: string; text: string; onClick: () => void }) {
   return (
     <button type="button" onClick={onClick} className="flex min-h-[48px] w-full items-center gap-2.5 border-b border-line py-1.5 text-left active:bg-surface/60">
-      <span className={cx('w-4 flex-none text-center text-[13px] font-bold', tone)}>{glyph}</span>
+      <span className={cx('flex w-4 flex-none items-center justify-center text-center text-[13px] font-bold', tone)}>{/* 3.6: match the shared completion icon. */}{glyph === '✓' ? <CheckGlyph size={14} /> : glyph}</span>
       <span className="min-w-0 flex-1 text-[14.5px] leading-snug tabular-nums">{text}</span>
       <ChevronRight size={12} className="flex-none text-fg3" />
     </button>

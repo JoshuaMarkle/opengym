@@ -1,9 +1,9 @@
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { CheckGlyph, ChevronRight, Handle } from '../../components/icons';
+import { CheckGlyph, ChevronLeft, ChevronRight, Handle } from '../../components/icons';
 import { Sheet, SheetOption } from '../../components/overlays';
 import { BackButton, BarButton, cx, Note, Radio, Screen, SectionLabel, Segmented, TopBar } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
@@ -11,13 +11,13 @@ import { saveSchedule, usePlanView, type PlanView } from '../../data/schedule';
 import { usePlans } from '../../data/usePlans';
 import type { Folder, MissPolicy, ScheduleSlot } from '../../db/types';
 import { useGiveUp } from '../../hooks/useGiveUp';
-import { fmtDay, weekdayShort } from '../../lib/dates';
-import { addDayKey, currentVersion, DEFAULT_MISS, parseDayKey, planDays, suggestDays, trainedByDay, weekOrder, withScheduleFrom, type ScheduleDraft } from '../../lib/schedule';
-import { PlanStrip } from './PlanParts';
+import { dayKey, fmtDay, fmtMonthDay, startOfWeek, weekdayShort } from '../../lib/dates';
+import { addDayKey, applyOverrides, resetDayPatch, currentVersion, DEFAULT_MISS, parseDayKey, planDays, suggestDays, trainedByDay, weekOrder, withScheduleFrom, type ScheduleDraft, type PlanDay, type OverridePatch } from '../../lib/schedule';
+import { DaySheet, PlanGrid } from './PlanParts';
 
 const LONG_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const DRAFT_KEY = (folderId: string) => `og-schedule-draft:${folderId}`;
-/** Written by the builder after "+ New routine for this day" (2.19). */
+/** Written by the builder after "+ Add workout for this day" (2.19). */
 export const ASSIGN_KEY = 'og-schedule-assign';
 
 type Step = 'type' | 'cycle' | 'weekly';
@@ -36,6 +36,7 @@ interface Draft {
   todayIndex: number;
   missCycle: MissPolicy;
   missWeekly: MissPolicy;
+  overrides?: OverridePatch;
 }
 
 export interface PendingAssign {
@@ -85,12 +86,13 @@ function initialDraft(folder: Folder, view: PlanView): Draft {
       if (pending.kind === 'cycle' && saved.cycle[pending.index]) saved.cycle[pending.index] = { ...saved.cycle[pending.index], slot: pending.routineId };
       if (pending.kind === 'weekly') saved.weekly[pending.index] = pending.routineId;
     }
-    return saved;
+    return { ...saved, overrides: saved.overrides ?? folder.schedule?.overrides ?? {} };
   }
   const v = view.scheduled ? currentVersion(folder.schedule, view.today) : undefined;
   const ids = (view.plans.byFolder.get(folder.id) ?? []).map((r) => r.id);
   return {
     step: 'type',
+    overrides: folder.schedule?.overrides ?? {},
     kind: v?.kind ?? 'none',
     cycle: (v?.kind === 'cycle' ? v.days : suggestDays('cycle', ids)).map((slot) => ({ key: newKey(), slot })),
     weekly: v?.kind === 'weekly' ? [...v.days] : suggestDays('weekly', ids),
@@ -113,6 +115,8 @@ function Editor({ folder, view }: { folder: Folder; view: PlanView }) {
   const [assign, setAssign] = useState<{ kind: 'cycle' | 'weekly'; index: number } | null>(null);
   const [pickToday, setPickToday] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [page, setPage] = useState(0);
+  const [sheetDay, setSheetDay] = useState<PlanDay | null>(null);
   const { today, plans } = view;
   const routines = plans.byFolder.get(folder.id) ?? [];
   const exCount = (rid: string) => plans.exercisesByRoutine.get(rid)?.length ?? 0;
@@ -130,22 +134,29 @@ function Editor({ folder, view }: { folder: Folder; view: PlanView }) {
   const save = async (kind: Kind) => {
     setSaving(true);
     try {
-      await saveSchedule(folder.id, toScheduleDraft(draft, kind));
+      await saveSchedule(folder.id, toScheduleDraft(draft, kind), draft.overrides);
       leave();
     } finally {
       setSaving(false);
     }
   };
 
-  // "Next 7 days" preview for the cycle, as the plan would run with this draft.
+  // 2.20 / 2.16–2.19: the calendar previews every unsaved schedule change.
   const trained = useMemo(() => trainedByDay(history.workouts.map((w) => w.workout)), [history]);
-  const preview = useMemo(() => {
-    if (draft.step !== 'cycle' || !draft.cycle.length) return [];
-    const schedule = withScheduleFrom(folder.schedule, toScheduleDraft(draft, 'cycle'), today);
-    if (!schedule) return [];
+  const from = addDayKey(dayKey(startOfWeek(parseDayKey(today), settings.weekStart)), -7 + page * 28);
+  const draftSchedule = useMemo(() => {
+    const schedule = withScheduleFrom(folder.schedule, toScheduleDraft(draft), today);
+    return schedule ? applyOverrides(schedule, draft.overrides ?? {}) : undefined;
+  }, [folder.schedule, draft, today]);
+  const preview = useMemo<PlanDay[]>(() => {
+    const schedule = draftSchedule;
     const live = new Set(plans.routines.map((r) => r.id));
-    return planDays({ schedule, trained, today, from: today, to: addDayKey(today, 6), weekStart: settings.weekStart, exists: (rid) => live.has(rid) });
-  }, [draft, folder.schedule, today, trained, plans.routines, settings.weekStart]);
+    if (schedule) return planDays({ schedule, trained, today, from, to: addDayKey(from, 34), weekStart: settings.weekStart, exists: (rid) => live.has(rid) });
+    return Array.from({ length: 35 }, (_, i) => {
+      const key = addDayKey(from, i);
+      return { key, ts: parseDayKey(key), state: 'off' as const, changed: false, doneIds: [] };
+    });
+  }, [draftSchedule, today, from, trained, plans.routines, settings.weekStart]);
 
   const newRoutineFor = (kind: 'cycle' | 'weekly', index: number) => {
     sessionStorage.setItem(DRAFT_KEY(folder.id), JSON.stringify(draft));
@@ -161,80 +172,6 @@ function Editor({ folder, view }: { folder: Folder; view: PlanView }) {
   };
 
   const assignSlot = assign ? (assign.kind === 'cycle' ? draft.cycle[assign.index]?.slot : draft.weekly[assign.index]) : undefined;
-
-  // ───── 2.16
-  if (draft.step === 'type') {
-    const options: { kind: Kind; title: string; body: string; example: ReactNode }[] = [
-      { kind: 'none', title: 'No schedule', body: "Whatever you did longest ago is next. Train when you can. (Today's behaviour.)", example: null },
-      {
-        kind: 'cycle',
-        title: 'Repeating cycle',
-        body: 'A fixed order that repeats, rest days included. Ignores weekdays.',
-        example: <Examples items={['Push', 'Pull', 'Legs', 'Rest']} rest={3} suffix="↻" />,
-      },
-      {
-        kind: 'weekly',
-        title: 'Weekly split',
-        body: 'Each weekday gets a routine or rest. Same week every week.',
-        example: <Examples items={['Mon Pull', 'Tue Legs', 'Thu Push']} suffix="…" />,
-      },
-    ];
-    return (
-      <Screen
-        header={
-          <TopBar
-            left={
-              <BarButton kind="muted" onClick={leave}>
-                Cancel
-              </BarButton>
-            }
-            title="Schedule"
-            right={
-              <BarButton kind="bold" disabled={saving} onClick={() => (draft.kind === 'none' ? void save('none') : patch({ step: draft.kind }))}>
-                {draft.kind === 'none' ? 'Save' : 'Next'}
-              </BarButton>
-            }
-          />
-        }
-      >
-        <p className="mt-4 text-[15px] text-fg2">How should {folder.name} decide what's next?</p>
-        <div className="mt-2">
-          {options.map((o) => (
-            <button
-              key={o.kind}
-              type="button"
-              role="radio"
-              aria-checked={draft.kind === o.kind}
-              onClick={() => patch({ kind: o.kind })}
-              className="flex w-full items-start gap-3 border-b border-line py-3.5 text-left active:opacity-70"
-            >
-              <span className="mt-[1px]">
-                <Radio on={draft.kind === o.kind} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <b className="block text-[17px] font-semibold">{o.title}</b>
-                <span className="mt-0.5 block text-[13.5px] leading-snug text-fg2">{o.body}</span>
-                {o.example}
-              </span>
-            </button>
-          ))}
-        </div>
-        <Note className="mt-4">You can switch any time. History stays; only what's planned from today on changes.</Note>
-      </Screen>
-    );
-  }
-
-  const header = (title: string) => (
-    <TopBar
-      left={<BackButton label="Back" onClick={() => patch({ step: 'type' })} />}
-      title={title}
-      right={
-        <BarButton kind="bold" disabled={saving} onClick={() => void save(draft.step === 'type' ? draft.kind : draft.step)}>
-          Save
-        </BarButton>
-      }
-    />
-  );
 
   const assignSheet = (
     <Sheet
@@ -267,7 +204,7 @@ function Editor({ folder, view }: { folder: Folder; view: PlanView }) {
       </SheetOption>
       {assign && (
         <SheetOption tone="accent" onClick={() => newRoutineFor(assign.kind, assign.index)}>
-          + New routine for this day
+          + Add workout for this day
         </SheetOption>
       )}
       {assign?.kind === 'cycle' && draft.cycle.length > 1 && (
@@ -285,13 +222,45 @@ function Editor({ folder, view }: { folder: Folder; view: PlanView }) {
     </Sheet>
   );
 
-  // ───── 2.18
-  if (draft.step === 'weekly') {
-    const todayWd = new Date(parseDayKey(today)).getDay();
-    const workouts = draft.weekly.filter(Boolean).length;
-    return (
-      <Screen header={header('Weekly split')}>
-        <SectionLabel action={<span className="text-[12px] font-semibold tracking-normal text-fg2 normal-case">tap a day to change</span>}>Each week</SectionLabel>
+  const todayWd = new Date(parseDayKey(today)).getDay();
+  const workouts = draft.weekly.filter(Boolean).length;
+  const day1 = addDayKey(today, -Math.min(draft.todayIndex, draft.cycle.length - 1));
+  return (
+    <Screen header={<TopBar
+      left={<BackButton iconSize={14} label={folder.name} onClick={leave} />}
+      title="Schedule"
+      right={<BarButton kind="bold" disabled={saving} onClick={() => void save(draft.kind)}>Save</BarButton>}
+    />}>
+      <div className="mt-3 flex items-center justify-between">
+        <button type="button" aria-label="Earlier" onClick={() => setPage((p) => p - 1)} className="-ml-2 flex h-11 w-11 items-center justify-center text-accent"><ChevronLeft size={12} /></button>
+        <b className="text-[16px] font-bold tabular-nums">{fmtMonthDay(preview[0].ts)} – {fmtMonthDay(preview[27].ts)}</b>
+        <button type="button" aria-label="Later" onClick={() => setPage((p) => p + 1)} className="-mr-2 flex h-11 w-11 items-center justify-center text-accent"><ChevronRight size={12} /></button>
+      </div>
+      <PlanGrid days={preview.slice(0, 28)} codes={view.codes} today={today} weekStart={settings.weekStart} onOpen={(d) => {
+        if (d.key >= today && draftSchedule) setSheetDay(d);
+      }} />
+      {sheetDay && draftSchedule && <DaySheet
+        folder={{ ...folder, schedule: draftSchedule }}
+        day={sheetDay}
+        view={{ ...view, days: preview }}
+        onClose={() => setSheetDay(null)}
+        onApply={(changes) => patch({ overrides: applyOverrides(draftSchedule, changes).overrides })}
+        onReset={(key) => patch({ overrides: applyOverrides(draftSchedule, resetDayPatch(draftSchedule, key)).overrides })}
+      />}
+      {/* PH3.13: clearing only updates the draft; Save commits it. */}
+      <SectionLabel className="-mt-2!" action={
+        <button type="button" onClick={() => patch({ overrides: Object.fromEntries(Object.entries(draft.overrides ?? {}).filter(([key]) => key < today)) })} className="flex min-h-11 items-end text-[13px] leading-[16px] font-semibold tracking-normal text-danger normal-case active:opacity-70">
+          Clear changes
+        </button>
+      }>Schedule type</SectionLabel>
+      <Segmented className="mt-3" options={[
+        { value: 'none' as Kind, label: 'No schedule' },
+        { value: 'weekly' as Kind, label: 'Weekly split' },
+        { value: 'cycle' as Kind, label: 'Repeating cycle' },
+      ]} value={draft.kind} onChange={(kind) => patch({ kind })} />
+      {draft.kind === 'none' && <Note>Whatever you did longest ago is next. Train when you can.</Note>}
+      {draft.kind === 'weekly' && <>
+      <SectionLabel action={<span className="text-[12px] font-semibold tracking-normal text-fg2 normal-case">tap a day to change</span>}>Each week</SectionLabel>
         {weekOrder(settings.weekStart).map((wd) => {
           const slot = draft.weekly[wd];
           const isToday = wd === todayWd;
@@ -322,15 +291,8 @@ function Editor({ folder, view }: { folder: Folder; view: PlanView }) {
         <Note className="tabular-nums">
           {workouts} {workouts === 1 ? 'workout' : 'workouts'} a week · weeks start {settings.weekStart === 1 ? 'Monday' : 'Sunday'} (Settings).
         </Note>
-        {assignSheet}
-      </Screen>
-    );
-  }
-
-  // ───── 2.17
-  const day1 = addDayKey(today, -Math.min(draft.todayIndex, draft.cycle.length - 1));
-  return (
-    <Screen header={header('Repeating cycle')}>
+      </>}
+      {draft.kind === 'cycle' && <>
       <SectionLabel action={<span className="text-[12px] font-semibold tracking-normal text-fg2 normal-case">drag to reorder</span>}>
         {`Cycle · ${draft.cycle.length} ${draft.cycle.length === 1 ? 'day' : 'days'}`}
       </SectionLabel>
@@ -369,9 +331,7 @@ function Editor({ folder, view }: { folder: Folder; view: PlanView }) {
       />
       <Note>Wait: the cycle pauses until you train. Stick: missed days are skipped.</Note>
 
-      <SectionLabel>Next 7 days</SectionLabel>
-      <PlanStrip days={preview} codes={view.codes} today={today} dense className="mt-2.5" />
-
+      </>}
       <Sheet open={pickToday} onClose={() => setPickToday(false)} title="Which day is today?" subtitle="Day 1 is counted back from your pick.">
         {draft.cycle.map((c, i) => (
           <SheetOption
@@ -388,19 +348,6 @@ function Editor({ folder, view }: { folder: Folder; view: PlanView }) {
       </Sheet>
       {assignSheet}
     </Screen>
-  );
-}
-
-function Examples({ items, rest, suffix }: { items: string[]; rest?: number; suffix?: string }) {
-  return (
-    <span className="mt-2 flex flex-wrap items-center gap-1">
-      {items.map((t, i) => (
-        <span key={t} className={cx('rounded-[5px] px-1.5 py-[2px] text-[11px] font-semibold', i === rest ? 'text-fg3 ring-1 ring-line-strong ring-inset' : 'bg-surface-2 text-fg')}>
-          {t}
-        </span>
-      ))}
-      {suffix && <span className="text-[12px] text-fg2">{suffix}</span>}
-    </span>
   );
 }
 
