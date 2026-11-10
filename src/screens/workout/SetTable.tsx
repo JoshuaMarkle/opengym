@@ -268,7 +268,7 @@ export function SetTable({
                   <span
                     className={cx(
                       'flex h-7 w-7 items-center justify-center rounded-sm border-[1.5px] transition-colors',
-                      s.completed ? 'border-accent bg-accent text-white' : isCur ? 'border-fg3' : 'border-line-strong',
+                      s.completed ? 'border-action bg-action text-white' : isCur ? 'border-fg3' : 'border-line-strong',
                     )}
                   >
                     {s.completed && <CheckGlyph size={15} />}

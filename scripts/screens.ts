@@ -330,11 +330,11 @@ scene('sample', 'PH3.1 PH3.2 PH3.3 PH3.4 PH3.5 PH3.6 PH3.7 PH3.8 PH3.9 4.35', as
   await go('/');
   await go('/calendar?day=2026-12-17');
   await shot('PH3.8');
-  await p.click('Change this day ›');
+  await p.click('Change this day');
   await shot('PH3.9');
   await go('/');
   await go('/calendar?day=2026-12-31');
-  await p.click('Change this day ›');
+  await p.click('Change this day');
   await p.click('Move workout to…');
   await p.find({ sel: 'button', text: 'Jan 1' });
 });
@@ -365,7 +365,7 @@ scene('sample', 'PH3.12 PH3.14 PH3.15', async ({ p, go, shot }) => {
     await __og.db.folders.update(f.id, { schedule: { versions: [{ from: '2026-11-05', anchor: '2026-11-05', kind: 'cycle', days: [...rs.map(r => r.id), null], onMiss: 'wait' }], overrides: {} } });
   })()`);
   await go('/calendar?day=2026-11-05');
-  await p.click('Change this day ›');
+  await p.click('Change this day');
   await shot('PH3.12');
   await p.click('Move workout to…');
   await p.click({ sel: 'button', text: 'Fri', start: true });
@@ -460,7 +460,7 @@ scene('sample', '2.16 2.17 2.18 2.19 3.4 2.15 2.14 2.20 2.21 2.23 2.24 3.5', asy
   await go('/plans');
   await p.click({ sel: '[role=tab]', text: 'Routines' });
   await p.click({ sel: 'button', text: 'PPL', nth: 0 });
-  await p.click('Change ›');
+  await p.click('Change');
   await p.click('Weekly split');
   await shot('2.16');
   await p.click('Repeating cycle');
@@ -493,7 +493,7 @@ scene('sample', '2.16 2.17 2.18 2.19 3.4 2.15 2.14 2.20 2.21 2.23 2.24 3.5', asy
   await p.click({ sel: 'button', text: 'PPL', nth: 0 });
   // 2.15: capture the stacked weekday/date list, including today's blue date.
   await shot('2.15');
-  await p.click('Calendar ›');
+  await p.click('Calendar');
   // 2.20: small dates over large codes, with SVG checkmarks on completed extra days.
   await shot('2.20');
   await p.click({ sel: 'button', text: 'Nov 6', start: false }).catch(() => p.click({ text: 'Fri', nth: 0 }));

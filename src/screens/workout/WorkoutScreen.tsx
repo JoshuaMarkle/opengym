@@ -1318,7 +1318,7 @@ export function TagPill({ tag, on, done }: { tag?: string; on?: boolean; done?: 
       aria-label={done ? `${tag}, done` : undefined}
       className={cx(
         'flex h-5 min-w-6.5 flex-none items-center justify-center rounded-sm px-1 text-caps normal-case tracking-normal font-extrabold',
-        on ? 'bg-accent text-white' : done ? 'bg-done text-accent' : 'bg-surface-2 text-fg2',
+        on ? 'bg-action text-white' : done ? 'bg-done text-accent' : 'bg-surface-2 text-fg2',
       )}
     >
       {done ? <CheckGlyph size={11} /> : tag}

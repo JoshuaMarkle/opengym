@@ -4,13 +4,14 @@ Offline-first lifting log PWA (React + TypeScript + Vite + Dexie + Tailwind). No
 
 ## Read first
 - `design/SPEC.md`: rules, data model, design principles. Code comments cite it as `SPEC §4`.
+- `design/DESIGN.md`: tokens, type scale, sizes, glyphs and the component catalog. Component comments cite the design doc as `design §9`; `#/dev/ui` (screen 0.1, dev only) shows every component.
 - `design/storyboard.html` + `design/screens/<id>.png`: every screen, captured from the app. Comments cite screen IDs like `4.1`.
 - Training work (suggestions, trends, goals): `design/training-logic.html`. Comments cite it as `§9` or `training-logic §9`; it wins over `design/proposals/progressive-overload.html`.
 - `design/ROADMAP.md`: known bugs, friction points and what to build next.
 
 ## Commands
 - `npm run dev`: dev server at http://localhost:5173 with sample history in a separate test database. `npm run dev:real` uses the real one.
-- `npm test`: Vitest (`src/**/*.test.ts`). `npm run typecheck`: `tsc -b` (app and scripts). `npm run build`: typecheck + PWA build into `dist/`.
+- `npm test`: Vitest (`src/**/*.test.ts`). `npm run typecheck`: `tsc -b` (app and scripts). `npm run lint:design`: checks `src/` against DESIGN.md (`-- --files` for a count per file). `npm run build`: typecheck + design lint + PWA build into `dist/`.
 - `npm run screens [-- 4 2.1]`: re-screenshot screens into `design/` (needs Chromium/Chrome). Run after UI changes.
 - `npm run brand`: regenerate logo SVGs, PWA icons and the brand board from `src/lib/logo.ts` and `src/index.css`.
 
@@ -19,7 +20,7 @@ Offline-first lifting log PWA (React + TypeScript + Vite + Dexie + Tailwind). No
 - `src/lib/`: pure logic with tests (no React, no Dexie): 1RM, records, prefill, next-up, schedules, supersets, cardio, plates, effort, import parsing.
 - `src/lib/training/`: fit-zone suggestions, trends, goals, milestones, tips. A port of `design/training-logic-reference.py`; the doc's example sessions are the fixtures in `decide.test.ts`.
 - `src/data/`: reads and writes (workouts, routines, exercises, schedule, history index, goals, training, backup/import, settings) and `DataProvider`.
-- `src/components/`: shared UI (`ui.tsx`), overlays (Sheet, Alert, HoldMenu, Toast), Keypad, PlatePad, gestures, charts, icons.
+- `src/components/`: shared UI (`ui/`, one file per design family), overlays (Sheet, Alert, HoldMenu, Toast), Keypad, PlatePad, gestures, charts, icons.
 - `src/screens/<area>/`: onboarding, home, plans, workout, history, progress, exercises, settings.
 - `scripts/`: `screens.ts`, `brand.ts` and a small headless-Chrome driver (`chrome.ts`). Plain Node, no build step.
 
@@ -31,7 +32,8 @@ Offline-first lifting log PWA (React + TypeScript + Vite + Dexie + Tailwind). No
 - Never lose logged data: persist the active workout on every change; confirm before destructive actions.
 - Nothing from SPEC §1 "Out of scope".
 - New pure logic goes in `src/lib/` with a Vitest test.
-- Only the tab bar uses the solid icons; in-app controls use the glyphs ▶ + ✓ ••• ≡ W/D, the pencil (workout options), plus the orange warning triangle (`WarnGlyph`) for "not enough data" notes.
+- Only the tab bar uses the solid icons. Only + − × W D ✕ and — are typed; everything else is a glyph from `icons.tsx`.
+- UI: build from `src/components/ui/`; no arbitrary Tailwind values; read `design/DESIGN.md` first.
 - New or changed screen: add its catalog entry and scene in `scripts/screens.ts`, re-run it, and cite its ID in comments.
 
 ## Gotchas

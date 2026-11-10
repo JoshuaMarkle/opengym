@@ -59,6 +59,17 @@ S1–S12, file by file, with `npm run lint:design` as the to-do list. Most of S1
 - **Prose left typed** (allowlisted): the comeback ramp "135 → 145 → 155" in the Why sheet's sentence, and "✓ fills them in" in the Suggestions setting note, which names the button.
 - **RoutineBuilder's superset hint** said "••• to unlink"; it now says "options menu to unlink", since a typed ••• can't sit in the sentence.
 
+## Phase 4 notes
+
+- **Done ticks** in the set and cardio tables, and the selected superset tag, were filled `accent`; they are `action` now (white on a fill), as §7 says.
+- **Brand board:** the glyph row shows only the typed characters (+ − × W D ✕ —) and the type row shows the twelve-step scale; the tab labels are Micro 10.
+- **§16 cleanup list** in the design doc: every item is marked done.
+
 ## Not done
 
-(Filled in as phases land: anything that would need a behaviour change.)
+- **Goal value boxes (7.16):** `ValueBox` is its own `<label>`, so the KG / REPS caption above it can't wrap it any more. Tapping the caption used to focus the box; now only the box does. Keeping the old behaviour would need `ValueBox` to take an `id` and the caption to become `<label htmlFor>`; left as is because it's a behaviour change either way.
+- **Screens 2.14–2.24, 3.4, 3.5 (one `scripts/screens.ts` scene):** not re-shot. The scene clicks a "Change ›" link on the plan screen that the calendar and routine merge (`ac7c8c0`) removed before this work began, so it already failed at the start. Fixing it means rewriting the scene's route to the schedule editor, which isn't part of a visual refactor. Their PNGs are the pre-install ones.
+- **Typed prose kept** (allowlisted, see above): "135 → 145 → 155" in the Why sheet sentence, "✓ fills them in" in the Suggestions note, "A → B" in the "Update the routine?" alert (`lib/routineDiff.ts`), "Settings → Export" on the import screen. Each sits inside a plain string that an alert or note renders as text; drawing a glyph there would mean changing those APIs to take nodes.
+- **`=` and `½`** stay typed: `=` marks "no change" next to trend glyphs, and `½` is on the effort pad, which §7 keeps as built.
+- **Effort pad sizes** (21 px digits, 10 px words, the 10.5 px badge) are allowlisted rather than tokenized, per §7.
+- **`text-input` weight:** the token has none; set cells add 600 themselves (see above).

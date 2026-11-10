@@ -60,7 +60,7 @@ p{color:#a1a1aa}.row{display:flex;gap:28px;align-items:flex-end}.cap{font-size:1
 .logo img{display:block}.logo img[src*=icon-dark]{border-radius:22%;box-shadow:0 0 0 1px #38383b}.light{background:#fff;padding:24px;border-radius:14px}
 table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #222222;padding:7px 10px 7px 0;text-align:left;font-size:13px}th{color:#a1a1aa;font-weight:600;font-size:11px}
 td i{display:inline-block;width:18px;height:18px;border-radius:4px;vertical-align:-4px;margin-right:8px;border:1px solid #38383b}
-.tabs{display:flex;border-top:1px solid #222222;width:390px}.tabs div{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0;font-size:10.5px;font-weight:600;color:#a1a1aa}.tabs div:first-child{color:#007aff}.tabs svg{width:23px;height:23px}
+.tabs{display:flex;border-top:1px solid #222222;width:390px}.tabs div{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0;font-size:10px;font-weight:600;color:#a1a1aa}.tabs div:first-child{color:#007aff}.tabs svg{width:23px;height:23px}
 .glyphs span{display:inline-flex;min-width:44px;height:44px;align-items:center;justify-content:center;border:1px solid #222222;border-radius:10px;font-size:18px;margin-right:8px}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:48px}
 </style></head><body>
@@ -83,8 +83,8 @@ ${dark.map(([k, v]) => `<tr><td>--og-${k}</td><td>${swatch(v)}${v}</td><td>${swa
 ${[...meaning, ['tip', tip]].map(([k, v]) => `<tr><td>${swatch(v)}${k} ${v}</td><td>${ROLE[k] ?? ''}</td></tr>`).join('')}
 </table>
 <h2>Tab bar (solid icons, design/brand/tabs)</h2><div class="tabs">${tabs.map(([n, s]) => `<div>${s.replace('<svg', '<svg fill="currentColor"')}${TAB_LABEL[n]}</div>`).join('')}</div>
-<h2>In-app glyphs</h2><div class="glyphs"><span>▶</span><span>+</span><span style="color:#007aff">✓</span><span>•••</span><span>≡</span><span style="color:#a1a1aa;font-weight:700">W</span><span style="color:#ff9500;font-weight:700">D</span></div>
-<h2>Type</h2><p style="color:#fff"><b style="font-size:34px">34 Title</b> · <b style="font-size:22px">22 Exercise</b> · <span style="font-size:17px">17 Row</span> · <span style="font-size:13px;color:#a1a1aa">13 Meta</span> · <b style="font-size:10px;letter-spacing:.12em;color:#a1a1aa">10 CAPS</b></p>
+<h2>Typed characters</h2><div class="glyphs"><span>+</span><span>−</span><span>×</span><span style="color:#a1a1aa;font-weight:700">W</span><span style="color:#ff9500;font-weight:700">D</span><span>✕</span><span style="color:#71717a">—</span></div><p style="margin-top:10px">Only these are typed. Every other mark (check, chevrons, arrows, trends, more, play, handle) is a drawn glyph from <code>src/components/icons.tsx</code>.</p>
+<h2>Type</h2><p style="color:#fff;line-height:1.5"><b style="font-size:40px;letter-spacing:-.03em">40 Hero</b> · <b style="font-size:34px;letter-spacing:-.02em">34 Display</b> · <b style="font-size:30px;letter-spacing:-.02em">30 Title 1</b> · <b style="font-size:22px;letter-spacing:-.01em">22 Title 2</b> · <b style="font-size:19px">19 Title 3</b> · <b style="font-size:17px">17 Headline</b> · <span style="font-size:15px">15 Body</span> · <span style="font-size:14px">14 Callout</span> · <span style="font-size:13px;color:#a1a1aa">13 Footnote</span> · <span style="font-size:12px;color:#a1a1aa">12 Caption</span> · <b style="font-size:11px;letter-spacing:.06em;color:#a1a1aa">11 CAPS</b> · <b style="font-size:10px;color:#a1a1aa">10 MICRO</b></p>
 </div></div>
 </body></html>
 `;

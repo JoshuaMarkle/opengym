@@ -120,14 +120,14 @@ A new screen or feature should pass all ten principles:
 
 Dates read `Thu, Oct 29`, or relative within a week ("Mon"). Units default to lbs, written "lb" after numbers.
 
-- **Tokens.** Every color is a CSS variable in `src/index.css` (dark first; light swaps the neutrals). See `design/brand/brand-board.png`.
-- **Meaning colors.** Accent `#2E8BFF` (actions, done, plates) · Tip green (up, records, live) · Warning `#FF8C1A` (drops, backup due) · Caution `#FF3B3B` (delete, down).
-- **Type.** System font, tabular numbers everywhere digits appear. 34/28 titles, 22/20 exercise names, 17/15 rows, 12–13 meta, 10 caps labels.
-- **Layout.** Flat rows with hairline dividers; no cards, no shadows. 16 px edges, 8 px grid, 44 px minimum tap target.
+- **Design system.** Colors, type, sizes, radii, glyphs and every shared component are in [`DESIGN.md`](DESIGN.md) (the installed form of `proposals/design-system.html`), built in `src/components/ui/` and checked by `npm run lint:design`, which runs in `npm run build`. Where this section and `DESIGN.md` differ on looks, `DESIGN.md` wins; the behavior rules here still apply.
+- **Tokens.** Every color is a CSS variable in `src/index.css` (dark first; light swaps the neutrals). Two blues: accent `#007AFF` for text, lines, rings and marks; action `#0066D6` for every filled surface with white on it. Tip green (up, records, live), warning `#FF9500` (drops, backup due), danger `#FF453A` (delete, down).
+- **Type.** System font, tabular numbers everywhere digits appear, twelve sizes from Hero 40 to Micro 10 (`text-hero` … `text-micro`), no arbitrary sizes.
+- **Layout.** Flat rows with hairline dividers (52 single, 60 two-line); no cards, no shadows. 16 px edges, 8 px grid, 44 px minimum tap target.
 - **Bars and overlays.** Cancel/Back on the left, Save/Done on the right. Sheets are for options; alerts only confirm data loss. Alerts look like iOS: centered, 270 wide, hairline-separated buttons.
 - **Gestures** are shortcuts only; everything they do is also reachable from a visible control.
 - **Logo.** The right half of a loaded bar, drawn like the plate pad at 5× scale: grey bar off the left edge, a collar, two 45s (the second centered) and a 10, all plates blue. Geometry lives in `src/lib/logo.ts`.
-- **Icons.** Only the tab bar uses the solid icons in `design/brand/tabs/`. In-app controls use the plain glyphs ▶ + ✓ ••• ≡ and W / D letters, a pencil for the workout options (5.4), plus an orange warning triangle for "not enough data" notes (7.1).
+- **Icons.** Only the tab bar uses the solid icons in `design/brand/tabs/`. Only + − × W D ✕ and — are typed; everything else (check, chevrons, arrows, trends, more, play, handle, the workout-options pencil (5.4), the orange warning triangle for "not enough data" (7.1)) is a drawn glyph from `src/components/icons.tsx`.
 
 ## 9. Open questions
 
