@@ -20,13 +20,13 @@ export function Welcome() {
     <div className="flex h-full flex-col px-6 pt-10 pb-[max(20px,env(safe-area-inset-bottom))]">
       <div className="anim-page">
         <LogoMark size={56} />
-        <div className="mt-8 text-[12px] font-bold tracking-[0.12em] text-fg2">OPENGYM · LIFTING LOG</div>
-        <h1 className="mt-2 text-[40px] leading-[1.05] font-bold tracking-[-0.03em]">
+        <div className="mt-8 text-caption font-bold text-fg2">OPENGYM · LIFTING LOG</div>
+        <h1 className="mt-2 text-hero leading-[1.05] font-bold">
           Log your lifts.
           <br />
           Nothing else.
         </h1>
-        <ul className="mt-7 flex flex-col gap-3.5 text-[16px]">
+        <ul className="mt-7 flex flex-col gap-3.5 text-input">
           {['Free. No account, no ads, no subscription.', 'Your data stays on this phone.', 'Works offline at the gym.'].map((t) => (
             <li key={t} className="flex items-start gap-3">
               <DiscFace size="s" className="-mt-px">

@@ -1,4 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
+import { TrendDown, TrendUp } from '../../components/icons';
 import { useMemo } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router';
 import { BarButton, cx, Screen, StatRow, TopBar } from '../../components/ui';
@@ -107,8 +108,8 @@ export function Summary() {
       }
     >
       <div className="anim-pop mt-6 text-center">
-        <div className="text-[28px] leading-tight font-bold tracking-[-0.01em]">{headline}</div>
-        <div className="mt-1.5 text-[13px] text-fg2">{sub}</div>
+        <div className="text-title1 leading-tight font-bold">{headline}</div>
+        <div className="mt-1.5 text-footnote text-fg2">{sub}</div>
       </div>
 
       {/* 5.5 (C6): shown once, for the workout that hit a goal. */}
@@ -116,16 +117,16 @@ export function Summary() {
 
       <div className="mt-5">
         {rows.map((r) => (
-          <div key={r.key} className="grid min-h-[54px] grid-cols-[minmax(0,1fr)_auto_minmax(64px,auto)] items-center gap-2.5 border-b border-line py-1.5">
+          <div key={r.key} className="grid min-h-13 grid-cols-[minmax(0,1fr)_auto_minmax(64px,auto)] items-center gap-2.5 border-b border-line py-1.5">
             <div className="min-w-0">
-              <b className="block truncate text-[15px] font-semibold">{r.name}</b>
-              <small className="block truncate text-[12.5px] text-fg2">{r.cmp.detail}</small>
+              <b className="block truncate text-body font-semibold">{r.name}</b>
+              <small className="block truncate text-caption text-fg2">{r.cmp.detail}</small>
             </div>
-            <span className={cx('text-[13px]', dirColor(r.cmp.direction))}>{r.cmp.direction === 'up' ? '▲' : r.cmp.direction === 'down' ? '▼' : r.cmp.direction === 'same' ? '=' : ''}</span>
+            <span className={cx('text-footnote', dirColor(r.cmp.direction))}>{r.cmp.direction === 'up' ? <TrendUp size={9} /> : r.cmp.direction === 'down' ? <TrendDown size={9} /> : r.cmp.direction === 'same' ? '=' : ''}</span>
             <span className="text-right">
               <span
                 className={cx(
-                  'inline-block rounded-[6px] px-2 py-[3px] text-[12px] font-bold whitespace-nowrap',
+                  'inline-block rounded-sm px-2 py-[3px] text-caption font-bold whitespace-nowrap',
                   r.cmp.direction === 'up' && 'bg-[color-mix(in_srgb,var(--og-tip)_18%,var(--og-bg))] text-tip',
                   r.cmp.direction === 'down' && 'bg-[color-mix(in_srgb,#ff3b3b_18%,var(--og-bg))] text-danger',
                   r.cmp.direction === 'same' && 'bg-surface-2 text-fg2',
@@ -141,14 +142,14 @@ export function Summary() {
 
       {cardio.length > 0 && (
         <>
-          <div className="mt-5 text-[11px] font-bold tracking-[0.07em] text-fg2 uppercase">Cardio</div>
+          <div className="mt-5 text-caps text-fg2">Cardio</div>
           {cardio.map((c) => (
             <div key={c.key} className="flex min-h-[48px] items-center justify-between gap-3 border-b border-line">
-              <b className="min-w-0 truncate text-[15px] font-semibold">{c.name}</b>
-              <span className="flex-none text-[14px] text-fg2">{c.text || '—'}</span>
+              <b className="min-w-0 truncate text-body font-semibold">{c.name}</b>
+              <span className="flex-none text-callout text-fg2">{c.text || '—'}</span>
             </div>
           ))}
-          <div className="flex min-h-[44px] items-center justify-between gap-3 text-[14px]">
+          <div className="flex min-h-[44px] items-center justify-between gap-3 text-callout">
             <span className="text-fg2">Cardio this week</span>
             <b className="font-semibold">
               {Math.round(weekT.durationSec / 60)} min
@@ -169,7 +170,7 @@ export function Summary() {
           ...(!totals.cardioCount ? [{ label: 'Records', value: <span className={records ? 'text-tip' : ''}>{records}</span> }] : []),
         ]}
       />
-      <button type="button" onClick={() => navigate(`/history/${w.id}`)} className="mt-4 flex h-11 w-full items-center justify-center text-[15px] font-semibold text-accent">
+      <button type="button" onClick={() => navigate(`/history/${w.id}`)} className="mt-4 flex h-11 w-full items-center justify-center text-body font-semibold text-accent">
         View workout
       </button>
     </Screen>

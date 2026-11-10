@@ -66,17 +66,17 @@ export function SupersetSheet({
             className="flex min-h-[52px] w-full items-center gap-3 border-b border-line text-left disabled:opacity-40"
           >
             <span className="min-w-0 flex-1 py-1.5">
-              <b className="block truncate text-[16px] font-semibold">{c.name}</b>
-              <span className={cx('block truncate text-[13px]', c.sub === 'just added' ? 'text-accent' : 'text-fg2')}>{c.sub}</span>
+              <b className="block truncate text-input font-semibold">{c.name}</b>
+              <span className={cx('block truncate text-footnote', c.sub === 'just added' ? 'text-accent' : 'text-fg2')}>{c.sub}</span>
             </span>
             <Check on={on} />
           </button>
         );
       })}
-      {!candidates.length && <p className="py-3 text-[14px] text-fg2">Nothing else to pair with yet.</p>}
+      {!candidates.length && <p className="py-3 text-callout text-fg2">Nothing else to pair with yet.</p>}
       <button type="button" onClick={onAddAnother} className="flex min-h-[52px] w-full flex-col justify-center border-b border-line text-left">
-        <b className="text-[16px] font-semibold text-accent">+ Another exercise…</b>
-        <span className="text-[13px] text-fg2">{addLabel}</span>
+        <b className="text-input font-semibold text-accent">+ Another exercise…</b>
+        <span className="text-footnote text-fg2">{addLabel}</span>
       </button>
       <Button className="mt-4" disabled={!picked.length} onClick={() => onMake(picked)}>
         Make superset

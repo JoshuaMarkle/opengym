@@ -9,6 +9,7 @@ import { fmtMonthShortYear } from '../../lib/dates';
 import { ImportError, parseImportCsv, type ParsedImport } from '../../lib/importParser';
 import { matchExerciseName, type MatchConfidence } from '../../lib/match';
 import { ExercisePicker } from '../exercises/ExercisePicker';
+import { ArrowGlyph } from '../../components/icons';
 
 interface Row {
   name: string;
@@ -85,9 +86,9 @@ export function ImportScreen() {
     const target = r.exerciseId ? exerciseMap.get(r.exerciseId)?.name : undefined;
     const unsure = r.confidence === 'unsure' && !r.reviewed;
     return (
-      <button key={r.name} type="button" onClick={() => setEditing(r.name)} className="flex min-h-[48px] w-full items-center gap-2 border-b border-line py-1.5 text-left text-[14.5px] active:bg-surface/60">
+      <button key={r.name} type="button" onClick={() => setEditing(r.name)} className="flex min-h-[48px] w-full items-center gap-2 border-b border-line py-1.5 text-left text-callout active:bg-surface/60">
         <span className="min-w-0 flex-1 truncate">{r.name}</span>
-        <span className="flex-none text-fg3">→</span>
+        <ArrowGlyph size={10} className="flex-none text-fg3" />
         <span className={cx('min-w-0 max-w-[48%] flex-none truncate text-right font-semibold', target ? (unsure ? 'text-warn' : 'text-fg') : 'text-accent')}>
           {target ?? '+ New exercise'}
           {unsure && ' ?'}
@@ -130,11 +131,11 @@ export function ImportScreen() {
           <EmptyState icon="⇪" title="Import from Strong or Hevy">
             Export a CSV from the other app, then pick the file here. Your workouts are added to History; nothing is replaced.
           </EmptyState>
-          {error && <p className="mt-4 text-center text-[14px] font-semibold text-danger">{error}</p>}
+          {error && <p className="mt-4 text-center text-callout font-semibold text-danger">{error}</p>}
           <Button className="mx-auto mt-6 max-w-[280px]" onClick={() => fileRef.current?.click()}>
             Choose CSV file
           </Button>
-          <div className="mt-8 border-t border-line pt-3 text-[13px] leading-relaxed text-fg2">
+          <div className="mt-8 border-t border-line pt-3 text-footnote leading-relaxed text-fg2">
             <p>
               <b className="text-fg">Strong:</b> Settings → Export Strong Data.
             </p>
@@ -147,13 +148,13 @@ export function ImportScreen() {
         <>
           <button type="button" onClick={() => fileRef.current?.click()} className="mt-3 flex w-full items-center justify-between text-left">
             <span className="min-w-0">
-              <b className="block truncate text-[17px]">{fileName}</b>
-              <span className="text-[13px] text-fg2">
+              <b className="block truncate text-body-lg">{fileName}</b>
+              <span className="text-footnote text-fg2">
                 {SOURCE[parsed.source]} export · {setsTotal} sets
                 {parsed.skippedRows ? ` · ${parsed.skippedRows} cardio/timed rows skipped` : ''}
               </span>
             </span>
-            <span className="flex-none text-[14px] font-semibold text-accent">Change</span>
+            <span className="flex-none text-callout font-semibold text-accent">Change</span>
           </button>
           <StatRow
             className="mt-3"
@@ -165,9 +166,9 @@ export function ImportScreen() {
           />
 
           <div className="mt-4 flex items-center justify-between gap-3">
-            <span className="text-[14px] text-fg2">Weights in the file are in</span>
+            <span className="text-callout text-fg2">Weights in the file are in</span>
             {parsed.units ? (
-              <span className="text-[15px] font-semibold">{parsed.units === 'kg' ? 'kg' : 'lbs'}</span>
+              <span className="text-body font-semibold">{parsed.units === 'kg' ? 'kg' : 'lbs'}</span>
             ) : (
               <Segmented
                 className="w-[140px]"
@@ -181,7 +182,7 @@ export function ImportScreen() {
             )}
           </div>
 
-          <div className="mt-5 flex justify-between border-b border-line pb-1.5 text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase">
+          <div className="mt-5 flex justify-between border-b border-line pb-1.5 text-caps text-fg2">
             <span>Matched</span>
             <span className="font-semibold tracking-normal normal-case">
               {matched.length} of {rows.length}
@@ -190,7 +191,7 @@ export function ImportScreen() {
           {matched.map(row)}
           {needs.length > 0 && (
             <>
-              <div className="mt-5 flex justify-between border-b border-line pb-1.5 text-[11px] font-bold tracking-[0.06em] text-warn uppercase">
+              <div className="mt-5 flex justify-between border-b border-line pb-1.5 text-caps text-warn">
                 <span>Needs a look</span>
                 <span className="font-semibold tracking-normal">{needs.length}</span>
               </div>
@@ -198,7 +199,7 @@ export function ImportScreen() {
             </>
           )}
           <Note>Tap any row to change the match. Imported workouts are added to your history; nothing is replaced. Workouts already here are skipped.</Note>
-          {error && <p className="mt-3 text-[14px] font-semibold text-danger">{error}</p>}
+          {error && <p className="mt-3 text-callout font-semibold text-danger">{error}</p>}
           <Button className="mt-5" disabled={busy} onClick={() => void run()}>
             {busy ? 'Importing…' : `Import ${parsed.workouts.length} workouts`}
           </Button>

@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { LiftChart, type ChartPoint } from '../../components/charts';
-import { cx, DataHeader, DataRow, DropBadge, InlineBar, Segmented, StatRow, Tag } from '../../components/ui';
+import { cx, DataHeader, DataRow, DropBadge, InlineBar, Segmented, StatRow, Tag, TrendText } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import type { HistorySession } from '../../data/history';
 import { liftPoints, type LiftPoint } from '../../data/lifts';
@@ -52,11 +52,11 @@ export function Change({ value, pct, ex, units, words, className = '' }: { value
     ex.type === 'bodyweight'
       ? `${Math.abs(Math.round(value))} ${Math.abs(Math.round(value)) === 1 ? 'rep' : 'reps'}`
       : `${formatNumber(Math.abs(toDisplay(value, units)), ex.type === 'weight' ? 0 : 1)} ${unitLabel(units)}`;
-  const text = dir === 'flat' ? `= no change` : `${dir === 'up' ? '▲' : '▼'} ${amount}${pct !== undefined && ex.type === 'weight' ? ` (${Math.abs(Math.round(pct))}%)` : ''}`;
+  const text = dir === 'flat' ? `= no change` : <TrendText dir={dir}>{`${amount}${pct !== undefined && ex.type === 'weight' ? ` (${Math.abs(Math.round(pct))}%)` : ''}${words ? ` ${words}` : ''}`}</TrendText>;
   return (
-    <span className={cx('text-[14px] font-bold', dir === 'up' ? 'text-tip' : dir === 'down' ? 'text-danger' : 'text-fg2', className)}>
+    <span className={cx('text-callout font-bold', dir === 'up' ? 'text-tip' : dir === 'down' ? 'text-danger' : 'text-fg2', className)}>
       {text}
-      {words ? ` ${words}` : ''}
+      {dir === 'flat' && words ? ` ${words}` : ''}
     </span>
   );
 }
@@ -77,7 +77,7 @@ export function HistoryView({ exercise, onOpenWorkout }: { exercise: Exercise; o
     return all.sort((a, b) => b.date - a.date);
   }, [variations, history]);
 
-  if (!sessions.length) return <p className="py-10 text-center text-[14px] text-fg2">No sessions yet. They'll show up here after you finish a workout with {exercise.name}.</p>;
+  if (!sessions.length) return <p className="py-10 text-center text-callout text-fg2">No sessions yet. They'll show up here after you finish a workout with {exercise.name}.</p>;
 
   let lastMonth = '';
   return (
@@ -93,14 +93,14 @@ export function HistoryView({ exercise, onOpenWorkout }: { exercise: Exercise; o
         if (ex.type === 'cardio')
           return (
             <div key={`${s.workoutId}-${s.exerciseId}`}>
-              {header && <div className="mt-4 pb-1 text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase">{header}</div>}
+              {header && <div className="mt-4 pb-1 text-caps text-fg2">{header}</div>}
               <Body
                 {...(onOpenWorkout ? { type: 'button' as const, onClick: () => onOpenWorkout(s.workoutId) } : {})}
                 className="grid w-full grid-cols-[42px_1fr] items-start gap-3 border-b border-line py-2.5 text-left"
               >
                 <span className="pt-1 text-center leading-[1.1]">
-                  <small className="block text-[10.5px] font-bold text-fg2 uppercase">{weekdayShort(d.getDay())}</small>
-                  <b className="text-[19px]">{d.getDate()}</b>
+                  <small className="block text-caps text-fg2">{weekdayShort(d.getDay())}</small>
+                  <b className="text-title3">{d.getDate()}</b>
                 </span>
                 <CardioMiniTable exercise={ex} sets={s.sets} units={settings.units} />
               </Body>
@@ -108,21 +108,21 @@ export function HistoryView({ exercise, onOpenWorkout }: { exercise: Exercise; o
           );
         return (
           <div key={`${s.workoutId}-${s.exerciseId}`}>
-            {header && <div className="mt-4 pb-1 text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase">{header}</div>}
+            {header && <div className="mt-4 pb-1 text-caps text-fg2">{header}</div>}
             <Body
               {...(onOpenWorkout ? { type: 'button' as const, onClick: () => onOpenWorkout(s.workoutId) } : {})}
               className="grid w-full grid-cols-[42px_1fr] items-center gap-3 border-b border-line py-2.5 text-left"
             >
               <span className="text-center leading-[1.1]">
-                <small className="block text-[10.5px] font-bold text-fg2 uppercase">{weekdayShort(d.getDay())}</small>
-                <b className="text-[19px]">{d.getDate()}</b>
+                <small className="block text-caps text-fg2">{weekdayShort(d.getDay())}</small>
+                <b className="text-title3">{d.getDate()}</b>
               </span>
               {/*
                 Each set is one unbreakable block ("185 × 8 @8"). The "·" before a block sits in
                 the gap and is clipped when the block starts a line, so no dot is left hanging (A6).
                 A set's drops stay in its block, in the order you did them.
               */}
-              <span className="flex min-w-0 flex-wrap gap-x-[12px] overflow-hidden text-[14px] leading-[1.6]">
+              <span className="flex min-w-0 flex-wrap gap-x-[12px] overflow-hidden text-callout leading-[1.6]">
                 {chains.length ? (
                   chains.map((c) => (
                     <span key={c.set.id} className={cx('relative whitespace-nowrap', SEP)}>
@@ -206,19 +206,19 @@ export function ChartsView({
 
   let hero: ReactNode = null;
   if (!last) {
-    hero = <p className="py-6 text-[14px] text-fg2">No sessions in this range.</p>;
+    hero = <p className="py-6 text-callout text-fg2">No sessions in this range.</p>;
   } else if (m === 'e1rm') {
     const cur = last.metric?.value ?? 0;
     const f = fmtMetric(cur, exercise, units);
     const base = baseline?.metric?.value;
     hero = (
       <div className="mt-3">
-        <div className="text-[11px] font-bold tracking-[0.05em] text-fg2 uppercase">Estimated 1RM{effortIn1rm(settings) ? ' · effort-adjusted' : ''}</div>
-        <div className="text-[34px] leading-[1.1] font-bold tracking-[-0.02em]">
+        <div className="text-caps text-fg2">Estimated 1RM{effortIn1rm(settings) ? ' · effort-adjusted' : ''}</div>
+        <div className="text-display leading-[1.1] font-bold">
           {f.big}
-          <small className="ml-1 text-[16px] font-semibold text-fg2">{f.unit}</small>
+          <small className="ml-1 text-input font-semibold text-fg2">{f.unit}</small>
         </div>
-        {base !== undefined ? <Change value={cur - base} pct={base ? ((cur - base) / base) * 100 : undefined} ex={exercise} units={units} words={RANGE_WORDS[range]} /> : <span className="text-[14px] font-bold text-fg2">First session</span>}
+        {base !== undefined ? <Change value={cur - base} pct={base ? ((cur - base) / base) * 100 : undefined} ex={exercise} units={units} words={RANGE_WORDS[range]} /> : <span className="text-callout font-bold text-fg2">First session</span>}
       </div>
     );
   } else {
@@ -230,17 +230,17 @@ export function ChartsView({
     const f = isBW ? { big: String(t.reps), unit: 'reps' } : { big: formatSetWeight(t.weight, exercise.type, units), unit: `${exercise.type === 'weight' || (t.weight ?? 0) !== 0 ? unitLabel(units) + ' ' : ''}× ${t.reps}` };
     hero = (
       <div className="mt-3">
-        <div className="text-[11px] font-bold tracking-[0.05em] text-fg2 uppercase">{isBW ? 'Most reps, last session' : 'Heaviest set, last session'}</div>
-        <div className="text-[34px] leading-[1.1] font-bold tracking-[-0.02em]">
+        <div className="text-caps text-fg2">{isBW ? 'Most reps, last session' : 'Heaviest set, last session'}</div>
+        <div className="text-display leading-[1.1] font-bold">
           {f.big}
-          <small className="ml-1 text-[16px] font-semibold text-fg2">{f.unit}</small>
+          <small className="ml-1 text-input font-semibold text-fg2">{f.unit}</small>
         </div>
         {bt && baseline ? (
-          <span className={cx('text-[14px] font-bold', dir === 'up' ? 'text-tip' : dir === 'down' ? 'text-danger' : 'text-fg2')}>
-            {dir === 'up' ? '▲' : dir === 'down' ? '▼' : '='} from {formatSet(bt, exercise.type, units)} in {fmtMonthDay(baseline.date)}
+          <span className={cx('text-callout font-bold', dir === 'up' ? 'text-tip' : dir === 'down' ? 'text-danger' : 'text-fg2')}>
+            <TrendText dir={dir === 'up' || dir === 'down' ? dir : undefined}>{`${dir === 'up' || dir === 'down' ? '' : '= '}from ${formatSet(bt, exercise.type, units)} in ${fmtMonthDay(baseline.date)}`}</TrendText>
           </span>
         ) : (
-          <span className="text-[14px] font-bold text-fg2">First session</span>
+          <span className="text-callout font-bold text-fg2">First session</span>
         )}
       </div>
     );
@@ -268,15 +268,15 @@ export function ChartsView({
       {hero}
       {easier && settings.effort !== 'off' && (
         <div className="mt-3">
-          <div className="text-[11px] font-bold tracking-[0.05em] text-tip uppercase">Same weight, easier</div>
-          <p className="mt-0.5 text-[14px] leading-snug">
+          <div className="text-caps text-tip">Same weight, easier</div>
+          <p className="mt-0.5 text-callout leading-snug">
             {formatSet(easier, exercise.type, units)} went from {effortText(easier.fromRpe, settings.effort)} to {effortText(easier.toRpe, settings.effort)} since {fmtMonthDay(easier.since)}.{' '}
             <span className="text-fg2">Ready for more weight.</span>
           </p>
         </div>
       )}
       {chartPoints.length > 0 && <LiftChart points={chartPoints} from={start ?? points[0]?.date} style={m === 'e1rm' || exercise.type === 'bodyweight' ? 'trend' : 'top'} priorBest={priorBest} />}
-      {m === 'top' && exercise.type !== 'bodyweight' && chartPoints.length > 0 && <p className="mt-1 text-[12.5px] text-fg2">Each dot = that day's top set · number = reps</p>}
+      {m === 'top' && exercise.type !== 'bodyweight' && chartPoints.length > 0 && <p className="mt-1 text-caption text-fg2">Each dot = that day's top set · number = reps</p>}
       {ranges.length > 1 && (
         <Segmented className="mt-3" options={ranges.map((r) => ({ value: r, label: r }))} value={range} onChange={setRange} />
       )}
@@ -311,13 +311,13 @@ export function RecordsView({ exercise, exerciseIds, currentReps }: { exercise: 
     return computeRecords(sessions, exercise.type, settings.oneRmFormula, effortIn1rm(settings));
   }, [history, ids.join(','), exercise.type, settings]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!rec.mostReps) return <p className="py-10 text-center text-[14px] text-fg2">No records yet. Finish a workout with {exercise.name} to set some.</p>;
+  if (!rec.mostReps) return <p className="py-10 text-center text-callout text-fg2">No records yet. Finish a workout with {exercise.name} to set some.</p>;
 
   const pair = (label: string, big: ReactNode, sub: ReactNode) => (
     <div className="min-w-0 py-2.5 [&+&]:border-l [&+&]:border-line [&+&]:pl-3">
-      <small className="block text-[10.5px] font-bold tracking-[0.04em] text-fg2 uppercase">{label}</small>
-      <b className="block text-[20px]">{big}</b>
-      <span className="block truncate text-[12px] text-fg2">{sub}</span>
+      <small className="block text-caps text-fg2">{label}</small>
+      <b className="block text-title2">{big}</b>
+      <span className="block truncate text-caption text-fg2">{sub}</span>
     </div>
   );
 
@@ -367,7 +367,7 @@ export function RecordsView({ exercise, exerciseIds, currentReps }: { exercise: 
           );
         })}
       </div>
-      <p className="mt-2.5 text-[12.5px] text-fg2">Best weight for 1–12 reps from working sets.{rows.some((r) => r.entry && isRecent(r.entry.date)) ? ' Blue = set in the last 30 days.' : ''}</p>
+      <p className="mt-2.5 text-caption text-fg2">Best weight for 1–12 reps from working sets.{rows.some((r) => r.entry && isRecent(r.entry.date)) ? ' Blue = set in the last 30 days.' : ''}</p>
     </div>
   );
 }

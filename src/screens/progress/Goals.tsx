@@ -5,7 +5,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { ForecastChart, type ChartPoint, type ForecastBand } from '../../components/charts';
-import { CheckGlyph, MoreGlyph, TargetGlyph } from '../../components/icons';
+import { ArrowGlyph, CheckGlyph, ChevronRight, MoreGlyph, TargetGlyph } from '../../components/icons';
 import { Alert, Sheet, SheetOption } from '../../components/overlays';
 import { BackButton, BarButton, Button, ChoiceTile, cx, EmptyState, fieldClass, FieldLabel, GoalBar, IconButton, Note, Screen, SectionLabel, Segmented, StatRow, TopBar, ValueBox } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
@@ -198,12 +198,12 @@ export function NewGoal() {
         </EmptyState>
       ) : (
         <>
-          <button type="button" onClick={() => setPickOpen(true)} className="mt-2 flex min-h-[56px] w-full items-center justify-between gap-3 border-b border-line text-left active:bg-surface/60">
+          <button type="button" onClick={() => setPickOpen(true)} className="mt-2 flex min-h-15 w-full items-center justify-between gap-3 border-b border-line text-left active:bg-surface/60">
             <span className="min-w-0">
-              <b className="block truncate text-[17px] font-semibold">{ex?.name ?? 'Pick a lift'}</b>
-              {ex && lift && <span className="text-[13px] text-fg2 tabular-nums">{ex.type === 'bodyweight' ? 'reps' : 'est. 1RM'} {lift.points.length ? fmtStrength(lift.now.E0, ex, units) : '—'}</span>}
+              <b className="block truncate text-body-lg font-semibold">{ex?.name ?? 'Pick a lift'}</b>
+              {ex && lift && <span className="text-footnote text-fg2 tabular-nums">{ex.type === 'bodyweight' ? 'reps' : 'est. 1RM'} {lift.points.length ? fmtStrength(lift.now.E0, ex, units) : '—'}</span>}
             </span>
-            <span className="text-[15px] font-semibold text-accent">Change</span>
+            <span className="text-body font-semibold text-accent">Change</span>
           </button>
 
           <div className="mt-1 grid grid-cols-2 gap-3">
@@ -236,7 +236,7 @@ export function NewGoal() {
 
           {messy && ex && lift && (
             <>
-              <p className="mt-4 text-[14px] leading-snug">
+              <p className="mt-4 text-callout leading-snug">
                 <b>No projection.</b> <span className="text-fg2">{lift.fit.reason ? `${lift.fit.reason}.` : 'Too few sessions to draw a line.'} A line through this would be a guess, so choose a pace instead.</span>
               </p>
               <FieldLabel>If you focus on it, you'll gain</FieldLabel>
@@ -246,13 +246,13 @@ export function NewGoal() {
                 value={rateIdx}
                 onChange={setRateIdx}
               />
-              <div className="mt-1 grid grid-cols-4 text-center text-[11px] text-fg2">
+              <div className="mt-1 grid grid-cols-4 text-center text-caps normal-case tracking-normal font-normal text-fg2">
                 {rateOptions.map((r, i) => (
                   <span key={i}>{RATE_WORD[rateLabel(fromShown(r), paceRate)]}</span>
                 ))}
               </div>
-              <p className="mt-2 text-[14px] tabular-nums">
-                {formatNumber(rateOptions[rateIdx], 2)} {ex.type === 'bodyweight' ? 'reps' : unitLabel(units)}/wk → <b>{eta != null ? fmtMonthDay(now + eta * WEEK) : 'past 2 years'}</b>
+              <p className="mt-2 text-callout tabular-nums">
+                {formatNumber(rateOptions[rateIdx], 2)} {ex.type === 'bodyweight' ? 'reps' : unitLabel(units)}/wk <ArrowGlyph size={10} className="inline" /> <b>{eta != null ? fmtMonthDay(now + eta * WEEK) : 'past 2 years'}</b>
               </p>
             </>
           )}
@@ -271,7 +271,7 @@ export function NewGoal() {
               label="Goal projection"
             />
           )}
-          {sentence && <p className="mt-3 text-[14px] leading-snug tabular-nums">{sentence}</p>}
+          {sentence && <p className="mt-3 text-callout leading-snug tabular-nums">{sentence}</p>}
           <Note className="mt-3">
             {ex?.type === 'bodyweight'
               ? 'Progress is counted in reps, so every set counts.'
@@ -319,7 +319,7 @@ function CustomDateSheet({ open, onClose, value, verdictAt, onPick }: { open: bo
         aria-label="Goal date"
         className={cx(fieldClass, 'mt-1 font-semibold')}
       />
-      <p className="mt-3 min-h-[20px] text-[14px]">{v ? <VerdictTag v={v} /> : <span className="text-fg2">No verdict without a projection.</span>}</p>
+      <p className="mt-3 min-h-5 text-callout">{v ? <VerdictTag v={v} /> : <span className="text-fg2">No verdict without a projection.</span>}</p>
       <div className="mt-4 grid grid-cols-2 gap-3">
         <Button kind="secondary" onClick={onClose}>
           Cancel
@@ -429,12 +429,12 @@ export function GoalDetail() {
     >
       <div className="mt-4 text-caps text-fg2">Goal · {view.by != null ? `by ${fmtMonthDay(view.by)}` : 'no date'}</div>
       <div className="text-hero tabular-nums">{fmtGoal(goal, ex, units)}</div>
-      <div className={cx('text-[15px] font-bold tabular-nums', tone)}>{status}</div>
+      <div className={cx('text-body font-bold tabular-nums', tone)}>{status}</div>
 
       {!state.done && (
         <div className="mt-5">
           <GoalBar frac={state.progress} behind={state.behind} marker={view.by != null ? state.tickProgress : undefined} markerLabel="Where steady gains would put you today" />
-          <div className="mt-2 grid grid-cols-3 text-[12.5px] text-fg2 tabular-nums">
+          <div className="mt-2 grid grid-cols-3 text-caption text-fg2 tabular-nums">
             <span>
               Start {num(goal.startE1rm)} · {fmtMonthDay(goal.startedAt)}
             </span>
@@ -480,23 +480,24 @@ export function GoalDetail() {
             />
           )}
           <AdjustRow title="Keep it" detail={`Needs ${fmtRate(adjust.need, ex, units)} · ${state.verdict === 'stretch' ? 'Stretch' : 'Unlikely'}`} onClick={() => setKept(true)} />
-          <button type="button" onClick={() => navigate(`/progress/lift/${ex.id}/trend`)} className="flex h-11 items-center text-[15px] font-semibold text-accent">
-            See {ex.name} trend ›
+          <button type="button" onClick={() => navigate(`/progress/lift/${ex.id}/trend`)} className="flex h-11 items-center gap-1 text-body font-semibold text-accent">
+            See {ex.name} trend
+            <ChevronRight size={11} />
           </button>
         </>
       ) : (
         !state.done && (
           <>
             <SectionLabel>How to get there</SectionLabel>
-            <p className="border-b border-line py-2.5 text-[14px] leading-snug">
+            <p className="border-b border-line py-2.5 text-callout leading-snug">
               Follow the workout suggestions for {ex.name}. Every set counts: progress is measured in {ex.type === 'bodyweight' ? 'reps' : 'est. 1RM'}, not only attempts at {fmtGoal(goal, ex, units)}.
             </p>
             {testAt && (
-              <p className="border-b border-line py-2.5 text-[14px] leading-snug tabular-nums">
+              <p className="border-b border-line py-2.5 text-callout leading-snug tabular-nums">
                 Test {fmtGoal(goal, ex, units)} around <b>{fmtMonthDay(testAt)}</b>, when your trend says you can lift it.
               </p>
             )}
-            {state.verdict === 'ready' && <p className="border-b border-line py-2.5 text-[14px] leading-snug">Your est. 1RM already covers it. Try it at your next session.</p>}
+            {state.verdict === 'ready' && <p className="border-b border-line py-2.5 text-callout leading-snug">Your est. 1RM already covers it. Try it at your next session.</p>}
             <Note className="mt-3">The white tick is where you'd be today if gains were steady from the day you set the goal. Ahead of it is green, behind it is orange.</Note>
           </>
         )
@@ -561,12 +562,12 @@ const startOfWeekDay = (ts: number) => {
 
 function AdjustRow({ title, detail, onClick }: { title: string; detail: string; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="flex min-h-[56px] w-full items-center justify-between gap-3 border-b border-line py-1.5 text-left active:bg-surface/60">
+    <button type="button" onClick={onClick} className="flex min-h-15 w-full items-center justify-between gap-3 border-b border-line py-1.5 text-left active:bg-surface/60">
       <span className="min-w-0">
-        <b className="block text-[16px] font-semibold tabular-nums">{title}</b>
-        <span className="block text-[13px] text-fg2 tabular-nums">{detail}</span>
+        <b className="block text-input font-semibold tabular-nums">{title}</b>
+        <span className="block text-footnote text-fg2 tabular-nums">{detail}</span>
       </span>
-      <span className="text-[15px] font-semibold text-accent">Use</span>
+      <span className="text-body font-semibold text-accent">Use</span>
     </button>
   );
 }
@@ -602,16 +603,17 @@ export function GoalDoneBlock({ workoutId }: { workoutId: string }) {
 
   return (
     <div className="mt-5 border-y border-line py-3">
-      <div className="text-[11px] font-bold tracking-[0.06em] text-tip uppercase">
-        ✓ Goal done{early >= 1 ? ` · ${early === 1 ? '1 week' : `${early} weeks`} early` : ''}
+      <div className="flex items-center gap-1 text-caps text-tip">
+        <CheckGlyph size={11} />
+        Goal done{early >= 1 ? ` · ${early === 1 ? '1 week' : `${early} weeks`} early` : ''}
       </div>
-      <div className="text-[30px] leading-tight font-bold tracking-[-0.02em] tabular-nums">{fmtGoal(goal, ex, units)}</div>
-      <p className="text-[14px] text-fg2 tabular-nums">
+      <div className="text-title1 leading-tight font-bold tabular-nums">{fmtGoal(goal, ex, units)}</div>
+      <p className="text-callout text-fg2 tabular-nums">
         {ex.name}, {fmtMonthDay(goal.doneAt!)}. {ex.type === 'bodyweight' ? 'Best' : 'Est. 1RM'} is now {fmtStrength(t.E0, ex, units)}.
       </p>
       {next.length > 0 && (
         <>
-          <div className="mt-3 text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase">Next goal?</div>
+          <div className="mt-3 text-caps text-fg2">Next goal?</div>
           {next.map((n) => (
             <button
               key={`${n.weight}-${n.reps}`}
@@ -623,17 +625,17 @@ export function GoalDoneBlock({ workoutId }: { workoutId: string }) {
               className="flex min-h-[52px] w-full items-center justify-between gap-3 border-b border-line text-left active:bg-surface/60"
             >
               <span>
-                <b className="block text-[16px] font-semibold tabular-nums">
+                <b className="block text-input font-semibold tabular-nums">
                   {fmtGoal(n, ex, units)} by {fmtMonthDay(by)}
                 </b>
                 <VerdictTag v={n.v} />
               </span>
-              <span className="text-[15px] font-semibold text-accent">Set goal</span>
+              <span className="text-body font-semibold text-accent">Set goal</span>
             </button>
           ))}
         </>
       )}
-      <button type="button" onClick={done} className="flex h-11 w-full items-center justify-center text-[15px] font-semibold text-fg2">
+      <button type="button" onClick={done} className="flex h-11 w-full items-center justify-center text-body font-semibold text-fg2">
         Not now
       </button>
     </div>

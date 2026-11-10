@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router';
 import { SwipeRow } from '../../components/gestures';
-import { ChevronRight } from '../../components/icons';
+import { ChevronRight, CopyGlyph, MoreGlyph } from '../../components/icons';
 import { Keypad, type KeypadTab } from '../../components/Keypad';
 import { Alert, HoldMenu, Sheet, SheetOption, type MenuItem } from '../../components/overlays';
 import { AddButton, BarButton, Button, cx, FieldLabel, Tag, TopBar } from '../../components/ui';
@@ -247,14 +247,14 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
           ...(menuSet.kind !== 'drop' && exerciseOrMissing(exerciseMap, exercises.find((e) => e.key === setMenu.exKey)!.exerciseId).type !== 'cardio'
             ? [{ label: menuSet.kind === 'warmup' ? 'Mark as working set' : 'Mark as warm-up', glyph: menuSet.kind === 'warmup' ? '1' : 'W', onClick: () => toggleWarm(setMenu.exKey, setMenu.setKey) }]
             : []),
-          { label: 'Duplicate', glyph: '⧉', onClick: () => duplicateSet(setMenu.exKey, setMenu.setKey) },
+          { label: 'Duplicate', glyph: <CopyGlyph />, onClick: () => duplicateSet(setMenu.exKey, setMenu.setKey) },
           { label: 'Delete', glyph: '✕', tone: 'danger' as const, onClick: () => removeSet(setMenu.exKey, setMenu.setKey) },
         ]
       : [];
 
   const exHeader = (e: EditedExercise, ex: Exercise) => (
     <div className="flex items-center gap-2">
-      <b className="min-w-0 flex-1 truncate text-[16px] font-semibold">{ex.name}</b>
+      <b className="min-w-0 flex-1 truncate text-input font-semibold">{ex.name}</b>
       <button
         type="button"
         onClick={() => {
@@ -262,9 +262,9 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
           setExMenu(e.key);
         }}
         aria-label={`${ex.name} options`}
-        className="-mr-2 flex h-11 w-11 items-center justify-center text-[14px] font-bold tracking-[1px] text-accent"
+        className="-mr-2 flex h-11 w-11 items-center justify-center text-accent"
       >
-        •••
+        <MoreGlyph size={16} />
       </button>
     </div>
   );
@@ -277,7 +277,7 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
       <section key={e.key} className="border-b border-line pt-3 pb-2">
         {exHeader(e, ex)}
         {e.sets.length > 0 && (
-          <div className="grid h-5 items-center gap-2 text-center text-[10.5px] font-bold tracking-[0.05em] text-fg2" style={grid}>
+          <div className="grid h-5 items-center gap-2 text-center text-caps text-fg2" style={grid}>
             <span>#</span>
             {cols.map((c) => (
               <span key={c} className="truncate">
@@ -294,14 +294,14 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
                   type="button"
                   aria-label={`Segment ${i + 1} options`}
                   onClick={(ev) => setSetMenu({ exKey: e.key, setKey: s.key, rect: (ev.currentTarget.parentElement as HTMLElement).getBoundingClientRect() })}
-                  className="flex h-10 items-center justify-center text-[14px] font-bold"
+                  className="flex h-10 items-center justify-center text-callout font-bold"
                 >
                   {i + 1}
                 </button>
                 {cols.map((c) => {
                   if (c !== 'time' && isComputed(c))
                     return (
-                      <span key={c} className="truncate text-center text-[15px] font-medium text-fg3">
+                      <span key={c} className="truncate text-center text-body font-medium text-fg3">
                         {columnText(c, s, ex, units) || '—'}
                       </span>
                     );
@@ -353,10 +353,10 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
             onFocus={() => setEditing(null)}
             maxLength={60}
             placeholder="Workout name"
-            className="min-w-0 flex-1 bg-transparent text-[30px] leading-tight font-bold tracking-[-0.02em] outline-none placeholder:text-fg3"
+            className="min-w-0 flex-1 bg-transparent text-title1 leading-tight font-bold outline-none placeholder:text-fg3"
           />
         </div>
-        <button type="button" onClick={() => setOverlay('time')} className="-mb-3 flex h-11 w-full items-start justify-between pt-1 text-[13px] text-fg2">
+        <button type="button" onClick={() => setOverlay('time')} className="-mb-3 flex h-11 w-full items-start justify-between pt-1 text-footnote text-fg2">
           <span>
             {fmtDay(startedAt)} · {fmtTime(startedAt)}
             {endedAt ? ` – ${fmtTime(endedAt)}` : ''}
@@ -375,7 +375,7 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
             <section key={e.key} className="border-b border-line pt-3 pb-6">
               <div className="flex items-center gap-2">
                 <TagPill tag={tags.get(e.key)} on />
-                <b className="min-w-0 flex-1 truncate text-[16px] font-semibold">
+                <b className="min-w-0 flex-1 truncate text-input font-semibold">
                   {ex.name}
                   {TYPE_TAG[ex.type] && <Tag>{TYPE_TAG[ex.type]}</Tag>}
                 </b>
@@ -386,13 +386,13 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
                     setExMenu(e.key);
                   }}
                   aria-label={`${ex.name} options`}
-                  className="-mr-2 flex h-11 w-11 items-center justify-center text-[14px] font-bold tracking-[1px] text-accent"
+                  className="-mr-2 flex h-11 w-11 items-center justify-center text-accent"
                 >
-                  •••
+                  <MoreGlyph size={16} />
                 </button>
               </div>
               {e.sets.length > 0 && (
-                <div className={cx('grid h-5 items-center gap-2 text-center text-[10.5px] font-bold tracking-[0.05em] text-fg2', cols)}>
+                <div className={cx('grid h-5 items-center gap-2 text-center text-caps text-fg2', cols)}>
                   <span>SET</span>
                   {showW && <span>{weightColumnLabel(ex.type, unitColumn(units))}</span>}
                   <span>REPS</span>
@@ -425,7 +425,7 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
                           type="button"
                           aria-label={`Set ${l} options`}
                           onClick={(ev) => setSetMenu({ exKey: e.key, setKey: s.key, rect: (ev.currentTarget.parentElement as HTMLElement).getBoundingClientRect() })}
-                          className={cx('flex h-10 items-center justify-center text-[14px] font-bold', s.kind === 'warmup' && 'text-fg2', s.kind === 'drop' && 'text-warn')}
+                          className={cx('flex h-10 items-center justify-center text-callout font-bold', s.kind === 'warmup' && 'text-fg2', s.kind === 'drop' && 'text-warn')}
                         >
                           {l}
                         </button>
@@ -448,7 +448,7 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
           if (!b.letter) return section(b.items[0]);
           return (
             <div key={`ss-${b.items[0].key}`} className="mt-3 border-l-2 border-accent pl-3">
-              <div className="pt-1 text-[11px] font-bold tracking-[0.07em] text-accent uppercase">Superset {b.letter}</div>
+              <div className="pt-1 text-caps text-accent">Superset {b.letter}</div>
               {b.items.map(section)}
             </div>
           );
@@ -463,7 +463,7 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
         >
           + Add exercises
         </AddButton>
-        <p className="mt-3 text-[12.5px] leading-normal text-fg2">
+        <p className="mt-3 text-caption leading-normal text-fg2">
           {emptyCount ? `${emptyCount} empty ${emptyCount === 1 ? 'row' : 'rows'} will be removed on Save. ` : ''}
           Records and charts update on Save.
         </p>
@@ -631,8 +631,8 @@ function Editor({ id, initial }: { id: string; initial: { name: string; startedA
 function EditCell({ text, editing, onClick, label, badge }: { text: string; editing: boolean; onClick: () => void; label: string; badge?: ReactNode }) {
   const cell = (
     <button type="button" aria-label={label} onClick={onClick} className="flex h-10 w-full items-center">
-      <span className={cx('flex h-[32px] w-full items-center justify-center rounded-[8px] text-[16px] font-semibold', editing ? 'border-2 border-accent bg-edit' : 'bg-surface-2')}>
-        {text ? <span>{text}</span> : !editing && <span className="text-[14px] font-medium text-fg3">—</span>}
+      <span className={cx('flex h-[32px] w-full items-center justify-center rounded-sm text-input font-semibold', editing ? 'border-2 border-accent bg-edit' : 'bg-surface-2')}>
+        {text ? <span>{text}</span> : !editing && <span className="text-callout font-medium text-fg3">—</span>}
       </span>
     </button>
   );
@@ -670,14 +670,14 @@ function TimeSheet({
   const ta = fromLocalInputValue(a);
   const tb = b ? fromLocalInputValue(b) : undefined;
   const error = !ta ? 'Pick a start time.' : tb !== undefined && tb < ta ? 'The end is before the start.' : ta > Date.now() ? "That's in the future." : '';
-  const input = 'mt-1.5 h-12 w-full rounded-[10px] bg-surface-2 px-3 text-[17px] text-fg outline-none focus:ring-2 focus:ring-accent';
+  const input = 'mt-1.5 h-12 w-full rounded-md bg-surface-2 px-3 text-body-lg text-fg outline-none focus:ring-2 focus:ring-accent';
   return (
     <Sheet open={open} onClose={onClose} title="Date & time">
       <FieldLabel className="mt-1">Started</FieldLabel>
       <input type="datetime-local" value={a} max={toLocalInputValue(Date.now())} onChange={(e) => setA(e.target.value)} className={input} />
       <FieldLabel>Finished</FieldLabel>
       <input type="datetime-local" value={b} onChange={(e) => setB(e.target.value)} className={input} />
-      {error && <p className="mt-2 text-[13px] font-semibold text-danger">{error}</p>}
+      {error && <p className="mt-2 text-footnote font-semibold text-danger">{error}</p>}
       <Button
         className="mt-4"
         disabled={!!error}

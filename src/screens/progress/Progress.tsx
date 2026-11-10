@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { Sparkline } from '../../components/charts';
-import { CheckGlyph, ChevronDown, ProgressIcon, WarnGlyph } from '../../components/icons';
+import { CheckGlyph, ChevronDown, ChevronRight, ProgressIcon, WarnGlyph } from '../../components/icons';
 import { Sheet, SheetOption } from '../../components/overlays';
-import { cx, EmptyState, LabelAction, LargeHeader, Screen, SectionLabel, Segmented } from '../../components/ui';
+import { cx, EmptyState, LabelAction, LargeHeader, Screen, SectionLabel, Segmented, TrendText } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { hasEnoughForProgress, liftPoints, liftTrend, loggedLifts } from '../../data/lifts';
 import { pickFocus, popularityOf } from '../../lib/popularity';
@@ -75,17 +75,17 @@ function valueText(v: number, ex: Exercise, units: Units): string {
   return `${formatNumber(Math.round(toDisplay(v, units)), 0)} ${unitLabel(units)}`;
 }
 
-function changeText(change: number, pct: number | undefined, ex: Exercise, units: Units): string {
+function changeText(change: number, pct: number | undefined, ex: Exercise, units: Units): ReactNode {
   if (ex.type === 'bodyweight') {
     const r = Math.round(change);
-    return r === 0 ? '= 0 reps' : `${r > 0 ? '▲ +' : '▼ −'}${Math.abs(r)} ${Math.abs(r) === 1 ? 'rep' : 'reps'}`;
+    return r === 0 ? '= 0 reps' : <TrendText dir={r > 0 ? 'up' : 'down'}>{`${r > 0 ? '+' : '−'}${Math.abs(r)} ${Math.abs(r) === 1 ? 'rep' : 'reps'}`}</TrendText>;
   }
   if (ex.type === 'weight' && pct !== undefined) {
     const p = Math.round(pct);
-    return p === 0 ? '= 0%' : `${p > 0 ? '▲ +' : '▼ −'}${Math.abs(p)}%`;
+    return p === 0 ? '= 0%' : <TrendText dir={p > 0 ? 'up' : 'down'}>{`${p > 0 ? '+' : '−'}${Math.abs(p)}%`}</TrendText>;
   }
   const d = toDisplay(change, units);
-  return Math.abs(d) < 0.05 ? `= 0 ${unitLabel(units)}` : `${d > 0 ? '▲ +' : '▼ −'}${formatNumber(Math.abs(d), 1)} ${unitLabel(units)}`;
+  return Math.abs(d) < 0.05 ? `= 0 ${unitLabel(units)}` : <TrendText dir={d > 0 ? 'up' : 'down'}>{`${d > 0 ? '+' : '−'}${formatNumber(Math.abs(d), 1)} ${unitLabel(units)}`}</TrendText>;
 }
 
 /** 7.1 / 7.6 / 7.12: focus lifts first with a status each, every other lift, goals, cardio. */
@@ -174,8 +174,8 @@ export function Progress() {
         className="grid min-h-[60px] w-full grid-cols-[1fr_72px_76px] items-center gap-2.5 border-b border-line py-1.5 text-left active:bg-surface/60"
       >
         <span className="min-w-0">
-          <b className="block truncate text-[16px] font-semibold">{ex.name}</b>
-          <span className="block truncate text-[13px] text-fg2 tabular-nums">
+          <b className="block truncate text-input font-semibold">{ex.name}</b>
+          <span className="block truncate text-footnote text-fg2 tabular-nums">
             {trend.current !== undefined ? valueText(trend.current, ex, units) : sessions > 0 && ex.type === 'weight' && !hasMetric ? 'No sets of 12 reps or fewer' : 'No sessions in range'}
             {st && (
               <>
@@ -186,7 +186,7 @@ export function Progress() {
           </span>
         </span>
         <Sparkline values={trend.values} width={72} />
-        <span className={cx('text-right text-[13.5px] font-bold whitespace-nowrap tabular-nums', dir === 'up' ? 'text-tip' : dir === 'down' ? 'text-danger' : 'text-fg2')}>
+        <span className={cx('text-right text-footnote font-bold whitespace-nowrap tabular-nums', dir === 'up' ? 'text-tip' : dir === 'down' ? 'text-danger' : 'text-fg2')}>
           {ch === undefined ? '—' : changeText(ch, trend.pct, ex, units)}
         </span>
       </button>
@@ -200,14 +200,14 @@ export function Progress() {
           title="Progress"
           right={
             view === 'goals' ? (
-              <button type="button" onClick={() => navigate('/progress/goal/new')} aria-label="New goal" className="flex h-11 w-11 items-center justify-center text-[28px] font-light text-accent">
+              <button type="button" onClick={() => navigate('/progress/goal/new')} aria-label="New goal" className="flex h-11 w-11 items-center justify-center text-title1 font-light text-accent">
                 +
               </button>
             ) : (
               enough &&
               view === 'lifts' && (
                 <button type="button" onClick={() => setRangeOpen(true)} aria-label={`Range: ${range}`} className="flex h-11 items-center">
-                  <span className="flex h-[32px] items-center gap-1.5 rounded-[9px] border border-line-strong px-2.5 text-[14px] font-semibold text-accent">
+                  <span className="flex h-[32px] items-center gap-1.5 rounded-md border border-line-strong px-2.5 text-callout font-semibold text-accent">
                     {range}
                     <ChevronDown size={10} />
                   </span>
@@ -239,11 +239,11 @@ export function Progress() {
       ) : (
         <>
           <div className="mt-3">
-            <div className="text-[30px] leading-tight font-bold tracking-[-0.02em] tabular-nums">
+            <div className="text-title1 leading-tight font-bold tabular-nums">
               {avg === undefined ? '—' : `${avg >= 0 ? '+' : '−'}${Math.abs(Math.round(avg))}%`}
-              <small className="ml-1.5 text-[15px] font-semibold text-fg2">average {RANGE_WORDS[range]}</small>
+              <small className="ml-1.5 text-body font-semibold text-fg2">average {RANGE_WORDS[range]}</small>
             </div>
-            <span className="text-[14px] font-bold tabular-nums">
+            <span className="text-callout font-bold tabular-nums">
               {counts.length ? (
                 counts.map((c, i) => (
                   <span key={c.label} className={c.tone}>
@@ -259,9 +259,10 @@ export function Progress() {
               )}
             </span>
             {phase !== 'build' && (
-              <button type="button" onClick={() => navigate('/settings/phase')} className="flex min-h-11 items-center text-[13.5px] font-semibold text-accent">
+              <button type="button" onClick={() => navigate('/settings/phase')} className="flex min-h-11 items-center gap-1 text-footnote font-semibold text-accent">
                 {PHASE_LABEL[phase]}
-                {settings.phase?.until ? ` until ${fmtMonthDay(settings.phase.until)}` : ''} ›
+                {settings.phase?.until ? ` until ${fmtMonthDay(settings.phase.until)}` : ''}
+                <ChevronRight size={10} />
               </button>
             )}
           </div>
@@ -275,7 +276,7 @@ export function Progress() {
           <SectionLabel action={<LabelAction onClick={() => navigate('/progress/pinned')}>Edit</LabelAction>}>Focus</SectionLabel>
           {rows.map((r) => liftRow(r, true))}
           {!rows.length && (
-            <button type="button" onClick={() => navigate('/progress/pinned')} className="block w-full py-6 text-center text-[14px] text-fg2">
+            <button type="button" onClick={() => navigate('/progress/pinned')} className="block w-full py-6 text-center text-callout text-fg2">
               No focus lifts. <span className="font-semibold text-accent">Pick some</span>
             </button>
           )}
@@ -296,8 +297,8 @@ export function Progress() {
                   className="flex min-h-[52px] w-full items-center justify-between border-b border-line text-left active:bg-surface/60"
                 >
                   <span>
-                    <b className="block text-[16px] font-semibold">{otherRows.length} other lifts</b>
-                    <span className="text-[13px] text-fg2">Charts and records. Trends are on for focus lifts only.</span>
+                    <b className="block text-input font-semibold">{otherRows.length} other lifts</b>
+                    <span className="text-footnote text-fg2">Charts and records. Trends are on for focus lifts only.</span>
                   </span>
                   <ChevronDown size={11} className={cx('text-fg3 transition-transform', othersOpen && 'rotate-180')} />
                 </button>
@@ -308,7 +309,7 @@ export function Progress() {
           <div className="mt-6 border-t border-line">
             <NavRow title="Month in review" detail="One month at a time, against the one before" onClick={() => navigate('/progress/month')} />
           </div>
-          <p className="mt-4 text-[12.5px] leading-normal text-fg2">
+          <p className="mt-4 text-caption leading-normal text-fg2">
             Status = the last 8 weeks against each lift's own pace, so one bad day never counts. Change = latest session vs the last one before the range.
           </p>
         </>

@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
-import { CheckGlyph, ChevronRight } from '../../components/icons';
+import { CheckGlyph, ChevronRight, CopyGlyph, PencilGlyph, PlayGlyph } from '../../components/icons';
 import { Alert, HoldMenu, Sheet, SheetOption, useToast, type MenuItem } from '../../components/overlays';
 import { Button, TextField } from '../../components/ui';
 import { createFolder, deleteFolder, deleteRoutine, duplicateRoutine, moveRoutine, renameFolder, setActiveFolder, setFolderArchived } from '../../data/routines';
@@ -24,17 +24,22 @@ export function useRoutineActions(plans: PlansData | undefined) {
   const folderName = (id?: string) => plans?.folders.find((f) => f.id === id)?.name ?? 'No folder';
 
   const items = (r: Routine): MenuItem[] => [
-    { label: 'Start workout', glyph: '▶', tone: 'accent', onClick: () => start.startRoutine(r.id, r.name) },
-    { label: 'Edit routine', glyph: '✎', onClick: () => navigate(`/routine/${r.id}/edit`) },
+    { label: 'Start workout', glyph: <PlayGlyph size={12} />, tone: 'accent', onClick: () => start.startRoutine(r.id, r.name) },
+    { label: 'Edit routine', glyph: <PencilGlyph size={15} />, onClick: () => navigate(`/routine/${r.id}/edit`) },
     {
       label: 'Duplicate',
-      glyph: '⧉',
+      glyph: <CopyGlyph />,
       onClick: async () => {
         await duplicateRoutine(r.id);
         toast({ message: `Made a copy of ${r.name}` });
       },
     },
-    { label: 'Move to folder…', glyph: `${folderName(r.folderId)} ›`, onClick: () => setMoving(r) },
+    { label: 'Move to folder…', glyph: (
+        <span className="inline-flex items-center gap-1">
+          {folderName(r.folderId)}
+          <ChevronRight size={10} />
+        </span>
+      ), onClick: () => setMoving(r) },
     { label: 'Delete', tone: 'danger', onClick: () => setDeleting(r) },
   ];
 
@@ -163,7 +168,7 @@ export function FolderSheet({ folder, count, onClose }: { folder: Folder | null;
   return (
     <>
       <Sheet open={!!folder && !confirm} onClose={close} title={`Folder: ${folder?.name ?? ''}`} subtitle={`${count} ${count === 1 ? 'routine' : 'routines'}`}>
-        <div className="text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase">Name</div>
+        <div className="text-caps text-fg2">Name</div>
         <TextField value={name} onChange={setName} onBlur={commit} onEnter={commit} />
         <div className="mt-2">
           <SheetOption

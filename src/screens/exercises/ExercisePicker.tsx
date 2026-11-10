@@ -166,18 +166,18 @@ function PickerBody({
       className={cx('grid min-h-[52px] w-full grid-cols-[1fr_28px] items-center gap-3 border-b border-line text-left', opts.dim && 'opacity-55')}
     >
       <span className="min-w-0 py-1.5">
-        <b className={cx('block truncate text-[16px] font-semibold', opts.struck && 'text-fg3 line-through')}>
+        <b className={cx('block truncate text-input font-semibold', opts.struck && 'text-fg3 line-through')}>
           {e.name}
           {TYPE_TAG[e.type] && <Tag>{TYPE_TAG[e.type]}</Tag>}
         </b>
-        <span className="block truncate text-[13px] text-fg2">{opts.sub}</span>
+        <span className="block truncate text-footnote text-fg2">{opts.sub}</span>
       </span>
       {mode === 'multi' ? <Check on={!!opts.on} disabled={opts.locked} /> : <span />}
     </button>
   );
 
   const groupLabel = (children: ReactNode, right?: ReactNode, tone?: 'accent') => (
-    <div className={cx('mt-5 flex justify-between pb-1 text-[11px] font-bold tracking-[0.06em] uppercase', tone === 'accent' ? 'text-accent' : 'text-fg2')}>
+    <div className={cx('mt-5 flex justify-between pb-1 text-caps', tone === 'accent' ? 'text-accent' : 'text-fg2')}>
       <span>{children}</span>
       {right !== undefined && <span className="font-semibold tracking-normal normal-case">{right}</span>}
     </div>
@@ -299,7 +299,7 @@ function PickerBody({
               {ranked.rare.map((e) => pick(e, true))}
             </>
           )}
-          {searching && !results.length && <p className="py-6 text-center text-[14px] text-fg2">No exercise called "{query.trim()}" yet.</p>}
+          {searching && !results.length && <p className="py-6 text-center text-callout text-fg2">No exercise called "{query.trim()}" yet.</p>}
         </>
       )}
       {az && (
@@ -307,7 +307,7 @@ function PickerBody({
           {groupLabel('A – Z')}
           {letters.map((g) => (
             <div key={g.letter}>
-              <div className="sticky top-0 z-[1] bg-bg pt-2 pb-0.5 text-[12px] font-bold text-fg2">{g.letter}</div>
+              <div className="sticky top-0 z-[1] bg-bg pt-2 pb-0.5 text-caption font-bold text-fg2">{g.letter}</div>
               {g.items.map((e) => pick(e, !isShown(e, sessions, keep)))}
             </div>
           ))}

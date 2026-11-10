@@ -107,7 +107,7 @@ export function ExerciseScreen() {
           onAll={() => setAllOpen(true)}
         />
       ) : (
-        <p className="mt-2.5 text-[14px] text-fg2">None linked.</p>
+        <p className="mt-2.5 text-callout text-fg2">None linked.</p>
       )}
       <Note>{variations.length > CHIPS_MAX ? "Yours first (blue outline = you've logged it), then the most popular. Each keeps its own history." : 'Linked exercises show as buttons when logging. Each keeps its own history.'}</Note>
       <VariationsSheet
@@ -133,14 +133,14 @@ export function ExerciseScreen() {
       <button
         type="button"
         onClick={() => navigate(exercise.type === 'cardio' ? `/progress/cardio/${id}` : `/progress/lift/${id}`)}
-        className="flex min-h-[52px] w-full items-center justify-between gap-3 border-b border-line text-left text-[16px]"
+        className="flex min-h-[52px] w-full items-center justify-between gap-3 border-b border-line text-left text-input"
       >
         {exercise.type === 'cardio' ? 'Weekly totals & sessions' : 'History, charts & records'}
         <ChevronRight size={13} className="text-fg3" />
       </button>
-      <div className="flex min-h-[52px] items-center justify-between gap-3 border-b border-line text-[16px]">
+      <div className="flex min-h-[52px] items-center justify-between gap-3 border-b border-line text-input">
         <span className="flex-none">Used in</span>
-        <span className="min-w-0 truncate text-right text-[14px] text-fg2">
+        <span className="min-w-0 truncate text-right text-callout text-fg2">
           {usedIn === undefined ? '' : usedIn.length ? (
             usedIn.map((r, i) => (
               <span key={r.id}>
@@ -155,11 +155,11 @@ export function ExerciseScreen() {
           )}
         </span>
       </div>
-      <button type="button" onClick={() => setMerging(true)} className="flex min-h-[52px] w-full items-center justify-between gap-3 border-b border-line text-left text-[16px]">
+      <button type="button" onClick={() => setMerging(true)} className="flex min-h-[52px] w-full items-center justify-between gap-3 border-b border-line text-left text-input">
         Merge into another exercise…
         <ChevronRight size={13} className="text-fg3" />
       </button>
-      <button type="button" onClick={() => setConfirmDelete(true)} className="flex min-h-[52px] w-full items-center border-b border-line text-left text-[16px] text-danger">
+      <button type="button" onClick={() => setConfirmDelete(true)} className="flex min-h-[52px] w-full items-center border-b border-line text-left text-input text-danger">
         Delete exercise
       </button>
       <Note>Merge fixes duplicates (like an imported "Bench Press (Barbell)") by moving all its history into one exercise.</Note>
@@ -284,11 +284,11 @@ function LinkBody({ exercise, linked, onClose }: { exercise: Exercise; linked: s
             key={e.id}
             type="button"
             onClick={() => setPicked((p) => (on ? p.filter((x) => x !== e.id) : [...p, e.id]))}
-            className="flex min-h-[54px] w-full items-center gap-3 border-b border-line text-left"
+            className="flex min-h-13 w-full items-center gap-3 border-b border-line text-left"
           >
             <span className="min-w-0 flex-1">
-              <b className="block truncate text-[16px] font-semibold">{e.name}</b>
-              <span className="block truncate text-[13px] text-fg2">
+              <b className="block truncate text-input font-semibold">{e.name}</b>
+              <span className="block truncate text-footnote text-fg2">
                 {muscleLabel(e.muscle)} · {equipmentLabel(e.equipment).toLowerCase()}
                 {elsewhere ? ' · linked to others' : ''}
               </span>

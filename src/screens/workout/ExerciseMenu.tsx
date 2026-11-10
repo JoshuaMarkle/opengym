@@ -122,8 +122,8 @@ export function ExerciseMenu({
           >
             <Radio on={v.id === exercise.id} />
             <span className="min-w-0 flex-1">
-              <b className="block truncate text-[16px] font-semibold">{labels.get(v.id)}</b>
-              <span className="block truncate text-[13px] text-fg2">{v.name}</span>
+              <b className="block truncate text-input font-semibold">{labels.get(v.id)}</b>
+              <span className="block truncate text-footnote text-fg2">{v.name}</span>
             </span>
           </button>
         ))}

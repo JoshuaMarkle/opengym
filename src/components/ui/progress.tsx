@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { CheckGlyph } from '../icons';
+import { CheckGlyph, TrendDown, TrendUp } from '../icons';
 import { cx } from './layout';
 
 // design §8 Bars & rings. Two bar thicknesses (8 for a main bar, 4 under a label) and three
@@ -86,5 +86,16 @@ export function CountRing({ done, total }: { done: number; total: number }) {
     <Ring size="row" progress={total ? done / total : 0}>
       {complete ? <CheckGlyph size={12} className="text-accent" /> : <span className={cx('text-micro', done > 0 ? 'text-fg' : 'text-fg2')}>{`${done}/${total}`}</span>}
     </Ring>
+  );
+}
+
+/** A trend number or word with TrendUp / TrendDown 9 in front (design §3: never a typed ▲ ▼). No `dir`: the text alone. */
+export function TrendText({ dir, children, className = '' }: { dir?: 'up' | 'down'; children: ReactNode; className?: string }) {
+  if (!dir) return <span className={className}>{children}</span>;
+  return (
+    <span className={cx('inline-flex items-center gap-1', className)}>
+      {dir === 'up' ? <TrendUp size={9} className="flex-none" /> : <TrendDown size={9} className="flex-none" />}
+      <span>{children}</span>
+    </span>
   );
 }

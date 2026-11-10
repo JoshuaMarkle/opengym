@@ -7,7 +7,7 @@
  *   tracking  an arbitrary `tracking-[…]` value (tracking comes with the type utilities)
  *   height    an arbitrary `h-[…]` / `min-h-[…]` px height that isn't on the §4 list
  *   hex       a hex color in .ts / .tsx (every color is a --og-* variable in src/index.css)
- *   symbol    a typed ✓ → ▲ ▼ › ‹ ••• ▶ ≡ ▾ ⌄ ◎ in code (draw it with a glyph from icons.tsx)
+ *   symbol    a typed ✓ → ▲ ▼ › ‹ ••• ▶ ≡ ▾ ⌄ ◎ ✎ ⧉ ⤒ ↺ in code (draw it with a glyph from icons.tsx)
  *   disc      a `rounded-full` square between 20 and 40 px that isn't 24 or 34 (Disc S / L)
  *
  * Comments are ignored. Only the exceptions in ALLOW below pass, each with its reason.
@@ -41,6 +41,7 @@ const ALLOW: { file: string; rule: Rule; match: RegExp; reason: string }[] = [
   // design §2 "Keypad": 23 / 19 are keypad-only sizes.
   { file: 'src/components/Keypad.tsx', rule: 'text', match: /text-\[(23|19)px\]/, reason: 'keypad digits 23/500 and function keys 19/600 (design §2, §13)' },
   { file: 'src/components/Effort.tsx', rule: 'text', match: /text-\[(23|19)px\]/, reason: 'effort pad uses the keypad sizes (design §2, §13)' },
+  { file: 'src/components/Effort.tsx', rule: 'text', match: /text-\[(21px\]!|10px\])/, reason: 'effort pad digits 21 and their 10 px words: the effort view stays exactly as built (design §7)' },
   // design §13: the plate pad's bar drawing is a picture of a bar, sized to scale.
   { file: 'src/components/PlatePad.tsx', rule: 'radius', match: /rounded-(\w+-)?\[[123]px\]/, reason: 'bar and plate drawing (design §4: 2–3 px only inside drawings)' },
   { file: 'src/components/PlatePad.tsx', rule: 'height', match: /h-\[/, reason: 'bar and plate drawing, sized to scale' },
@@ -51,6 +52,8 @@ const ALLOW: { file: string; rule: Rule; match: RegExp; reason: string }[] = [
   // Prose inside strings: "A → B" in the routine-change alert and an app's menu path.
   { file: 'src/lib/routineDiff.ts', rule: 'symbol', match: /→/, reason: 'prose in the "Update the routine?" alert message (5.2)' },
   { file: 'src/screens/settings/ImportScreen.tsx', rule: 'symbol', match: /Settings → Export/, reason: 'a menu path in another app, written as prose' },
+  { file: 'src/screens/workout/Training.tsx', rule: 'symbol', match: /join\(' → '\)/, reason: 'the comeback ramp written out in the Why sheet\'s explanation sentence (4.28)' },
+  { file: 'src/screens/settings/SettingPicker.tsx', rule: 'symbol', match: /✓ fills them in/, reason: 'prose naming the ✓ accept button in a setting note (8.x Suggestions)' },
 ];
 
 // ───────────────────────────── scan
@@ -137,7 +140,7 @@ function lintFile(path: string): Issue[] {
       if (v !== null && !HEIGHTS.has(v)) add(i, 'height', `${m[1]}-[${m[2]}]: not a §4 height (${[...HEIGHTS].join(' ')})`);
     }
     if (!HEX_FILES.includes(file)) for (const m of l.matchAll(/#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b(?![\w-])/g)) add(i, 'hex', `${m[0]}: use a --og-* variable`);
-    for (const m of l.matchAll(/✓|→|▲|▼|›|‹|•••|▶|≡|▾|⌄|◎/g)) add(i, 'symbol', `typed ${m[0]}: draw it with a glyph from icons.tsx`);
+    for (const m of l.matchAll(/✓|→|▲|▼|›|‹|•••|▶|≡|▾|⌄|◎|✎|⧉|⤒|↺/g)) add(i, 'symbol', `typed ${m[0]}: draw it with a glyph from icons.tsx`);
     for (const cls of l.matchAll(/(["'`])([^"'`]*\brounded-full\b[^"'`]*)\1/g)) {
       const c = cls[2];
       const h = c.match(/(?<![\w-])h-(?:\[(\d+(?:\.\d+)?px)\]|(\d+(?:\.5)?))(?![\w.-])/);

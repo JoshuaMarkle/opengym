@@ -212,14 +212,14 @@ export function EffortSheet({ open, onClose, mode, onSwitch }: { open: boolean; 
         </Disc>
       }
     >
-      <p className="text-[14px] leading-snug text-fg2">
+      <p className="text-callout leading-snug text-fg2">
         <b className="text-fg">RPE</b> = Rate of Perceived Exertion: how hard the set was, 1 to 10.
       </p>
-      <p className="mt-1.5 text-[14px] leading-snug text-fg2">
+      <p className="mt-1.5 text-callout leading-snug text-fg2">
         <b className="text-fg">RIR</b> = Reps in Reserve: how many more reps you could have done.
       </p>
-      <div className="mt-4 text-[15px] tabular-nums" role="table" aria-label="RPE, RIR and how it feels">
-        <div role="row" className="grid h-7 grid-cols-[56px_56px_1fr] items-center border-b border-line text-[11px] font-bold tracking-[0.06em] text-fg2">
+      <div className="mt-4 text-body tabular-nums" role="table" aria-label="RPE, RIR and how it feels">
+        <div role="row" className="grid h-7 grid-cols-[56px_56px_1fr] items-center border-b border-line text-caps text-fg2">
           <span role="columnheader">RPE</span>
           <span role="columnheader">RIR</span>
           <span role="columnheader">FEELS LIKE</span>
@@ -232,14 +232,14 @@ export function EffortSheet({ open, onClose, mode, onSwitch }: { open: boolean; 
             <b role="cell" className={cx(mode !== 'rir' && 'font-medium text-fg2')}>
               {r.rir}
             </b>
-            <span role="cell" className="text-[14px] text-fg2">
+            <span role="cell" className="text-callout text-fg2">
               {r.feels}
             </span>
           </div>
         ))}
       </div>
       {onSwitch && mode !== 'off' && (
-        <button type="button" onClick={onSwitch} className="mt-2 flex h-11 items-center text-[16px] font-semibold text-accent active:opacity-60">
+        <button type="button" onClick={onSwitch} className="mt-2 flex h-11 items-center text-input font-semibold text-accent active:opacity-60">
           Switch to {mode === 'rpe' ? 'RIR' : 'RPE'}
         </button>
       )}

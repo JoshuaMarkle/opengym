@@ -283,7 +283,7 @@ export function WhySheet({
       />
       {tab === 'sets' ? (
         <>
-          <p className="mt-3 text-[13.5px] leading-snug text-fg2">{explain}</p>
+          <p className="mt-3 text-footnote leading-snug text-fg2">{explain}</p>
           <div className="mt-2" role="table" aria-label="Next weights per set">
             {t.setIds.map((id, i) => {
               const last = t.sg.last[i];
@@ -295,14 +295,14 @@ export function WhySheet({
               const where = last && r ? (last.reps > r.max ? `past ${r.max}` : last.reps < r.min ? `${r.min - last.reps} under` : 'in range') : '';
               return (
                 <div key={id} role="row" className="grid min-h-[50px] grid-cols-[44px_1fr_auto] items-center gap-2 border-b border-line py-1.5">
-                  <span className="text-[13px] font-bold text-fg2">Set {i + 1}</span>
+                  <span className="text-footnote font-bold text-fg2">Set {i + 1}</span>
                   <span className="min-w-0">
-                    <span className="block truncate text-[14.5px]">{last ? setLine(last, exercise, units, mode) : '—'}</span>
-                    <span className="block truncate text-[12px] text-fg2">
+                    <span className="block truncate text-callout">{last ? setLine(last, exercise, units, mode) : '—'}</span>
+                    <span className="block truncate text-caption text-fg2">
                       {[where, fit && !t.comeback ? `zone ${fmtW(Math.round(fit.zone[0]), exercise, units)}–${fmtW(Math.round(fit.zone[1]), exercise, units)}` : '', aim != null ? `aim ${aim}` : ''].filter(Boolean).join(' · ')}
                     </span>
                   </span>
-                  <span className={cx('text-right text-[15px] font-bold', MOVE_TONE[mv])}>
+                  <span className={cx('text-right text-body font-bold', MOVE_TONE[mv])}>
                     {w != null ? (
                       <span className="inline-flex items-center gap-1">
                         {mv === 'up' ? <TrendUp size={10} /> : mv === 'down' ? <TrendDown size={10} /> : '='} {fmtW(w, exercise, units)}
@@ -323,10 +323,10 @@ export function WhySheet({
             return (
               <div key={s.workoutId} className="grid grid-cols-[38px_1fr_auto] items-start gap-2 border-b border-line py-2">
                 <span className="text-center leading-[1.1]">
-                  <small className="block text-[10px] font-bold text-fg2 uppercase">{fmtMonthDay(s.date).split(' ')[0]}</small>
-                  <b className="text-[17px]">{d.getDate()}</b>
+                  <small className="block text-micro font-bold text-fg2 uppercase">{fmtMonthDay(s.date).split(' ')[0]}</small>
+                  <b className="text-body-lg">{d.getDate()}</b>
                 </span>
-                <span className="text-[13.5px] leading-snug">
+                <span className="text-footnote leading-snug">
                   {sets.map((x, j) => (
                     <Fragment key={j}>
                       {j > 0 && <span className="text-fg3"> · </span>}
@@ -334,14 +334,14 @@ export function WhySheet({
                     </Fragment>
                   ))}
                 </span>
-                {call ? <span className={cx('pt-0.5 text-[11px] font-bold', MOVE_TONE[call])}>{MOVE_WORD[call]}</span> : <span />}
+                {call ? <span className={cx('pt-0.5 text-caps normal-case tracking-normal font-bold', MOVE_TONE[call])}>{MOVE_WORD[call]}</span> : <span />}
               </div>
             );
           })}
           {t.autoMisses && (
             <div className="mt-4 border-l-2 border-warn pl-3">
-              <p className="text-[13.5px] leading-snug">Auto keeps missing here: you changed the weights in each of the last 3 sessions.</p>
-              <button type="button" onClick={onSuggestOnly} className="flex h-11 items-center text-[15px] font-semibold text-accent">
+              <p className="text-footnote leading-snug">Auto keeps missing here: you changed the weights in each of the last 3 sessions.</p>
+              <button type="button" onClick={onSuggestOnly} className="flex h-11 items-center text-body font-semibold text-accent">
                 Switch this lift to Suggest
               </button>
             </div>
@@ -353,25 +353,25 @@ export function WhySheet({
           {series.length > 1 ? (
             <LiftChart points={series.map((p) => ({ date: p.date, value: exercise.type === 'bodyweight' ? p.value : toDisplay(p.value, units) }))} from={at - 42 * DAY_MS} to={at} height={150} />
           ) : (
-            <p className="py-6 text-[13.5px] text-fg2">Not enough sessions in the last 6 weeks for a line.</p>
+            <p className="py-6 text-footnote text-fg2">Not enough sessions in the last 6 weeks for a line.</p>
           )}
           {set1.length > 0 && (
             <>
               <div className="mt-4 text-caps text-fg2">Set 1 reps{r0 ? ` · range ${rangeText(r0)}` : ''}</div>
-              <div className="mt-2 flex h-[110px] items-end gap-2">
+              <div className="mt-2 flex h-27.5 items-end gap-2">
                 {set1.map(({ date, set }) => {
                   const inR = r0 ? set.reps >= r0.min && set.reps <= r0.max : false;
                   const max = Math.max(...set1.map((x) => x.set.reps), r0?.max ?? 0);
                   return (
                     <div key={date} className="flex min-w-0 flex-1 flex-col items-center gap-1">
-                      <i className={cx('w-full max-w-[34px] rounded-t-[4px]', inR ? 'bg-tip' : 'bg-[var(--og-bar)]')} style={{ height: `${Math.max(6, (set.reps / max) * 70)}px` }} />
-                      <b className="text-[12px]">{set.reps}</b>
-                      <small className="truncate text-[10px] text-fg2">{fmtW(set.weight, exercise, units)}</small>
+                      <i className={cx('w-full max-w-[34px] rounded-t-xs', inR ? 'bg-tip' : 'bg-[var(--og-bar)]')} style={{ height: `${Math.max(6, (set.reps / max) * 70)}px` }} />
+                      <b className="text-caption">{set.reps}</b>
+                      <small className="truncate text-micro text-fg2">{fmtW(set.weight, exercise, units)}</small>
                     </div>
                   );
                 })}
               </div>
-              <p className="mt-2 text-[13px] leading-snug text-fg2">Set 1 counts most because it's the freshest. Bars turn green once they're in range.</p>
+              <p className="mt-2 text-footnote leading-snug text-fg2">Set 1 counts most because it's the freshest. Bars turn green once they're in range.</p>
             </>
           )}
         </>

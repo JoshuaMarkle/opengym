@@ -67,7 +67,7 @@ export function Settings() {
       <Item label="Drop set amount" value={`−${settings.dropPercent}%`} to="/settings/dropPercent" />
       <Item label="Effort (RPE / RIR)" value={EFFORT_LABEL[settings.effort]} to="/settings/effort" />
       <div className="flex min-h-[52px] items-center justify-between gap-3 border-b border-line">
-        <span className="text-[16px]">Keep screen on</span>
+        <span className="text-input">Keep screen on</span>
         <Toggle label="Keep screen on during workouts" on={settings.keepScreenOn} onChange={(v) => void updateSettings({ keepScreenOn: v })} />
       </div>
 
@@ -78,16 +78,16 @@ export function Settings() {
       <Item label="Exercise library" value={exercises.length} to="/exercises" />
 
       <SectionLabel>Data · last backup {fmtAgo(settings.lastBackupAt)}</SectionLabel>
-      <button type="button" disabled={busy} onClick={() => void backup()} className="flex min-h-[52px] w-full items-center border-b border-line text-left text-[16px] font-semibold text-accent disabled:opacity-50">
+      <button type="button" disabled={busy} onClick={() => void backup()} className="flex min-h-[52px] w-full items-center border-b border-line text-left text-input font-semibold text-accent disabled:opacity-50">
         Back up now
       </button>
       <Item label="Restore from backup" onClick={restore.pick} />
       <Item label="Import from Strong / Hevy" to="/settings/import" />
       <Item label="Export CSV" onClick={() => void csv()} />
-      <button type="button" onClick={() => setDeleting(true)} className="flex min-h-[52px] w-full items-center border-b border-line text-left text-[16px] text-danger">
+      <button type="button" onClick={() => setDeleting(true)} className="flex min-h-[52px] w-full items-center border-b border-line text-left text-input text-danger">
         Delete all data
       </button>
-      <p className="mt-2.5 text-[13px] leading-normal text-fg2">
+      <p className="mt-2.5 text-footnote leading-normal text-fg2">
         Everything lives on this phone. A backup is one file; save it to iCloud Drive with "Save to Files".
       </p>
 
@@ -95,7 +95,7 @@ export function Settings() {
         <>
           <SectionLabel tone="warn">Testing mode · this laptop only</SectionLabel>
           <Item label="Reset sample data" onClick={() => setResetting(true)} />
-          <p className="mt-2.5 text-[13px] leading-normal text-fg2">
+          <p className="mt-2.5 text-footnote leading-normal text-fg2">
             The dev server on localhost uses a separate test database filled with workouts from July 2024. Production and your phone never see it. Run{' '}
             <code>npm run dev:real</code> to turn it off.
           </p>
@@ -104,7 +104,7 @@ export function Settings() {
 
       <div className="mt-10 flex flex-col items-center gap-2 text-center">
         <LogoMark size={36} />
-        <div className="text-[13px] text-fg2">
+        <div className="text-footnote text-fg2">
           OpenGym {typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : ''}
           <br />
           Free, no account, works offline.
@@ -163,7 +163,7 @@ export function Settings() {
           { label: 'Cancel', onClick: closeDelete },
         ]}
       >
-        <TextField value={typed} onChange={setTyped} placeholder="DELETE" className="mt-3 text-center font-semibold tracking-[0.1em]" maxLength={10} />
+        <TextField value={typed} onChange={setTyped} placeholder="DELETE" className="mt-3 text-center font-semibold" maxLength={10} />
       </Alert>
     </Screen>
   );
@@ -177,8 +177,8 @@ function Item({ label, value, to, onClick }: { label: string; value?: ReactNode;
       onClick={onClick ?? (() => to && navigate(to))}
       className="flex min-h-[52px] w-full items-center justify-between gap-3 border-b border-line text-left active:bg-surface/60"
     >
-      <span className="text-[16px]">{label}</span>
-      <span className="flex items-center gap-2 text-[15px] text-fg2">
+      <span className="text-input">{label}</span>
+      <span className="flex items-center gap-2 text-body text-fg2">
         {value}
         <ChevronRight size={12} className="text-fg3" />
       </span>

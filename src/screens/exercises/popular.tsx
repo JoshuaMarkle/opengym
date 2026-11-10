@@ -56,7 +56,7 @@ export const sessionsText = (n: number) => `${n} ${n === 1 ? 'session' : 'sessio
 /** List section header: YOU DO, MOST POPULAR, RARELY USED (A1, A2). */
 export function ListHead({ children, count, tone }: { children: ReactNode; count?: ReactNode; tone?: 'accent' }) {
   return (
-    <div className={cx('mt-5 flex justify-between pb-1 text-[11px] font-bold tracking-[0.06em] uppercase', tone === 'accent' ? 'text-accent' : 'text-fg2')}>
+    <div className={cx('mt-5 flex justify-between pb-1 text-caps', tone === 'accent' ? 'text-accent' : 'text-fg2')}>
       <span>{children}</span>
       {count !== undefined && <span className="font-semibold tracking-normal normal-case tabular-nums">{count}</span>}
     </div>
@@ -67,7 +67,7 @@ export function ListHead({ children, count, tone }: { children: ReactNode; count
 export function HiddenFooter({ count, shown, onToggle }: { count: number; shown: boolean; onToggle: () => void }) {
   if (!count && !shown) return null;
   return (
-    <p className="mt-4 text-[13px] leading-snug text-fg2">
+    <p className="mt-4 text-footnote leading-snug text-fg2">
       {shown ? 'Rarely used exercises are shown.' : `${count} rarely used ${count === 1 ? 'exercise is' : 'exercises are'} hidden. They still show when you search, and anything you've logged always shows.`}{' '}
       <button type="button" onClick={onToggle} className="inline-flex min-h-11 items-center font-semibold text-accent">
         {shown ? 'Hide them' : 'Show hidden'}
@@ -114,11 +114,11 @@ export function VariationsSheet({
         className={cx('flex min-h-[52px] w-full items-center gap-3 border-b border-line text-left active:bg-surface/60', dim && 'opacity-55')}
       >
         <span className="min-w-0 flex-1 py-1.5">
-          <b className="block truncate text-[16px] font-semibold">
+          <b className="block truncate text-input font-semibold">
             {e.name}
             {TYPE_TAG[e.type] && <Tag>{TYPE_TAG[e.type]}</Tag>}
           </b>
-          <span className={cx('block truncate text-[13px]', n ? 'text-accent' : 'text-fg2')}>
+          <span className={cx('block truncate text-footnote', n ? 'text-accent' : 'text-fg2')}>
             {me ? `this${n ? ` · ${sessionsText(n)}` : ''}` : n ? sessionsText(n) : equipmentLabel(e.equipment).toLowerCase()}
           </span>
         </span>
@@ -136,7 +136,7 @@ export function VariationsSheet({
         </>
       )}
       {onEditLinks && (
-        <div className="mt-3 flex items-center justify-between text-[13px] text-fg2">
+        <div className="mt-3 flex items-center justify-between text-footnote text-fg2">
           <button type="button" onClick={onEditLinks} className="min-h-11 font-semibold text-accent">
             Edit links
           </button>

@@ -267,6 +267,36 @@ export function SearchGlyph({ size = 14, ...p }: P) {
   );
 }
 
+/** Coming back after a break (Lately, 3.6; was a typed ↺). */
+export function ReturnGlyph({ size = 14, ...p }: P) {
+  return (
+    <svg viewBox="0 0 16 16" {...svg(size, p)}>
+      <path d="M3.2 8a4.8 4.8 0 1 0 1.5-3.5" stroke="currentColor" strokeWidth="1.7" fill="none" strokeLinecap="round" />
+      <path d="M4.4 1.8v3h3" stroke="currentColor" strokeWidth="1.7" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** Duplicate in hold menus (was a typed ⧉). */
+export function CopyGlyph({ size = 15, ...p }: P) {
+  return (
+    <svg viewBox="0 0 16 16" {...svg(size, p)}>
+      <rect x="5" y="5" width="9" height="9" rx="2" stroke="currentColor" strokeWidth="1.6" fill="none" />
+      <path d="M11 2.8H4.5A1.7 1.7 0 0 0 2.8 4.5V11" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** Move to top in the set hold menu (was a typed ⤒). */
+export function ToTopGlyph({ size = 15, ...p }: P) {
+  return (
+    <svg viewBox="0 0 16 16" {...svg(size, p)}>
+      <line x1="3" y1="2.5" x2="13" y2="2.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M8 14V6M4.5 9.5 8 6l3.5 3.5" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 /** A target: the goals empty states (was a typed ◎). */
 export function TargetGlyph({ size = 22, ...p }: P) {
   return (

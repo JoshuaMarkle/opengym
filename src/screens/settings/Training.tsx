@@ -75,10 +75,10 @@ export function LinkRow({ label, detail, value, to, onClick }: { label: string; 
       className="flex min-h-[52px] w-full items-center justify-between gap-3 border-b border-line py-1.5 text-left active:bg-surface/60"
     >
       <span className="min-w-0">
-        <span className="block text-[16px]">{label}</span>
-        {detail && <span className="block text-[13px] leading-snug text-fg2">{detail}</span>}
+        <span className="block text-input">{label}</span>
+        {detail && <span className="block text-footnote leading-snug text-fg2">{detail}</span>}
       </span>
-      <span className="flex flex-none items-center gap-2 text-[15px] text-fg2 tabular-nums">
+      <span className="flex flex-none items-center gap-2 text-body text-fg2 tabular-nums">
         {value}
         <ChevronRight size={12} className="text-fg3" />
       </span>
@@ -90,8 +90,8 @@ export function ToggleRow({ label, detail, on, onChange }: { label: string; deta
   return (
     <div className="flex min-h-[52px] items-center justify-between gap-3 border-b border-line py-1.5">
       <span className="min-w-0">
-        <span className="block text-[16px]">{label}</span>
-        {detail && <span className="block text-[13px] leading-snug text-fg2">{detail}</span>}
+        <span className="block text-input">{label}</span>
+        {detail && <span className="block text-footnote leading-snug text-fg2">{detail}</span>}
       </span>
       <Toggle label={label} on={on} onChange={onChange} />
     </div>
@@ -100,10 +100,10 @@ export function ToggleRow({ label, detail, on, onChange }: { label: string; deta
 
 function ChoiceRow({ on, label, detail, onClick }: { on: boolean; label: string; detail?: string; onClick: () => void }) {
   return (
-    <button type="button" aria-pressed={on} onClick={onClick} className="flex min-h-[56px] w-full items-center gap-3 border-b border-line py-1.5 text-left active:bg-surface/60">
+    <button type="button" aria-pressed={on} onClick={onClick} className="flex min-h-15 w-full items-center gap-3 border-b border-line py-1.5 text-left active:bg-surface/60">
       <span className="min-w-0 flex-1">
-        <b className="block text-[16px] font-semibold">{label}</b>
-        {detail && <span className="block text-[13px] leading-snug text-fg2">{detail}</span>}
+        <b className="block text-input font-semibold">{label}</b>
+        {detail && <span className="block text-footnote leading-snug text-fg2">{detail}</span>}
       </span>
       <Radio on={on} />
     </button>
@@ -140,7 +140,7 @@ export function EffortTargetScreen() {
   const { settings } = useData();
   return (
     <Screen header={<TopBar left={<BackButton label="Training" onClick={() => navigate('/settings/training')} />} title="Effort target" />}>
-      <p className="mt-3 mb-2 text-[14px] leading-snug text-fg2">How close to failure do you want to train? Reps in reserve (RIR) = how many more reps you could have done. Suggestions pick weights that land you here.</p>
+      <p className="mt-3 mb-2 text-callout leading-snug text-fg2">How close to failure do you want to train? Reps in reserve (RIR) = how many more reps you could have done. Suggestions pick weights that land you here.</p>
       <EffortTargetPicker
         value={settings.effortTarget}
         lastOnly={settings.failureLastSetOnly}
@@ -207,7 +207,7 @@ export function PhaseScreen() {
         <>
           <SectionLabel>Until</SectionLabel>
           <Chips options={UNTIL.map((u) => ({ value: u.value, label: u.label }))} value={until} onChange={setUntil} />
-          <p className="mt-2 text-[13px] text-fg2">{ends ? `Ends ${fmtMonthDay(ends)}, then back to Building.` : 'Stays on until you change it.'}</p>
+          <p className="mt-2 text-footnote text-fg2">{ends ? `Ends ${fmtMonthDay(ends)}, then back to Building.` : 'Stays on until you change it.'}</p>
         </>
       )}
       {kind === 'maintain' && (

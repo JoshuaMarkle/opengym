@@ -4,7 +4,7 @@
 import { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { ChevronLeft, ChevronRight } from '../../components/icons';
-import { BackButton, cx, DetailTitle, EmptyState, Screen, SectionLabel, StatRow, TopBar } from '../../components/ui';
+import { BackButton, cx, DetailTitle, EmptyState, Screen, SectionLabel, StatRow, TopBar, TrendText } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { liftSeries, recentLifts, sessionSets } from '../../data/training';
 import { addMonths, fmtMonthDay, MONTHS_LONG, startOfMonth } from '../../lib/dates';
@@ -82,7 +82,7 @@ export function MonthReview() {
         />
       }
     >
-      <div className="mt-4 text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase">{new Date(from).getFullYear()}</div>
+      <div className="mt-4 text-caps text-fg2">{new Date(from).getFullYear()}</div>
       <DetailTitle className="mt-0" title={name} meta={from === thisMonth ? 'Your month so far' : 'Your month in lifting'} />
 
       {review.workouts === 0 ? (
@@ -101,7 +101,7 @@ export function MonthReview() {
           {best && bestEx && (
             <>
               <SectionLabel>Best moment</SectionLabel>
-              <p className="border-b border-line pb-3 text-[16px] leading-snug tabular-nums">
+              <p className="border-b border-line pb-3 text-input leading-snug tabular-nums">
                 <b>
                   {bestEx.name} {fmtGoal(best, bestEx, units)}
                 </b>
@@ -121,21 +121,21 @@ export function MonthReview() {
                 key={l.exerciseId}
                 type="button"
                 onClick={() => navigate(`/progress/lift/${ex.id}`)}
-                className="flex min-h-[56px] w-full items-center justify-between gap-3 border-b border-line text-left active:bg-surface/60"
+                className="flex min-h-15 w-full items-center justify-between gap-3 border-b border-line text-left active:bg-surface/60"
               >
                 <span className="min-w-0">
-                  <b className="block truncate text-[16px] font-semibold">{ex.name}</b>
-                  <span className="text-[13px] text-fg2 tabular-nums">
+                  <b className="block truncate text-input font-semibold">{ex.name}</b>
+                  <span className="text-footnote text-fg2 tabular-nums">
                     {ex.type === 'bodyweight' ? 'best set' : ex.type === 'assisted' ? 'assist' : 'est. 1RM'} {fmtStrength(l.now, ex, units)}
                   </span>
                 </span>
-                <span className={cx('text-[14px] font-bold tabular-nums', r === undefined || r === 0 ? 'text-fg2' : r > 0 ? 'text-tip' : 'text-warn')}>
-                  {r === undefined ? 'new' : r === 0 ? 'same' : `${r > 0 ? '▲' : '▼'} ${formatNumber(Math.abs(r), 0)}`}
+                <span className={cx('text-callout font-bold tabular-nums', r === undefined || r === 0 ? 'text-fg2' : r > 0 ? 'text-tip' : 'text-warn')}>
+                  {r === undefined ? 'new' : r === 0 ? 'same' : <TrendText dir={r > 0 ? 'up' : 'down'}>{formatNumber(Math.abs(r), 0)}</TrendText>}
                 </span>
               </button>
             );
           })}
-          <p className="mt-4 text-[12.5px] leading-normal text-fg2">Each lift's best session this month against its best in {prevName}. Records = sessions with a new best est. 1RM.</p>
+          <p className="mt-4 text-caption leading-normal text-fg2">Each lift's best session this month against its best in {prevName}. Records = sessions with a new best est. 1RM.</p>
         </>
       )}
     </Screen>

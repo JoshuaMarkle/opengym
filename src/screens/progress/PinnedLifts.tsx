@@ -66,15 +66,15 @@ export function PinnedLifts() {
           onChange={(v) => void updateSettings({ trainEverything: v })}
         />
       </div>
-      <p className="mt-2 text-[13px] leading-snug text-fg2">
+      <p className="mt-2 text-footnote leading-snug text-fg2">
         {settings.trainEverything
           ? 'Focus lifts go first in Progress and get the Home lines. Up to 5.'
           : 'Only focus lifts get trends, milestones and goals. Skipping legs is fine: every lift still gets workout suggestions and records.'}
       </p>
       {!settings.pinnedCustomized && pinned.length > 0 && (
-        <p className="mt-2 text-[13px] leading-snug text-fg2">Picked for you: the compound lifts you log most, nudged toward common lifts, one per variation group. Drag or tick to choose your own.</p>
+        <p className="mt-2 text-footnote leading-snug text-fg2">Picked for you: the compound lifts you log most, nudged toward common lifts, one per variation group. Drag or tick to choose your own.</p>
       )}
-      <div className="mt-4 flex justify-between pb-1 text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase">
+      <div className="mt-4 flex justify-between pb-1 text-caps text-fg2">
         <span>{settings.pinnedCustomized ? 'Focus · drag to order' : 'Focus · automatic'}</span>
         <span className="font-semibold tracking-normal">
           {pinned.length} of {FOCUS_MAX}
@@ -87,9 +87,9 @@ export function PinnedLifts() {
           ))}
         </SortableContext>
       </DndContext>
-      {!pinned.length && <p className="border-b border-line py-3 text-[13px] text-fg2">No focus lifts. Tick lifts below.</p>}
+      {!pinned.length && <p className="border-b border-line py-3 text-footnote text-fg2">No focus lifts. Tick lifts below.</p>}
 
-      <div className="mt-6 pb-1 text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase">{full ? 'Other exercises · untick one to swap' : 'Other exercises'}</div>
+      <div className="mt-6 pb-1 text-caps text-fg2">{full ? 'Other exercises · untick one to swap' : 'Other exercises'}</div>
       <SearchField value={query} onChange={setQuery} placeholder="Search all exercises" />
       <div className="mt-1">
         {others.map((e) => (
@@ -102,12 +102,12 @@ export function PinnedLifts() {
           >
             <Check on={false} disabled={full} />
             <span className="min-w-0 flex-1">
-              <b className="block truncate text-[16px] font-semibold">{e.name}</b>
-              <span className="text-[13px] text-fg2">{sessions(e.id) ? `${sessions(e.id)} sessions` : 'Not logged yet'}</span>
+              <b className="block truncate text-input font-semibold">{e.name}</b>
+              <span className="text-footnote text-fg2">{sessions(e.id) ? `${sessions(e.id)} sessions` : 'Not logged yet'}</span>
             </span>
           </button>
         ))}
-        {!others.length && <p className="py-4 text-[13px] text-fg2">{query ? 'No matches.' : 'Everything you’ve logged is a focus lift.'}</p>}
+        {!others.length && <p className="py-4 text-footnote text-fg2">{query ? 'No matches.' : 'Everything you’ve logged is a focus lift.'}</p>}
       </div>
     </Screen>
   );
@@ -119,14 +119,14 @@ function PinnedRow({ exercise, sessions, onToggle }: { exercise: Exercise; sessi
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform), transition }}
-      className={cx('relative flex min-h-[52px] items-center gap-3 border-b border-line bg-bg', isDragging && 'z-10 rounded-[10px] border-transparent bg-surface px-2 outline-[1.5px] outline-accent')}
+      className={cx('relative flex min-h-[52px] items-center gap-3 border-b border-line bg-bg', isDragging && 'z-10 rounded-md border-transparent bg-surface px-2 outline-[1.5px] outline-accent')}
     >
       <button type="button" onClick={onToggle} aria-label={`Remove ${exercise.name} from focus`} className="-ml-2 flex h-11 w-11 items-center justify-center">
         <Check on />
       </button>
       <span className="min-w-0 flex-1">
-        <b className="block truncate text-[16px] font-semibold">{exercise.name}</b>
-        <span className="text-[13px] text-fg2">{sessions} sessions</span>
+        <b className="block truncate text-input font-semibold">{exercise.name}</b>
+        <span className="text-footnote text-fg2">{sessions} sessions</span>
       </span>
       <button type="button" ref={setActivatorNodeRef} {...attributes} {...listeners} aria-label={`Reorder ${exercise.name}`} className="-mr-2 flex h-11 w-11 touch-none items-center justify-center text-fg3">
         <Handle />

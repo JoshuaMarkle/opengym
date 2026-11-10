@@ -51,7 +51,7 @@ export function LiftDetail() {
           right={
             hasVariations ? (
               <button type="button" onClick={() => setVarOpen(true)} className="flex h-11 items-center" aria-label="Variation">
-                <span className="flex h-[30px] max-w-[110px] items-center gap-1 rounded-[9px] border border-line-strong px-2 text-[13px] font-semibold text-accent">
+                <span className="flex h-8 max-w-27.5 items-center gap-1 rounded-md border border-line-strong px-2 text-footnote font-semibold text-accent">
                   <span className="truncate">{combined ? 'All' : labels.get(exercise.id)}</span>
                   <ChevronDown size={9} className="flex-none" />
                 </span>
@@ -66,7 +66,7 @@ export function LiftDetail() {
           <NavRow
             title={
               <>
-                <span className="text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase">Trend · 8 wk </span>
+                <span className="text-caps text-fg2">Trend · 8 wk </span>
                 <span className={STATUS_TONE[trend.status]}>{statusText(trend.status)}</span>
               </>
             }
@@ -82,7 +82,7 @@ export function LiftDetail() {
       {tab === 'records' && <RecordsView exercise={exercise} exerciseIds={ids} />}
       {tab === 'history' && <HistoryView exercise={exercise} onOpenWorkout={(wid) => navigate(`/history/${wid}`)} />}
       {tab !== 'history' && (
-        <button type="button" onClick={() => navigate(`/exercises/${exercise.id}`)} className="mt-5 flex h-11 w-full items-center justify-center text-[15px] font-semibold text-accent">
+        <button type="button" onClick={() => navigate(`/exercises/${exercise.id}`)} className="mt-5 flex h-11 w-full items-center justify-center text-body font-semibold text-accent">
           Exercise settings
         </button>
       )}
@@ -96,7 +96,7 @@ export function LiftDetail() {
               setCombined(false);
               if (v.id !== exercise.id) navigate(`/progress/lift/${v.id}`, { replace: true });
             }}
-            detail={!combined && v.id === exercise.id ? <CheckGlyph size={15} className="text-accent" /> : <span className="text-[13px]">{v.name}</span>}
+            detail={!combined && v.id === exercise.id ? <CheckGlyph size={15} className="text-accent" /> : <span className="text-footnote">{v.name}</span>}
           >
             {labels.get(v.id)}
           </SheetOption>

@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { Navigate, useNavigate } from 'react-router';
-import { ChartIcon, CheckGlyph, ChevronDown, KeyboardGlyph, MoreGlyph } from '../../components/icons';
+import { ArrowGlyph, ChartIcon, CheckGlyph, ChevronDown, CopyGlyph, KeyboardGlyph, MoreGlyph, ToTopGlyph } from '../../components/icons';
 import { EffortPad } from '../../components/Effort';
 import { Keypad, ModeTabs, type KeypadTab } from '../../components/Keypad';
 import { Alert, HoldMenu, Sheet, SheetOption, useToast, type MenuItem } from '../../components/overlays';
@@ -496,9 +496,9 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
           ? { label: 'Mark as working set', glyph: '1', onClick: () => void toggleWarmup(set.id) }
           : { label: 'Mark as warm-up', glyph: 'W', onClick: () => void toggleWarmup(set.id) },
       );
-      items.push({ label: 'Move to top', glyph: '⤒', onClick: () => void moveSetToTop(set.id) });
+      items.push({ label: 'Move to top', glyph: <ToTopGlyph />, onClick: () => void moveSetToTop(set.id) });
     }
-    items.push({ label: 'Duplicate', glyph: '⧉', onClick: () => void duplicateSet(set.id) });
+    items.push({ label: 'Duplicate', glyph: <CopyGlyph />, onClick: () => void duplicateSet(set.id) });
     items.push({ label: 'Delete', glyph: '✕', tone: 'danger', onClick: () => void onDelete(m, set) });
     return items;
   };
@@ -773,7 +773,7 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
         <div className="mt-2 grid">
           <AddButton onClick={() => void addSet(m)}>+ Segment</AddButton>
         </div>
-        {m.sets.length === 1 && <p className="mt-3 text-[13px] leading-normal text-fg2">Most cardio is a single row. Segments are there for warm-up / main / cool-down if you want them.</p>}
+        {m.sets.length === 1 && <p className="mt-3 text-footnote leading-normal text-fg2">Most cardio is a single row. Segments are there for warm-up / main / cool-down if you want them.</p>}
       </>
     ) : (
       <div className="mt-2 grid grid-cols-2 gap-2">
@@ -784,7 +784,7 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
       </div>
     );
 
-  const emptySets = (m: ActiveExercise) => !m.sets.length && <p className="py-4 text-center text-[14px] text-fg2">{m.exercise.type === 'cardio' ? 'No segments. Add one below.' : 'No sets. Add one below.'}</p>;
+  const emptySets = (m: ActiveExercise) => !m.sets.length && <p className="py-4 text-center text-callout text-fg2">{m.exercise.type === 'cardio' ? 'No segments. Add one below.' : 'No sets. Add one below.'}</p>;
 
   /** 4.19–4.20: the superset on one screen, inside the blue bracket. */
   const supersetView = () => {
@@ -798,12 +798,12 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
     return (
       <div key={`ss-${members[0].we.id}`} className="anim-page">
         <div className="mt-3.5 flex items-center justify-between gap-2">
-          <span className="text-[11px] font-bold tracking-[0.07em] text-accent uppercase">
+          <span className="text-caps text-accent">
             Superset {block.letter} · Round {round.round} of {round.rounds}
           </span>
           {partner && (
-            <span className="text-[12px] font-semibold text-fg2">
-              {tags.get(cur.we.id)} → {tags.get(partner.we.id)}
+            <span className="inline-flex items-center gap-1 text-caption font-semibold text-fg2">
+              {tags.get(cur.we.id)} <ArrowGlyph size={10} /> {tags.get(partner.we.id)}
             </span>
           )}
         </div>
@@ -816,8 +816,8 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
               return (
                 <button key={m.we.id} type="button" onClick={() => focus(m)} className="flex min-h-[52px] w-full items-center gap-2.5 border-b border-line text-left">
                   <TagPill tag={tag} done={allTicked(m.sets)} />
-                  <b className="min-w-0 flex-1 truncate text-[16px] font-semibold">{m.exercise.name}</b>
-                  <span className="max-w-[150px] flex-none truncate text-[13px] text-fg2">{done.map((s) => formatSet(s, m.exercise.type, units)).join(' · ')}</span>
+                  <b className="min-w-0 flex-1 truncate text-input font-semibold">{m.exercise.name}</b>
+                  <span className="max-w-[150px] flex-none truncate text-footnote text-fg2">{done.map((s) => formatSet(s, m.exercise.type, units)).join(' · ')}</span>
                 </button>
               );
             }
@@ -826,7 +826,7 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
                 <div className="mt-1 flex items-start justify-between gap-2">
                   <button type="button" onClick={() => focus(m)} className="flex min-h-11 min-w-0 items-center gap-2.5 text-left" aria-label={`${tag} ${m.exercise.name}${focused ? ' (current)' : ''}`}>
                     <TagPill tag={tag} on={focused} done={allTicked(m.sets)} />
-                    <span className={cx('min-w-0 truncate font-bold tracking-[-0.01em]', focused ? 'text-[20px]' : 'text-[17px]')}>{m.exercise.name}</span>
+                    <span className={cx('min-w-0 truncate font-bold', focused ? 'text-title2' : 'text-body-lg')}>{m.exercise.name}</span>
                   </button>
                   {focused && icons}
                 </div>
@@ -988,8 +988,8 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
           <div key={cur.we.id} className="anim-page">
             <div className="mt-3.5 flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <h1 className="text-[22px] leading-tight font-bold tracking-[-0.01em]">{ex.name}</h1>
-                <button type="button" onClick={openAll} className="mt-0.5 flex h-6 max-w-full items-center gap-1 text-[13px] text-fg2">
+                <h1 className="text-title2 leading-tight font-bold">{ex.name}</h1>
+                <button type="button" onClick={openAll} className="mt-0.5 flex h-6 max-w-full items-center gap-1 text-footnote text-fg2">
                   <span className="truncate">{subtitle(cur)}</span>
                   <ChevronDown size={9} className="flex-none" />
                 </button>
@@ -1285,13 +1285,13 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
             {finish.changes.map((c, i) => {
               const d = describeChange(c, (id) => exerciseMap.get(id)?.name ?? 'Exercise');
               return (
-                <div key={i} className="flex gap-3 border-b border-line py-2.5 text-[15px]">
+                <div key={i} className="flex gap-3 border-b border-line py-2.5 text-body">
                   <i className={cx('w-4 flex-none text-center font-extrabold not-italic', d.sign === '+' ? 'text-tip' : d.sign === '−' ? 'text-danger' : 'text-accent')}>{d.sign}</i>
                   <span className="min-w-0">{d.text}</span>
                 </div>
               );
             })}
-            <p className="mt-2.5 text-[13px] text-fg2">Weights and reps never count as changes. They always come from last time.</p>
+            <p className="mt-2.5 text-footnote text-fg2">Weights and reps never count as changes. They always come from last time.</p>
             <div className="mt-4 flex flex-col gap-2">
               <Button disabled={busy} onClick={() => void complete(finish.count, true)}>
                 Update {routine?.name ?? 'routine'}
@@ -1317,7 +1317,7 @@ export function TagPill({ tag, on, done }: { tag?: string; on?: boolean; done?: 
     <span
       aria-label={done ? `${tag}, done` : undefined}
       className={cx(
-        'flex h-[20px] min-w-[26px] flex-none items-center justify-center rounded-[5px] px-1 text-[11px] font-extrabold',
+        'flex h-5 min-w-6.5 flex-none items-center justify-center rounded-sm px-1 text-caps normal-case tracking-normal font-extrabold',
         on ? 'bg-accent text-white' : done ? 'bg-done text-accent' : 'bg-surface-2 text-fg2',
       )}
     >
@@ -1392,7 +1392,7 @@ function RenameSheet({ open, name, onClose, onSave }: { open: boolean; name: str
   return (
     <Sheet open={open} onClose={onClose} title="Rename workout">
       <TextField value={value} onChange={setValue} autoFocus onEnter={submit} placeholder="Workout name" />
-      <p className="mt-2 text-[13px] text-fg2">Only this workout. The routine keeps its name.</p>
+      <p className="mt-2 text-footnote text-fg2">Only this workout. The routine keeps its name.</p>
       <Button className="mt-4" onClick={submit} disabled={!value.trim()}>
         Save
       </Button>
@@ -1416,7 +1416,7 @@ function StartTimeSheet({ open, startedAt, onClose, onSave }: { open: boolean; s
         onChange={(e) => setValue(e.target.value)}
         className={cx('mt-2', fieldClass)}
       />
-      {ts && ts > Date.now() && <p className="mt-1.5 text-[13px] font-semibold text-danger">That's in the future.</p>}
+      {ts && ts > Date.now() && <p className="mt-1.5 text-footnote font-semibold text-danger">That's in the future.</p>}
       <Button
         className="mt-4"
         disabled={invalid}

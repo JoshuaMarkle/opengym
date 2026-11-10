@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "dev:real": "VITE_TEST_MODE=false vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && node scripts/lint-design.ts && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

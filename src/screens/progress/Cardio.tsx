@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { WeeklyBars } from '../../components/charts';
 import { ChevronRight } from '../../components/icons';
-import { BackButton, Chips, cx, EmptyState, LabelAction, Screen, SectionLabel, Segmented, TopBar } from '../../components/ui';
+import { BackButton, Chips, cx, EmptyState, LabelAction, Screen, SectionLabel, Segmented, TopBar, TrendText } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { cardioSessions } from '../../data/history';
 import type { Exercise, Units } from '../../db/types';
@@ -98,12 +98,12 @@ function WeeklyChart({
   return (
     <>
       <div className="mt-3">
-        <div className="text-[30px] leading-tight font-bold tracking-[-0.02em]">
-          {fmtMetric(sum.avg, metric, units, spec)} <small className="text-[15px] font-semibold text-fg2">{word} avg</small>
+        <div className="text-title1 leading-tight font-bold">
+          {fmtMetric(sum.avg, metric, units, spec)} <small className="text-body font-semibold text-fg2">{word} avg</small>
         </div>
         {ch !== undefined && (
-          <span className={cx('text-[14px] font-bold', ch > eps ? 'text-tip' : ch < -eps ? 'text-danger' : 'text-fg2')}>
-            {Math.abs(ch) <= eps ? '= same' : `${ch > 0 ? '▲' : '▼'} ${fmtMetric(Math.abs(ch), metric, units, spec)} ${word}`} vs the {RANGE_SHORT[range]} before
+          <span className={cx('text-callout font-bold', ch > eps ? 'text-tip' : ch < -eps ? 'text-danger' : 'text-fg2')}>
+            {Math.abs(ch) <= eps ? '= same' : <TrendText dir={ch > 0 ? 'up' : 'down'}>{`${fmtMetric(Math.abs(ch), metric, units, spec)} ${word}`}</TrendText>} vs the {RANGE_SHORT[range]} before
           </span>
         )}
       </div>
@@ -151,10 +151,10 @@ export function CardioProgress() {
         value={metric}
         onChange={setMetric}
       />
-      <div className="mt-4 text-[11px] font-bold tracking-[0.07em] text-fg2 uppercase">Per week · {RANGE_PHRASE[range]}</div>
+      <div className="mt-4 text-caps text-fg2">Per week · {RANGE_PHRASE[range]}</div>
       <WeeklyChart sessions={sessions} metric={metric} range={range} setRange={setRange} ranges={ranges} />
 
-      <SectionLabel action={runs ? <LabelAction onClick={() => navigate('/progress/cardio-records')}>Records ›</LabelAction> : undefined}>
+      <SectionLabel action={runs ? <LabelAction onClick={() => navigate('/progress/cardio-records')} chevron>Records</LabelAction> : undefined}>
         By machine · {RANGE_SHORT[range]}
       </SectionLabel>
       {machines.map((m) => {
@@ -165,24 +165,24 @@ export function CardioProgress() {
             key={m.exerciseId}
             type="button"
             onClick={() => navigate(`/progress/cardio/${m.exerciseId}`)}
-            className="grid min-h-[58px] w-full grid-cols-[minmax(0,1fr)_auto_auto_14px] items-center gap-3 border-b border-line text-left active:bg-surface/60"
+            className="grid min-h-15 w-full grid-cols-[minmax(0,1fr)_auto_auto_14px] items-center gap-3 border-b border-line text-left active:bg-surface/60"
           >
             <span className="min-w-0">
-              <b className="block truncate text-[16px] font-semibold">{ex?.name ?? 'Cardio'}</b>
-              <span className="text-[13px] text-fg2">
+              <b className="block truncate text-input font-semibold">{ex?.name ?? 'Cardio'}</b>
+              <span className="text-footnote text-fg2">
                 {m.sessions} {m.sessions === 1 ? 'session' : 'sessions'}
               </span>
             </span>
-            <span className="text-right text-[14px] font-semibold">{formatHours(m.durationSec)}</span>
-            <span className="min-w-[58px] text-right text-[14px] text-fg2">
+            <span className="text-right text-callout font-semibold">{formatHours(m.durationSec)}</span>
+            <span className="min-w-[58px] text-right text-callout text-fg2">
               {m.distance ? (meters ? `${Math.round(m.distance).toLocaleString('en-US')} m` : `${formatNumber(longDistance(m.distance, units), 1)} ${longDistanceWord(units)}`) : '—'}
             </span>
             <ChevronRight size={12} className="text-fg3" />
           </button>
         );
       })}
-      {!machines.length && <p className="py-5 text-center text-[14px] text-fg2">No cardio in this range.</p>}
-      <p className="mt-4 text-[12.5px] leading-normal text-fg2">This week is still going, so it's left out of the average.</p>
+      {!machines.length && <p className="py-5 text-center text-callout text-fg2">No cardio in this range.</p>}
+      <p className="mt-4 text-caption leading-normal text-fg2">This week is still going, so it's left out of the average.</p>
     </>
   );
 }
@@ -237,7 +237,7 @@ export function CardioMachine() {
               onChange={setMetric}
             />
           )}
-          <div className="mt-4 text-[11px] font-bold tracking-[0.07em] text-fg2 uppercase">
+          <div className="mt-4 text-caps text-fg2">
             {ex.name} · {metric === 'distance' ? distLabel.toLowerCase() : 'minutes'} per week
           </div>
           <WeeklyChart sessions={sessions} metric={metric} range={range} setRange={setRange} ranges={ranges} spec={ex} />
@@ -250,15 +250,15 @@ export function CardioMachine() {
                 key={`${s.workoutId}-${s.date}`}
                 type="button"
                 onClick={() => navigate(`/history/${s.workoutId}`)}
-                className="flex min-h-[56px] w-full items-center gap-3 border-b border-line text-left active:bg-surface/60"
+                className="flex min-h-15 w-full items-center gap-3 border-b border-line text-left active:bg-surface/60"
               >
                 <span className="w-10 flex-none text-center leading-[1.1]">
-                  <small className="block text-[10.5px] font-bold text-fg2 uppercase">{weekdayShort(d.getDay())}</small>
-                  <b className="text-[19px]">{d.getDate()}</b>
+                  <small className="block text-caps text-fg2">{weekdayShort(d.getDay())}</small>
+                  <b className="text-title3">{d.getDate()}</b>
                 </span>
                 <span className="min-w-0 flex-1">
-                  <b className="block truncate text-[16px] font-semibold">{cardioSummary(s.sets, ex, units) || '—'}</b>
-                  <span className="block truncate text-[13px] text-fg2">
+                  <b className="block truncate text-input font-semibold">{cardioSummary(s.sets, ex, units) || '—'}</b>
+                  <span className="block truncate text-footnote text-fg2">
                     {n} {n === 1 ? 'segment' : 'segments'}
                     {/^(Today|Yesterday)$/.test(fmtRelativeDay(s.date)) ? ` · ${fmtRelativeDay(s.date).toLowerCase()}` : ''}
                   </span>
@@ -267,7 +267,7 @@ export function CardioMachine() {
               </button>
             );
           })}
-          <p className="mt-4 text-[12.5px] leading-normal text-fg2">Speed is in each session's numbers, it just isn't charted.</p>
+          <p className="mt-4 text-caption leading-normal text-fg2">Speed is in each session's numbers, it just isn't charted.</p>
         </>
       )}
     </Screen>
@@ -291,10 +291,10 @@ export function DistanceRecords() {
         const b = r.best;
         const recent = b && isRecentDistanceRecord(b.date);
         return (
-          <div key={r.id} className="flex min-h-[58px] items-center justify-between gap-3 border-b border-line">
+          <div key={r.id} className="flex min-h-15 items-center justify-between gap-3 border-b border-line">
             <span className="min-w-0">
-              <b className="block text-[16px] font-semibold">{r.label}</b>
-              <span className="block truncate text-[13px] text-fg2">
+              <b className="block text-input font-semibold">{r.label}</b>
+              <span className="block truncate text-footnote text-fg2">
                 {b
                   ? `${fmtMonthDay(b.date)} · ${exerciseMap.get(b.exerciseId)?.name ?? 'Run'}`
                   : longest
@@ -302,11 +302,11 @@ export function DistanceRecords() {
                     : 'not yet'}
               </span>
             </span>
-            <b className={cx('flex-none text-[19px] font-bold', recent ? 'text-accent' : b ? 'text-fg' : 'text-fg3')}>{b ? formatDuration(Math.round(b.timeSec)) : '—'}</b>
+            <b className={cx('flex-none text-title3 font-bold', recent ? 'text-accent' : b ? 'text-fg' : 'text-fg3')}>{b ? formatDuration(Math.round(b.timeSec)) : '—'}</b>
           </div>
         );
       })}
-      <p className="mt-4 text-[12.5px] leading-normal text-fg2">
+      <p className="mt-4 text-caption leading-normal text-fg2">
         Counts runs (outside or treadmill) where one segment covered at least that distance; the time is scaled to the exact distance. Blue = set in the last 60 days.
       </p>
     </Screen>

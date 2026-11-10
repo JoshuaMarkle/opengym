@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { ShareGlyph } from '../../components/icons';
-import { Button } from '../../components/ui';
+import { Button, DiscFace } from '../../components/ui';
 import { isStandalone } from './Welcome';
 
 const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -35,15 +35,17 @@ export function InstallGuide() {
 
   return (
     <div className="flex h-full flex-col px-6 pt-8 pb-[max(20px,env(safe-area-inset-bottom))]">
-      <h1 className="text-[28px] leading-tight font-bold tracking-[-0.02em]">Add it to your Home Screen</h1>
-      <p className="mt-2 text-[15px] leading-normal text-fg2">It's a web app. Installed, it opens full screen, works offline, and {ios ? 'iPhone' : 'your phone'} keeps its data safer.</p>
+      <h1 className="text-title1 leading-tight font-bold">Add it to your Home Screen</h1>
+      <p className="mt-2 text-body leading-normal text-fg2">It's a web app. Installed, it opens full screen, works offline, and {ios ? 'iPhone' : 'your phone'} keeps its data safer.</p>
       <ol className="mt-6">
         {steps.map((st, i) => (
           <li key={i} className="flex items-start gap-3.5 border-b border-line py-3.5">
-            <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-surface-2 text-[14px] font-bold">{i + 1}</span>
+            <DiscFace size="s" tone="grey" className="mt-0.5 text-footnote font-bold text-fg">
+              {i + 1}
+            </DiscFace>
             <span>
-              <b className="block text-[16px] font-semibold">{st.t}</b>
-              <span className="text-[14px] text-fg2">{st.s}</span>
+              <b className="block text-input font-semibold">{st.t}</b>
+              <span className="text-callout text-fg2">{st.s}</span>
             </span>
           </li>
         ))}

@@ -38,7 +38,7 @@ export function LookbackSheet({
       title={
         <span className="block leading-tight">
           {exercise.name}
-          <small className="block text-[12px] font-medium text-fg2">{sub}</small>
+          <small className="block text-caption font-medium text-fg2">{sub}</small>
         </span>
       }
       action={

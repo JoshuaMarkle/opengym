@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { Alert, useToast } from '../../components/overlays';
 import { backUpNow, BackupError, dataCounts, readBackup, restoreBackup, type BackupFile } from '../../data/backup';
 import { fmtDay } from '../../lib/dates';
+import { CheckGlyph } from '../../components/icons';
 
 /**
  * 9.4: pick a backup file, compare counts, offer to back up this phone first,
@@ -56,7 +57,14 @@ export function useRestoreFlow(): { pick: () => void; element: ReactNode } {
           ...(pending && pending.here > 0
             ? [
                 {
-                  label: backedUp ? 'Backed up ✓' : 'Back up this phone first',
+                  label: backedUp ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      Backed up
+                      <CheckGlyph size={13} />
+                    </span>
+                  ) : (
+                    'Back up this phone first'
+                  ),
                   kind: 'bold' as const,
                   disabled: backedUp || busy,
                   onClick: async () => {

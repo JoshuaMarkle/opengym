@@ -52,7 +52,12 @@ S1–S12, file by file, with `npm run lint:design` as the to-do list. Most of S1
 - **Close buttons** in the look-back and RPE sheets were 30 px `key-fn` circles; they are now Disc L grey (34, `surface-2`).
 - **Tip line:** its bare ✕ is now a grey Disc L, like the suggestion bar's dismiss. The "Back after a break?" dismiss grew from 22 to Disc L.
 - **Goal value boxes:** `ValueBox` is itself a `<label>`, so the wrapping `<label>` became a `<div>` (same focus behaviour: tapping the field label no longer focuses the box, tapping the box does).
-- **Effort.tsx** text sizes outside the badge are screen copy and wait for Phase 3.
+- **Effort.tsx:** the RPE / RIR sheet is tokenized. The effort pad's 21 px digits and 10 px words are allowlisted with the badge, since §7 keeps the effort view exactly as built.
+- **Phase 3 codemod** (px → token, radius → scale, arbitrary tracking dropped): 13 → footnote, 14 → callout, 15 → body, 16 → input, 17 → body-lg, 18 → headline, 19 → title3, 20–24 → title2, 26–30 → title1, 34 → display, 38–40 → hero, 12–12.5 → caption, 13.5 → footnote, 14.5 → callout, 9–10 → micro, 10.5 / 11 caps → caps. 11 px text that wasn't caps became `text-caps normal-case tracking-normal` (11 px exists only as Caps). Radii 2–4 → xs, 5–8 → sm, 9–12 → md, 13–14 → lg. Half-pixel sizes therefore move by up to 1 px.
+- **Row heights:** 54 → 52; 56 and 58 → 60 (all of those are two-line rows).
+- **Typed glyphs beyond the lint list:** ✎ ⧉ ⤒ ↺ are drawn as well (`PencilGlyph`, `CopyGlyph`, `ToTopGlyph`, `ReturnGlyph`) and the lint now checks them. Trend strings with ▲ ▼ now return `TrendText` nodes; they were only ever rendered.
+- **Prose left typed** (allowlisted): the comeback ramp "135 → 145 → 155" in the Why sheet's sentence, and "✓ fills them in" in the Suggestions setting note, which names the button.
+- **RoutineBuilder's superset hint** said "••• to unlink"; it now says "options menu to unlink", since a typed ••• can't sit in the sentence.
 
 ## Not done
 

@@ -103,7 +103,7 @@ export function RoutineScreen() {
       }
     >
       <DetailTitle title={routine.name} meta={meta} />
-      {routine.notes && <p className="mt-3 rounded-[10px] bg-surface px-3 py-2.5 text-[14px] leading-normal whitespace-pre-wrap text-fg/85">{routine.notes}</p>}
+      {routine.notes && <p className="mt-3 rounded-md bg-surface px-3 py-2.5 text-callout leading-normal whitespace-pre-wrap text-fg/85">{routine.notes}</p>}
 
       {!draft.exercises.length && (
         <EmptyState icon="+" title="No exercises yet" className="pt-12">
@@ -121,13 +121,13 @@ export function RoutineScreen() {
           return (
             <section key={e.key} className="border-b border-line py-3 last:border-b-0">
               <button type="button" onClick={() => navigate(`/exercises/${ex.id}`)} className="flex w-full items-baseline justify-between gap-3 text-left">
-                <b className="min-w-0 truncate text-[16px] font-semibold">
+                <b className="min-w-0 truncate text-input font-semibold">
                   <span className="mr-2 text-fg2">{bi + 1}</span>
                   {ex.name}
                 </b>
-                <span className="flex-none text-[13px] text-fg2">{e.sets.length > 1 ? `${e.sets.length} segments` : 'cardio'}</span>
+                <span className="flex-none text-footnote text-fg2">{e.sets.length > 1 ? `${e.sets.length} segments` : 'cardio'}</span>
               </button>
-              <p className="mt-1 text-[13px] text-fg2">{line ? `Last: ${line} · ${fmtMonthDay(lastC!.date)}` : 'First time. Numbers fill in from here on.'}</p>
+              <p className="mt-1 text-footnote text-fg2">{line ? `Last: ${line} · ${fmtMonthDay(lastC!.date)}` : 'First time. Numbers fill in from here on.'}</p>
             </section>
           );
         }
@@ -144,7 +144,7 @@ export function RoutineScreen() {
         return (
           <section key={e.key} className="border-b border-line py-3 last:border-b-0">
             <button type="button" onClick={() => navigate(`/exercises/${ex.id}`)} className="flex w-full items-baseline justify-between gap-3 text-left">
-              <b className="min-w-0 truncate text-[16px] font-semibold">
+              <b className="min-w-0 truncate text-input font-semibold">
                 {tag ? (
                   <span className="mr-2 inline-flex align-[2px]">
                     <TagPill tag={tag} on />
@@ -155,7 +155,7 @@ export function RoutineScreen() {
                 {ex.name}
                 {TYPE_TAG[ex.type] && <Tag>{TYPE_TAG[ex.type]}</Tag>}
               </b>
-              <span className="flex-none text-[13px] text-fg2">
+              <span className="flex-none text-footnote text-fg2">
                 {tag && !warm && e.sets[0] && (e.sets[0].repsMin || e.sets[0].repsMax) ? `${work} × ${formatRepRange(e.sets[0].repsMin, e.sets[0].repsMax)}` : warm ? `W + ${work} sets` : `${work} ${work === 1 ? 'set' : 'sets'}`}
               </span>
             </button>

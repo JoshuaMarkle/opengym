@@ -71,7 +71,7 @@ export function ScheduleEditor() {
     if (!gaveUp) return null;
     return (
       <Screen header={<TopBar left={<BackButton label="Plans" onClick={() => navigate('/plans')} />} />}>
-        <p className="mt-10 text-center text-[15px] text-fg2">This plan was deleted.</p>
+        <p className="mt-10 text-center text-body text-fg2">This plan was deleted.</p>
       </Screen>
     );
   }
@@ -233,7 +233,7 @@ function Editor({ folder, view }: { folder: Folder; view: PlanView }) {
     />}>
       <div className="mt-3 flex items-center justify-between">
         <button type="button" aria-label="Earlier" onClick={() => setPage((p) => p - 1)} className="-ml-2 flex h-11 w-11 items-center justify-center text-accent"><ChevronLeft size={12} /></button>
-        <b className="text-[16px] font-bold tabular-nums">{fmtMonthDay(preview[0].ts)} – {fmtMonthDay(preview[27].ts)}</b>
+        <b className="text-input font-bold tabular-nums">{fmtMonthDay(preview[0].ts)} – {fmtMonthDay(preview[27].ts)}</b>
         <button type="button" aria-label="Later" onClick={() => setPage((p) => p + 1)} className="-mr-2 flex h-11 w-11 items-center justify-center text-accent"><ChevronRight size={12} /></button>
       </div>
       <PlanGrid days={preview.slice(0, 28)} codes={view.codes} today={today} weekStart={settings.weekStart} onOpen={(d) => {
@@ -249,7 +249,7 @@ function Editor({ folder, view }: { folder: Folder; view: PlanView }) {
       />}
       {/* PH3.13: clearing only updates the draft; Save commits it. */}
       <SectionLabel className="-mt-2!" action={
-        <button type="button" onClick={() => patch({ overrides: Object.fromEntries(Object.entries(draft.overrides ?? {}).filter(([key]) => key < today)) })} className="flex min-h-11 items-end text-[13px] leading-[16px] font-semibold tracking-normal text-danger normal-case active:opacity-70">
+        <button type="button" onClick={() => patch({ overrides: Object.fromEntries(Object.entries(draft.overrides ?? {}).filter(([key]) => key < today)) })} className="flex min-h-11 items-end text-footnote leading-[16px] font-semibold tracking-normal text-danger normal-case active:opacity-70">
           Clear changes
         </button>
       }>Schedule type</SectionLabel>
@@ -260,17 +260,17 @@ function Editor({ folder, view }: { folder: Folder; view: PlanView }) {
       ]} value={draft.kind} onChange={(kind) => patch({ kind })} />
       {draft.kind === 'none' && <Note>Whatever you did longest ago is next. Train when you can.</Note>}
       {draft.kind === 'weekly' && <>
-      <SectionLabel action={<span className="text-[12px] font-semibold tracking-normal text-fg2 normal-case">tap a day to change</span>}>Each week</SectionLabel>
+      <SectionLabel action={<span className="text-caption font-semibold tracking-normal text-fg2 normal-case">tap a day to change</span>}>Each week</SectionLabel>
         {weekOrder(settings.weekStart).map((wd) => {
           const slot = draft.weekly[wd];
           const isToday = wd === todayWd;
           return (
             <button key={wd} type="button" onClick={() => setAssign({ kind: 'weekly', index: wd })} className="flex min-h-[52px] w-full items-center gap-3 border-b border-line text-left active:bg-surface/60">
-              <span className={cx('w-[52px] flex-none text-[15px] font-semibold', isToday ? 'text-accent' : 'text-fg')}>
+              <span className={cx('w-[52px] flex-none text-body font-semibold', isToday ? 'text-accent' : 'text-fg')}>
                 {weekdayShort(wd)}
-                {isToday && <small className="block text-[11px] leading-none font-medium text-fg2">today</small>}
+                {isToday && <small className="block text-caps normal-case tracking-normal leading-none font-medium text-fg2">today</small>}
               </span>
-              <span className={cx('min-w-0 flex-1 truncate text-[16px]', slot ? 'font-semibold' : 'text-fg2')}>{slot ? name(slot) : 'Rest'}</span>
+              <span className={cx('min-w-0 flex-1 truncate text-input', slot ? 'font-semibold' : 'text-fg2')}>{slot ? name(slot) : 'Rest'}</span>
               <ChevronRight size={13} className="flex-none text-fg3" />
             </button>
           );
@@ -293,7 +293,7 @@ function Editor({ folder, view }: { folder: Folder; view: PlanView }) {
         </Note>
       </>}
       {draft.kind === 'cycle' && <>
-      <SectionLabel action={<span className="text-[12px] font-semibold tracking-normal text-fg2 normal-case">drag to reorder</span>}>
+      <SectionLabel action={<span className="text-caption font-semibold tracking-normal text-fg2 normal-case">drag to reorder</span>}>
         {`Cycle · ${draft.cycle.length} ${draft.cycle.length === 1 ? 'day' : 'days'}`}
       </SectionLabel>
       <CycleList
@@ -307,8 +307,8 @@ function Editor({ folder, view }: { folder: Folder; view: PlanView }) {
 
       <SectionLabel>Starts</SectionLabel>
       <button type="button" onClick={() => setPickToday(true)} className="flex min-h-[52px] w-full items-center gap-3 border-b border-line text-left active:bg-surface/60">
-        <span className="flex-1 text-[16px] font-semibold">Day 1 is</span>
-        <span className="text-[15px] text-fg2 tabular-nums">{day1 === today ? `Today, ${fmtDay(parseDayKey(day1)).replace(',', '')}` : fmtDay(parseDayKey(day1))}</span>
+        <span className="flex-1 text-input font-semibold">Day 1 is</span>
+        <span className="text-body text-fg2 tabular-nums">{day1 === today ? `Today, ${fmtDay(parseDayKey(day1)).replace(',', '')}` : fmtDay(parseDayKey(day1))}</span>
         <ChevronRight size={13} className="flex-none text-fg3" />
       </button>
 
@@ -381,10 +381,10 @@ function CycleRow({ day, index, isToday, label, onOpen }: { day: CycleDay; index
         <Handle />
       </button>
       <button type="button" onClick={onOpen} className="flex min-h-[52px] min-w-0 flex-1 items-center gap-3 text-left active:opacity-70">
-        <span className="w-[48px] flex-none text-[11px] font-bold tracking-[0.06em] text-fg2 tabular-nums">DAY {index + 1}</span>
-        <span className={cx('min-w-0 flex-1 truncate text-[16px]', day.slot ? 'font-semibold' : 'text-fg2')}>
+        <span className="w-[48px] flex-none text-caps text-fg2 tabular-nums">DAY {index + 1}</span>
+        <span className={cx('min-w-0 flex-1 truncate text-input', day.slot ? 'font-semibold' : 'text-fg2')}>
           {label}
-          {isToday && <small className="ml-2 text-[12px] font-medium text-accent">today</small>}
+          {isToday && <small className="ml-2 text-caption font-medium text-accent">today</small>}
         </span>
         <ChevronRight size={13} className="flex-none text-fg3" />
       </button>

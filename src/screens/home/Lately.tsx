@@ -1,9 +1,9 @@
 // Home "Lately" (training-logic §21, proposal D6). Screen 3.6. The only place trends show
 // up uninvited: at most one goal line and one trend line, and nothing when nothing changed.
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
-import { CheckGlyph, ChevronRight } from '../../components/icons';
+import { CheckGlyph, ChevronRight, ReturnGlyph, TargetGlyph, TrendDown, TrendUp } from '../../components/icons';
 import { cx, SectionLabel } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { goalView, useGoals } from '../../data/goals';
@@ -15,7 +15,7 @@ import { fmtGoal } from '../progress/TrainingViews';
 import { usePinned } from '../progress/Progress';
 
 interface Line extends LatelyCandidate {
-  glyph: string;
+  glyph: ReactNode;
   tone: string;
   text: string;
   to: string;
@@ -45,7 +45,7 @@ export function Lately({ now }: { now: number }) {
             key: `status:${ex.id}:${st}:${week}`,
             kind: 'status',
             weight: pct,
-            glyph: st === 'climbing' ? '▲' : '▼',
+            glyph: st === 'climbing' ? <TrendUp size={10} /> : <TrendDown size={10} />,
             tone: st === 'climbing' ? 'text-tip' : 'text-warn',
             text: st === 'climbing' ? `${ex.name} is climbing · +${pct}% in 8 weeks` : `${ex.name} is slipping · see what changed`,
             to: `/progress/lift/${ex.id}/trend`,
@@ -57,12 +57,12 @@ export function Lately({ now }: { now: number }) {
       const lift = exerciseMap.get(g.exerciseId);
       if (!lift) continue;
       if (g.doneAt && now - g.doneAt < 7 * DAY_MS) {
-        out.push({ key: `goalDone:${g.id}`, kind: 'goalDone', glyph: '✓', tone: 'text-tip', text: `${lift.name} ${fmtGoal(g, lift, units)} goal done`, to: `/progress/goal/${g.id}` });
+        out.push({ key: `goalDone:${g.id}`, kind: 'goalDone', glyph: <CheckGlyph size={14} />, tone: 'text-tip', text: `${lift.name} ${fmtGoal(g, lift, units)} goal done`, to: `/progress/goal/${g.id}` });
         continue;
       }
       if (g.doneAt) continue;
       const v = goalView(g, lift, history, settings, now);
-      if (v.state.behind) out.push({ key: `goalBehind:${g.id}`, kind: 'goalBehind', glyph: '◎', tone: 'text-warn', text: `${lift.name} ${fmtGoal(g, lift, units)} goal is behind · new dates to pick`, to: `/progress/goal/${g.id}` });
+      if (v.state.behind) out.push({ key: `goalBehind:${g.id}`, kind: 'goalBehind', glyph: <TargetGlyph size={14} />, tone: 'text-warn', text: `${lift.name} ${fmtGoal(g, lift, units)} goal is behind · new dates to pick`, to: `/progress/goal/${g.id}` });
     }
     return out;
   }, [goals, focus, history, settings, units, now, exerciseMap]);
@@ -87,7 +87,7 @@ export function Lately({ now }: { now: number }) {
     <>
       <SectionLabel>Lately</SectionLabel>
       {offerComeback && (
-        <LatelyRow glyph="↺" tone="text-warn" text={`Back after ${Math.round(gapDays / 7)} weeks? Start lighter and ramp up`} onClick={() => navigate('/settings/phase')} />
+        <LatelyRow glyph={<ReturnGlyph />} tone="text-warn" text={`Back after ${Math.round(gapDays / 7)} weeks? Start lighter and ramp up`} onClick={() => navigate('/settings/phase')} />
       )}
       {lines.map((l) => (
         <LatelyRow key={l.key} glyph={l.glyph} tone={l.tone} text={l.text} onClick={() => navigate(l.to)} />
@@ -96,11 +96,11 @@ export function Lately({ now }: { now: number }) {
   );
 }
 
-function LatelyRow({ glyph, tone, text, onClick }: { glyph: string; tone: string; text: string; onClick: () => void }) {
+function LatelyRow({ glyph, tone, text, onClick }: { glyph: ReactNode; tone: string; text: string; onClick: () => void }) {
   return (
     <button type="button" onClick={onClick} className="flex min-h-[48px] w-full items-center gap-2.5 border-b border-line py-1.5 text-left active:bg-surface/60">
-      <span className={cx('flex w-4 flex-none items-center justify-center text-center text-[13px] font-bold', tone)}>{/* 3.6: match the shared completion icon. */}{glyph === '✓' ? <CheckGlyph size={14} /> : glyph}</span>
-      <span className="min-w-0 flex-1 text-[14.5px] leading-snug tabular-nums">{text}</span>
+      <span className={cx('flex w-4 flex-none items-center justify-center text-center text-footnote font-bold', tone)}>{/* 3.6: match the shared completion icon. */}{glyph}</span>
+      <span className="min-w-0 flex-1 text-callout leading-snug tabular-nums">{text}</span>
       <ChevronRight size={12} className="flex-none text-fg3" />
     </button>
   );

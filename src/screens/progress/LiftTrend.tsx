@@ -1,6 +1,6 @@
 // One lift's trend (training-logic §13–§19, proposal B2, D2, D3, F2, F3, F4). Screen 7.13.
 
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { ForecastChart, type ChartPoint, type ForecastBand } from '../../components/charts';
 import { BackButton, Button, cx, EmptyState, Note, Screen, SectionLabel, StatRow, TopBar } from '../../components/ui';
@@ -14,6 +14,7 @@ import { formatNumber, unitLabel } from '../../lib/units';
 import { ToggleRow } from '../settings/Training';
 import { usePinned } from './Progress';
 import { fmtStrength, GoalRow, MilestoneList, STATUS_TONE, statusText, strengthNumber, useGoalViews } from './TrainingViews';
+import { ArrowGlyph } from '../../components/icons';
 
 export function LiftTrend() {
   const { id = '' } = useParams();
@@ -96,11 +97,11 @@ export function LiftTrend() {
 
   return (
     <Screen header={<TopBar left={<BackButton label={ex.name.length <= 12 ? ex.name : 'Back'} onClick={back} />} title="Trend" />}>
-      <div className="mt-4 text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase">Trend · last 8 weeks</div>
-      <div className={cx('text-[30px] leading-tight font-bold tracking-[-0.02em]', STATUS_TONE[t.status])}>{statusText(t.status)}</div>
-      <div className="text-[15px] font-semibold text-fg2 tabular-nums">{sub}</div>
+      <div className="mt-4 text-caps text-fg2">Trend · last 8 weeks</div>
+      <div className={cx('text-title1 leading-tight font-bold', STATUS_TONE[t.status])}>{statusText(t.status)}</div>
+      <div className="text-body font-semibold text-fg2 tabular-nums">{sub}</div>
       {!tracked && (
-        <p className="mt-2 text-[13px] text-fg2">
+        <p className="mt-2 text-footnote text-fg2">
           Train everything is off, so this lift's status isn't shown on Progress.{' '}
           <button type="button" onClick={() => navigate('/progress/pinned')} className="font-semibold text-accent">
             Focus lifts
@@ -109,12 +110,12 @@ export function LiftTrend() {
       )}
 
       <ForecastChart points={chartPts} from={from} to={end + 3 * DAY} fit={fit} band={band} gaps={gaps} label={`${ex.name} trend`} />
-      <p className="mt-3 text-[14px] leading-snug">{explain[t.status]}</p>
+      <p className="mt-3 text-callout leading-snug">{explain[t.status]}</p>
 
       {t.status === 'holding' && (
         <>
           <SectionLabel>To get moving</SectionLabel>
-          <p className="border-b border-line py-2.5 text-[14px] leading-snug">Use the rep hints in the workout. One extra rep a session is enough to restart the climb.</p>
+          <p className="border-b border-line py-2.5 text-callout leading-snug">Use the rep hints in the workout. One extra rep a session is enough to restart the climb.</p>
         </>
       )}
       {(t.status === 'holding' || t.status === 'maintained') && (
@@ -129,8 +130,8 @@ export function LiftTrend() {
       {changed && (
         <>
           <SectionLabel>What changed · from your log</SectionLabel>
-          <FactRow label={`${ex.name} days a week`} value={`${formatNumber(changed.perWeek[0], 1)} → ${formatNumber(changed.perWeek[1], 1)}`} />
-          <FactRow label="Working sets per session" value={`${formatNumber(changed.setsPer[0], 1)} → ${formatNumber(changed.setsPer[1], 1)}`} />
+          <FactRow label={`${ex.name} days a week`} value={<FromTo from={formatNumber(changed.perWeek[0], 1)} to={formatNumber(changed.perWeek[1], 1)} />} />
+          <FactRow label="Working sets per session" value={<FromTo from={formatNumber(changed.setsPer[0], 1)} to={formatNumber(changed.setsPer[1], 1)} />} />
           {changed.longestGap && changed.longestGap.days >= 7 && (
             <FactRow label="Longest gap" value={`${changed.longestGap.days} days · ${fmtMonthDay(changed.longestGap.from)}–${fmtMonthDay(changed.longestGap.to)}`} />
           )}
@@ -164,7 +165,7 @@ export function LiftTrend() {
           {milestones.length ? (
             <MilestoneList rows={milestones} exercise={ex} units={units} goals={goals?.filter((g) => g.exerciseId === ex.id)} onGoal={canHaveGoal(ex) ? (m) => navigate(`/progress/goal/new?ex=${ex.id}&w=${m.weight}&r=${m.reps}`) : undefined} />
           ) : (
-            <p className="py-2 text-[13px] text-fg2">No milestones for this lift.</p>
+            <p className="py-2 text-footnote text-fg2">No milestones for this lift.</p>
           )}
 
           {canHaveGoal(ex) && (
@@ -182,18 +183,29 @@ export function LiftTrend() {
           )}
         </>
       )}
-      <p className="mt-4 text-[12.5px] text-fg2 tabular-nums">
+      <p className="mt-4 text-caption text-fg2 tabular-nums">
         {STATUS_LABEL[t.status]} · {lift.sessions} sessions logged · now {lift.points.length ? fmtStrength(lift.now.E0, ex, units) : '—'}
       </p>
     </Screen>
   );
 }
 
-function FactRow({ label, value }: { label: string; value: string }) {
+/** "1.5 → 2" with a drawn arrow. */
+function FromTo({ from, to }: { from: string; to: string }) {
+  return (
+    <span className="inline-flex items-center gap-1">
+      {from}
+      <ArrowGlyph size={10} className="text-fg2" />
+      {to}
+    </span>
+  );
+}
+
+function FactRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex min-h-[48px] items-center justify-between gap-3 border-b border-line">
-      <span className="text-[15px]">{label}</span>
-      <span className="text-[15px] font-semibold tabular-nums">{value}</span>
+      <span className="text-body">{label}</span>
+      <span className="text-body font-semibold tabular-nums">{value}</span>
     </div>
   );
 }

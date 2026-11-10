@@ -30,7 +30,7 @@ export function PlanScreen() {
     if (!gaveUp) return null;
     return (
       <Screen header={<TopBar left={<BackButton label="Plans" onClick={() => navigate('/plans')} />} />}>
-        <p className="mt-10 text-center text-[15px] text-fg2">This plan was deleted.</p>
+        <p className="mt-10 text-center text-body text-fg2">This plan was deleted.</p>
       </Screen>
     );
   }
@@ -59,20 +59,20 @@ export function PlanScreen() {
         />
       }
     >
-      <h1 className="truncate text-[34px] leading-[1.1] font-bold tracking-[-0.02em]">{folder.name}</h1>
-      <p className="mt-1 text-[13px] text-fg2 tabular-nums">{subtitle}</p>
+      <h1 className="truncate text-display leading-[1.1] font-bold">{folder.name}</h1>
+      <p className="mt-1 text-footnote text-fg2 tabular-nums">{subtitle}</p>
 
       {!folder.active && !folder.archived && (
-        <button type="button" onClick={() => void setActiveFolder(folder.id)} className="mt-2 flex h-11 w-full items-center border-y border-line text-[15px] font-semibold text-accent active:opacity-70">
+        <button type="button" onClick={() => void setActiveFolder(folder.id)} className="mt-2 flex h-11 w-full items-center border-y border-line text-body font-semibold text-accent active:opacity-70">
           Make this the active plan
-          <span className="ml-auto text-[13px] font-normal text-fg2">Home follows it</span>
+          <span className="ml-auto text-footnote font-normal text-fg2">Home follows it</span>
         </button>
       )}
 
-      <SectionLabel action={<LabelAction onClick={() => navigate(`/plan/${folder.id}/calendar`)}>Calendar ›</LabelAction>}>Schedule</SectionLabel>
+      <SectionLabel action={<LabelAction onClick={() => navigate(`/plan/${folder.id}/calendar`)} chevron>Calendar</LabelAction>}>Schedule</SectionLabel>
       <button type="button" onClick={() => navigate(view.scheduled ? `/plan/${folder.id}/calendar` : `/plan/${folder.id}/schedule`)} className="block w-full py-2.5 text-left active:opacity-70">
-        <b className="block text-[19px] font-bold">{desc.title}</b>
-        <span className="block text-[13px] text-fg2">{view.scheduled ? desc.detail : 'Whatever you did longest ago is next. Tap to set up a cycle or weekly split.'}</span>
+        <b className="block text-title3 font-bold">{desc.title}</b>
+        <span className="block text-footnote text-fg2">{view.scheduled ? desc.detail : 'Whatever you did longest ago is next. Tap to set up a cycle or weekly split.'}</span>
       </button>
       {/* 2.15: show the base split without dates, completion states, or one-day overrides. */}
       {view.scheduled && version && (
@@ -83,11 +83,11 @@ export function PlanScreen() {
       <SectionLabel>Workouts</SectionLabel>
       {routines.map((r) => (
         <button key={r.id} type="button" onClick={() => navigate(`/routine/${r.id}`)} className="flex min-h-[52px] w-full items-center gap-3 border-b border-line text-left active:bg-surface/60">
-          <b className="min-w-0 flex-1 truncate text-[16px] font-semibold">{r.name}</b>
+          <b className="min-w-0 flex-1 truncate text-input font-semibold">{r.name}</b>
           <ChevronRight size={13} className="flex-none text-fg3" />
         </button>
       ))}
-      <button type="button" onClick={() => navigate(`/routine/new?folder=${folder.id}`)} className="flex h-12 w-full items-center text-[15px] font-semibold text-accent active:opacity-70">
+      <button type="button" onClick={() => navigate(`/routine/new?folder=${folder.id}`)} className="flex h-12 w-full items-center text-body font-semibold text-accent active:opacity-70">
         + Add workout
       </button>
 

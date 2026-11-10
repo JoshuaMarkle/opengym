@@ -270,16 +270,16 @@ function HomeDayRow({
 }) {
   const hold = useLongPress(onHold);
   return (
-    <div className="flex min-h-[58px] items-center gap-3 border-b border-line">
+    <div className="flex min-h-15 items-center gap-3 border-b border-line">
       <button type="button" {...hold} onClick={onOpen} className="no-select flex min-w-0 flex-1 items-center gap-3 py-2 text-left active:opacity-70">
         <span className={cx('w-[52px] flex-none text-center', day.key === today ? 'text-accent' : 'text-fg2')}>
-          <small className="block text-[10.5px] font-bold uppercase">{dayLabel(day, today, false)}</small>
+          <small className="block text-caps">{dayLabel(day, today, false)}</small>
           {/* PH3.1: routine dates stay bright, with today in blue. */}
-          <b className={cx('text-[19px]', day.key === today ? 'text-accent' : 'text-fg')}>{new Date(day.ts).getDate()}</b>
+          <b className={cx('text-title3', day.key === today ? 'text-accent' : 'text-fg')}>{new Date(day.ts).getDate()}</b>
         </span>
         <span className="min-w-0 flex-1">
-          <b className="block truncate text-[16px] font-semibold">{name}</b>
-          <span className="block truncate text-[13px] text-fg2">{detail}</span>
+          <b className="block truncate text-input font-semibold">{name}</b>
+          <span className="block truncate text-footnote text-fg2">{detail}</span>
         </span>
       </button>
       {day.state === 'done' ? (
@@ -296,7 +296,7 @@ function HomeDayRow({
 function HomeRestRow({ label, isToday, onHold }: { label: string; isToday: boolean; onHold: () => void }) {
   const hold = useLongPress(onHold);
   return (
-    <div {...hold} className="no-select flex min-h-11 items-center gap-3 border-b border-line text-[13px] text-fg2">
+    <div {...hold} className="no-select flex min-h-11 items-center gap-3 border-b border-line text-footnote text-fg2">
       {isToday ? (
         <span className="flex-1 text-accent">Rest today</span>
       ) : (

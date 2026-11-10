@@ -81,8 +81,8 @@ export function AllExercises({
           Close centres on the title line (-mt-2: 44 px button, 27.5 px line). */}
       <div className="mt-3.5 flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h1 className="text-[22px] leading-tight font-bold tracking-[-0.01em]">Exercises</h1>
-          <p className="mt-0.5 flex h-6 items-center text-[13px] text-fg2">{editing ? 'Remove or reorder for today.' : 'Plan order. Tap one to open it.'}</p>
+          <h1 className="text-title2 leading-tight font-bold">Exercises</h1>
+          <p className="mt-0.5 flex h-6 items-center text-footnote text-fg2">{editing ? 'Remove or reorder for today.' : 'Plan order. Tap one to open it.'}</p>
         </div>
         <BarButton className="-mt-2 -mr-2" kind={editing ? 'muted' : 'plain'} disabled={editing} onClick={close}>
           Close
@@ -114,11 +114,11 @@ export function AllExercises({
                   <CountRing done={done} total={e.sets.length} />
                 )}
                 <span className="min-w-0 flex-1">
-                  <b className={cx('block truncate text-[16px] font-semibold', isCur && 'text-accent')}>
+                  <b className={cx('block truncate text-input font-semibold', isCur && 'text-accent')}>
                     {e.exercise.name}
                     {TYPE_TAG[e.exercise.type] && <Tag>{TYPE_TAG[e.exercise.type]}</Tag>}
                   </b>
-                  <span className="block truncate text-[13px] text-fg2">{sub(e)}</span>
+                  <span className="block truncate text-footnote text-fg2">{sub(e)}</span>
                 </span>
               </>
             );
@@ -150,7 +150,7 @@ export function AllExercises({
           return (
             <div key={`ss-${block.items[0].key}`} className="mt-2 border-l-2 border-accent pl-3">
               <div className="flex min-h-9 items-center justify-between gap-2">
-                <span className="text-[11px] font-bold tracking-[0.07em] text-accent uppercase">Superset {block.letter}</span>
+                <span className="text-caps text-accent">Superset {block.letter}</span>
                 {editing && moves(block.items[0].key)}
               </div>
               {block.items.map((it) => row(it.e, true))}
@@ -158,7 +158,7 @@ export function AllExercises({
           );
         })}
       </div>
-      {!exercises.length && <p className="py-8 text-center text-[14px] text-fg2">No exercises yet.</p>}
+      {!exercises.length && <p className="py-8 text-center text-callout text-fg2">No exercises yet.</p>}
       <div className="mt-4 grid grid-cols-[1fr_100px] gap-2">
         <AddButton onClick={onAdd}>+ Add exercise</AddButton>
         <Button kind={editing ? 'primary' : 'secondary'} onClick={() => setEditing((v) => !v)} disabled={!exercises.length}>

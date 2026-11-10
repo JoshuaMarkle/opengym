@@ -5,7 +5,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { SwipeRow } from '../../components/gestures';
-import { CheckGlyph, ChevronRight, Handle } from '../../components/icons';
+import { CheckGlyph, ChevronRight, CopyGlyph, Handle, MoreGlyph } from '../../components/icons';
 import { EffortBadge, EffortPad } from '../../components/Effort';
 import { Keypad, type KeypadTab } from '../../components/Keypad';
 import { Alert, HoldMenu, Sheet, SheetOption, type MenuItem } from '../../components/overlays';
@@ -230,7 +230,7 @@ function Builder({ initial: initialProp, folderParam, slotParam }: { initial?: R
     setMenu && menuSet
       ? [
           { label: menuSet.kind === 'warmup' ? 'Mark as working set' : 'Mark as warm-up', glyph: menuSet.kind === 'warmup' ? '1' : 'W', onClick: () => toggleWarm(setMenu.exKey, setMenu.setKey) },
-          { label: 'Duplicate', glyph: '⧉', onClick: () => duplicateSet(setMenu.exKey, setMenu.setKey) },
+          { label: 'Duplicate', glyph: <CopyGlyph />, onClick: () => duplicateSet(setMenu.exKey, setMenu.setKey) },
           { label: 'Delete', glyph: '✕', tone: 'danger', onClick: () => removeSet(setMenu.exKey, setMenu.setKey) },
         ]
       : [];
@@ -265,15 +265,15 @@ function Builder({ initial: initialProp, folderParam, slotParam }: { initial?: R
             autoFocus={!initial}
             enterKeyHint="done"
             onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-            className="min-w-0 flex-1 bg-transparent text-[26px] font-bold tracking-[-0.01em] outline-none placeholder:text-fg3"
+            className="min-w-0 flex-1 bg-transparent text-title1 font-bold outline-none placeholder:text-fg3"
           />
-          <button type="button" onClick={() => setOverlay('folder')} className="flex h-9 flex-none items-center gap-1 text-[13px] text-fg2 active:opacity-60">
+          <button type="button" onClick={() => setOverlay('folder')} className="flex h-9 flex-none items-center gap-1 text-footnote text-fg2 active:opacity-60">
             {folderLabel}
             <ChevronRight size={10} />
           </button>
         </div>
-        {error && <p className="mt-1.5 text-[13px] font-semibold text-danger">{error}</p>}
-        <div className="mt-1.5 flex justify-between text-[13px] text-fg2">
+        {error && <p className="mt-1.5 text-footnote font-semibold text-danger">{error}</p>}
+        <div className="mt-1.5 flex justify-between text-footnote text-fg2">
           <span>
             {exercises.length} {exercises.length === 1 ? 'exercise' : 'exercises'} · {workingCount} sets
           </span>
@@ -307,8 +307,8 @@ function Builder({ initial: initialProp, folderParam, slotParam }: { initial?: R
               return (
                 <div key={`ss-${b.items[0].key}`} className="mt-3 border-l-2 border-accent pl-3">
                   <div className="flex items-baseline justify-between gap-2 pt-1">
-                    <span className="text-[11px] font-bold tracking-[0.07em] text-accent uppercase">Superset {b.letter}</span>
-                    <span className="text-[12px] text-fg2">alternate sets · ••• to unlink</span>
+                    <span className="text-caps text-accent">Superset {b.letter}</span>
+                    <span className="text-caption text-fg2">alternate sets · options menu to unlink</span>
                   </div>
                   {b.items.map(section)}
                 </div>
@@ -327,7 +327,7 @@ function Builder({ initial: initialProp, folderParam, slotParam }: { initial?: R
           + Add exercises
         </AddButton>
 
-        <div className="mt-6 text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase">Notes</div>
+        <div className="mt-6 text-caps text-fg2">Notes</div>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
@@ -335,10 +335,10 @@ function Builder({ initial: initialProp, folderParam, slotParam }: { initial?: R
           placeholder="Optional. Shown on the routine screen."
           rows={3}
           maxLength={500}
-          className="mt-1.5 w-full resize-none rounded-[10px] border-[1.5px] border-transparent bg-surface-2 px-3 py-2.5 text-[16px] outline-none focus:border-accent"
+          className="mt-1.5 w-full resize-none rounded-md border-[1.5px] border-transparent bg-surface-2 px-3 py-2.5 text-input outline-none focus:border-accent"
         />
 
-        <div className="mt-5 text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase">Short label</div>
+        <div className="mt-5 text-caps text-fg2">Short label</div>
         <div className="flex items-center gap-3">
           <div className="w-[88px] flex-none">
             <TextField
@@ -346,10 +346,10 @@ function Builder({ initial: initialProp, folderParam, slotParam }: { initial?: R
               onChange={(v) => setCode(v.replace(/[^\p{L}\p{N}]/gu, '').toUpperCase())}
               placeholder={autoCode}
               maxLength={3}
-              className="text-center font-bold tracking-[0.04em]"
+              className="text-center font-bold"
             />
           </div>
-          <p className="mt-1.5 min-w-0 flex-1 text-[13px] leading-snug text-fg2">1–3 letters for plan schedules. Leave empty to use {autoCode || 'one from the name'}.</p>
+          <p className="mt-1.5 min-w-0 flex-1 text-footnote leading-snug text-fg2">1–3 letters for plan schedules. Leave empty to use {autoCode || 'one from the name'}.</p>
         </div>
       </div>
 
@@ -647,26 +647,26 @@ function ExerciseSection({
     <section
       ref={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform), transition }}
-      className={cx('relative border-b border-line bg-bg pt-3 pb-2.5', isDragging && 'z-10 rounded-[10px] opacity-90 shadow-[0_8px_24px_rgba(0,0,0,0.6)] outline-[1.5px] outline-accent')}
+      className={cx('relative border-b border-line bg-bg pt-3 pb-2.5', isDragging && 'z-10 rounded-md opacity-90 shadow-[0_8px_24px_rgba(0,0,0,0.6)] outline-[1.5px] outline-accent')}
     >
       <div className="flex items-center gap-2">
         <button type="button" ref={setActivatorNodeRef} {...attributes} {...listeners} aria-label={`Reorder ${exercise.name}`} className="-ml-2.5 flex h-11 w-10 flex-none touch-none items-center justify-center text-fg3">
           <Handle />
         </button>
         {tag && <TagPill tag={tag} on />}
-        <b className="min-w-0 flex-1 truncate text-[16px] font-semibold">
+        <b className="min-w-0 flex-1 truncate text-input font-semibold">
           {exercise.name}
           {TYPE_TAG[exercise.type] && <Tag>{TYPE_TAG[exercise.type]}</Tag>}
         </b>
-        <button type="button" onClick={onMenu} aria-label={`${exercise.name} options`} className="-mr-2 flex h-11 w-11 items-center justify-center text-[14px] font-bold tracking-[1px] text-accent">
-          •••
+        <button type="button" onClick={onMenu} aria-label={`${exercise.name} options`} className="-mr-2 flex h-11 w-11 items-center justify-center text-accent">
+          <MoreGlyph size={16} />
         </button>
       </div>
       {exercise.type === 'cardio' ? (
         <CardioRows draft={draft} exercise={exercise} units={units} onDelete={onDelete} onSetMenu={onSetMenu} />
       ) : draft.sets.length > 0 && (
         <div className="mt-0.5">
-          <div className={cx('grid h-5 items-center gap-2 text-center text-[10.5px] font-bold tracking-[0.05em] text-fg2', cols)}>
+          <div className={cx('grid h-5 items-center gap-2 text-center text-caps text-fg2', cols)}>
             <span>SET</span>
             {showW && <span>{weightColumnLabel(exercise.type, unitColumn(units))}</span>}
             <span>REPS</span>
@@ -698,7 +698,7 @@ function ExerciseSection({
                       type="button"
                       onClick={(e) => onSetMenu(s.key, (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect())}
                       aria-label={`Set ${label} options`}
-                      className={cx('flex h-10 items-center justify-center text-[14px] font-bold', s.kind === 'warmup' && 'text-fg2')}
+                      className={cx('flex h-10 items-center justify-center text-callout font-bold', s.kind === 'warmup' && 'text-fg2')}
                     >
                       {label}
                     </button>
@@ -723,11 +723,11 @@ function BuilderCell({ text, placeholder, editing, onClick, label, badge }: { te
     <button type="button" aria-label={label} onClick={onClick} className="flex h-10 w-full items-center">
       <span
         className={cx(
-          'flex h-[32px] w-full items-center justify-center rounded-[8px] text-[16px] font-semibold',
+          'flex h-[32px] w-full items-center justify-center rounded-sm text-input font-semibold',
           editing ? 'border-2 border-accent bg-edit' : 'bg-surface-2',
         )}
       >
-        {text ? <span>{text}</span> : !editing && <span className="text-[14px] font-medium text-fg3">{placeholder}</span>}
+        {text ? <span>{text}</span> : !editing && <span className="text-callout font-medium text-fg3">{placeholder}</span>}
       </span>
     </button>
   );
@@ -757,7 +757,7 @@ function CardioRows({
 }) {
   return (
     <div className="mt-0.5">
-      <div className="grid h-5 grid-cols-[34px_1fr] items-center gap-2 text-center text-[10.5px] font-bold tracking-[0.05em] text-fg2">
+      <div className="grid h-5 grid-cols-[34px_1fr] items-center gap-2 text-center text-caps text-fg2">
         <span>#</span>
         <span className="uppercase">{columnsLabel(exercise, units)}</span>
       </div>
@@ -769,11 +769,11 @@ function CardioRows({
                 type="button"
                 onClick={(e) => onSetMenu(s.key, (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect())}
                 aria-label={`Segment ${i + 1} options`}
-                className="flex h-10 items-center justify-center text-[14px] font-bold"
+                className="flex h-10 items-center justify-center text-callout font-bold"
               >
                 {i + 1}
               </button>
-              <span className="flex h-[32px] items-center justify-center rounded-[8px] bg-surface-2 text-[14px] font-medium text-fg3">from last time</span>
+              <span className="flex h-[32px] items-center justify-center rounded-sm bg-surface-2 text-callout font-medium text-fg3">from last time</span>
             </div>
           </SwipeRow>
         ))}

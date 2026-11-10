@@ -94,7 +94,7 @@ export function ExerciseFormView({
         placeholder="e.g. Landmine Press"
         autoFocus={!exercise}
       />
-      {error && <p className="mt-1.5 text-[13px] font-semibold text-danger">{error}</p>}
+      {error && <p className="mt-1.5 text-footnote font-semibold text-danger">{error}</p>}
 
       <FieldLabel>Type</FieldLabel>
       <div role="radiogroup" className="mt-1">
@@ -105,14 +105,14 @@ export function ExerciseFormView({
             role="radio"
             aria-checked={type === t.id}
             onClick={() => setType(t.id)}
-            className="grid min-h-[56px] w-full grid-cols-[22px_1fr_auto] items-center gap-3 border-b border-line py-2 text-left"
+            className="grid min-h-15 w-full grid-cols-[22px_1fr_auto] items-center gap-3 border-b border-line py-2 text-left"
           >
             <Radio on={type === t.id} />
             <span>
-              <b className="block text-[15px] font-semibold">{t.label}</b>
-              <span className="text-[13px] text-fg2">{t.hint}</span>
+              <b className="block text-body font-semibold">{t.label}</b>
+              <span className="text-footnote text-fg2">{t.hint}</span>
             </span>
-            <em className="rounded-[5px] bg-surface px-1.5 py-0.5 text-[12px] text-fg2 not-italic">{t.example}</em>
+            <em className="rounded-sm bg-surface px-1.5 py-0.5 text-caption text-fg2 not-italic">{t.example}</em>
           </button>
         ))}
       </div>
@@ -165,7 +165,7 @@ export function ExerciseFormView({
 
           <FieldLabel>Preview</FieldLabel>
           <div
-            className="mt-1.5 grid h-10 items-center gap-1 rounded-[10px] bg-surface px-2 text-center text-[11px] font-bold tracking-[0.06em] text-fg2"
+            className="mt-1.5 grid h-10 items-center gap-1 rounded-md bg-surface px-2 text-center text-caps text-fg2"
             style={{ gridTemplateColumns: `24px repeat(${columns.length + 1}, minmax(0,1fr)) 28px` }}
           >
             <span>#</span>
@@ -195,8 +195,8 @@ export function ExerciseFormView({
               <Note>Miles or kilometers follow your units setting. Meters suit a rower.</Note>
               <div className="mt-4 flex min-h-[52px] items-center gap-3 border-y border-line">
                 <span className="min-w-0 flex-1">
-                  <b className="block text-[16px] font-semibold">Running</b>
-                  <span className="text-[13px] text-fg2">Counts toward distance records (1 mile, 5K…)</span>
+                  <b className="block text-input font-semibold">Running</b>
+                  <span className="text-footnote text-fg2">Counts toward distance records (1 mile, 5K…)</span>
                 </span>
                 <Toggle on={isRun} onChange={setIsRun} label="Running" />
               </div>

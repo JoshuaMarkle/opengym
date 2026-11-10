@@ -16,6 +16,7 @@ import { formatNumber, toDisplay } from '../../lib/units';
 import { CardioMiniTable } from '../workout/CardioTable';
 import { TagPill } from '../workout/WorkoutScreen';
 import { effortIn1rm, effortText } from '../../lib/effort';
+import { MoreGlyph } from '../../components/icons';
 
 /** 6.6: every set, drops included. Repeat, Edit, Delete. */
 export function WorkoutDetail() {
@@ -71,8 +72,8 @@ export function WorkoutDetail() {
           <Button onClick={() => start.repeat(w.id, w.name)}>
             Repeat this workout
           </Button>
-          <Button kind="secondary" aria-label="More" onClick={() => setMenu(true)} className="tracking-[1px]">
-            •••
+          <Button kind="secondary" aria-label="More" onClick={() => setMenu(true)}>
+            <MoreGlyph size={16} />
           </Button>
         </div>
       }
@@ -97,8 +98,8 @@ export function WorkoutDetail() {
           return (
             <section key={e.we.id} className="mt-4">
               <button type="button" onClick={() => navigate(`/exercises/${ex.id}`)} className="mb-1 flex w-full items-baseline justify-between gap-3 text-left">
-                <b className="min-w-0 truncate text-[16px] font-semibold">{ex.name}</b>
-                <span className="flex-none text-[12.5px] text-fg2">cardio</span>
+                <b className="min-w-0 truncate text-input font-semibold">{ex.name}</b>
+                <span className="flex-none text-caption text-fg2">cardio</span>
               </button>
               <CardioMiniTable exercise={ex} sets={e.sets} units={units} />
             </section>
@@ -108,23 +109,23 @@ export function WorkoutDetail() {
         return (
           <section key={e.we.id} className="mt-4">
             <button type="button" onClick={() => navigate(`/exercises/${ex.id}`)} className="mb-1 flex w-full items-baseline justify-between gap-3 text-left">
-              <b className="flex min-w-0 items-center gap-2 truncate text-[16px] font-semibold">
+              <b className="flex min-w-0 items-center gap-2 truncate text-input font-semibold">
                 <TagPill tag={tag} on />
                 <span className="truncate">{ex.name}</span>
                 {TYPE_TAG[ex.type] && <Tag>{TYPE_TAG[ex.type]}</Tag>}
               </b>
-              {metric && <span className="flex-none text-[12.5px] text-fg2">est. 1RM {formatNumber(Math.round(toDisplay(metric.value, units)), 0)}</span>}
+              {metric && <span className="flex-none text-caption text-fg2">est. 1RM {formatNumber(Math.round(toDisplay(metric.value, units)), 0)}</span>}
             </button>
             {e.sets.map((s) => {
               const l = labels.get(s.id);
               return (
-                <div key={s.id} className={cx('grid h-7 grid-cols-[28px_1fr_auto] items-center text-[14.5px]', s.kind === 'drop' && 'ml-1 border-l-2 border-warn pl-2.5')}>
-                  <span className={cx('text-[13px] font-bold', s.kind === 'drop' ? 'text-warn' : 'text-fg2')}>{l}</span>
+                <div key={s.id} className={cx('grid h-7 grid-cols-[28px_1fr_auto] items-center text-callout', s.kind === 'drop' && 'ml-1 border-l-2 border-warn pl-2.5')}>
+                  <span className={cx('text-footnote font-bold', s.kind === 'drop' ? 'text-warn' : 'text-fg2')}>{l}</span>
                   <span>
                     {formatSet(s, ex.type, units)}
                     {settings.effort !== 'off' && s.kind === 'working' && s.rpe != null && <span className="text-fg2"> {effortText(s.rpe, settings.effort)}</span>}
                   </span>
-                  {records.has(s.id) ? <span className="rounded-[5px] bg-[color-mix(in_srgb,var(--og-tip)_16%,var(--og-bg))] px-1.5 py-[1px] text-[11px] font-bold text-tip">record</span> : <span />}
+                  {records.has(s.id) ? <span className="rounded-sm bg-[color-mix(in_srgb,var(--og-tip)_16%,var(--og-bg))] px-1.5 py-[1px] text-caps normal-case tracking-normal font-bold text-tip">record</span> : <span />}
                 </div>
               );
             })}
@@ -134,12 +135,12 @@ export function WorkoutDetail() {
         if (!b.letter) return section(b.items[0]);
         return (
           <div key={`ss-${b.items[0].key}`} className="mt-4 border-l-2 border-accent pl-3">
-            <div className="text-[11px] font-bold tracking-[0.07em] text-accent uppercase">Superset {b.letter}</div>
+            <div className="text-caps text-accent">Superset {b.letter}</div>
             <div className="-mt-2">{b.items.map(section)}</div>
           </div>
         );
       })}
-      {!hw.exercises.length && <p className="py-10 text-center text-[14px] text-fg2">No sets in this workout.</p>}
+      {!hw.exercises.length && <p className="py-10 text-center text-callout text-fg2">No sets in this workout.</p>}
 
       <Sheet open={menu} onClose={() => setMenu(false)} title={w.name}>
         <SheetOption

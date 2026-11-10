@@ -140,8 +140,8 @@ export function SettingPicker() {
             className="flex min-h-[52px] w-full items-center justify-between gap-3 border-b border-line text-left active:bg-surface/60"
             aria-pressed={o.value === cur}
           >
-            <span className="text-[16px]">{o.label}</span>
-            <span className="flex items-center gap-3 text-[14px] text-fg2">
+            <span className="text-input">{o.label}</span>
+            <span className="flex items-center gap-3 text-callout text-fg2">
               {o.detail}
               <span className="w-4">{o.value === cur && <CheckGlyph size={16} className="text-accent" />}</span>
             </span>

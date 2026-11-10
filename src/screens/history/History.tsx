@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { ChevronRight } from '../../components/icons';
+import { ChevronLeft, ChevronRight } from '../../components/icons';
 import { Chips, cx, SearchField, Segmented, StatRow } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { workoutLine, type HistoryWorkout } from '../../data/history';
@@ -114,7 +114,7 @@ function MiniMonth({ month, byDay, count, weekStart, today, onOpen }: { month: n
       className={cx('block w-full self-start text-left', future && 'opacity-50')}
       aria-label={`${fmtMonthYear(month)}: ${count} workouts`}
     >
-      <span className="mb-1 flex justify-between text-[11.5px] font-bold text-fg/80">
+      <span className="mb-1 flex justify-between text-caption font-bold text-fg/80">
         {monthShort(d.getMonth())}
         <span className="font-semibold text-fg2">{count}</span>
       </span>
@@ -125,7 +125,7 @@ function MiniMonth({ month, byDay, count, weekStart, today, onOpen }: { month: n
         {Array.from({ length: days }, (_, i) => {
           const ts = new Date(d.getFullYear(), d.getMonth(), i + 1).getTime();
           const has = byDay.has(dayKey(ts));
-          return <i key={i} className={cx('block aspect-square rounded-[2px]', has ? 'bg-accent' : ts > today ? 'shadow-[inset_0_0_0_1px_var(--og-surface-2)]' : 'bg-surface-2')} />;
+          return <i key={i} className={cx('block aspect-square rounded-xs', has ? 'bg-accent' : ts > today ? 'shadow-[inset_0_0_0_1px_var(--og-surface-2)]' : 'bg-surface-2')} />;
         })}
       </span>
     </button>
@@ -170,7 +170,7 @@ function SixMonths({
           { label: 'Missed wks', value: missedWeeks(dates, from, now, weekStart, firstDate) },
         ]}
       />
-      <p className="mt-3 text-[12.5px] text-fg2">Tap a month to open it.</p>
+      <p className="mt-3 text-caption text-fg2">Tap a month to open it.</p>
     </div>
   );
 }
@@ -211,19 +211,19 @@ function YearView({
           aria-label="Previous year"
           disabled={year <= firstYear}
           onClick={() => setYear(year - 1)}
-          className="-ml-2 flex h-11 w-11 items-center justify-center text-[22px] text-accent disabled:text-fg3"
+          className="-ml-2 flex h-11 w-11 items-center justify-center text-accent disabled:text-fg3"
         >
-          ‹
+          <ChevronLeft size={13} />
         </button>
-        <b className="text-[17px]">{year}</b>
+        <b className="text-body-lg">{year}</b>
         <button
           type="button"
           aria-label="Next year"
           disabled={year >= thisYear}
           onClick={() => setYear(year + 1)}
-          className="-mr-2 flex h-11 w-11 items-center justify-center text-[22px] text-accent disabled:text-fg3"
+          className="-mr-2 flex h-11 w-11 items-center justify-center text-accent disabled:text-fg3"
         >
-          ›
+          <ChevronRight size={13} />
         </button>
       </div>
       <div className="grid grid-cols-4 gap-x-2.5 gap-y-3">
@@ -278,31 +278,31 @@ function AllView({
         const total = per.reduce((a, b) => a + b, 0);
         return (
           <button key={y} type="button" onClick={() => onOpen(y)} className="mt-4 grid w-full grid-cols-[42px_1fr_36px] items-end gap-2 text-left" aria-label={`${y}: ${total} workouts`}>
-            <span className="pb-4 text-[14px] font-bold">{y}</span>
+            <span className="pb-4 text-callout font-bold">{y}</span>
             <span>
-              <span className="grid h-[74px] grid-cols-12 items-end gap-[3px]">
+              <span className="grid h-18.5 grid-cols-12 items-end gap-0.75">
                 {per.map((c, m) => {
                   const future = y === thisYear && m > curMonth;
                   return (
                     <i
                       key={m}
-                      className={cx('block rounded-t-[2px]', future ? 'border-b border-dashed border-line-strong' : c ? 'bg-accent' : 'bg-surface-2')}
+                      className={cx('block rounded-t-xs', future ? 'border-b border-dashed border-line-strong' : c ? 'bg-accent' : 'bg-surface-2')}
                       style={{ height: future ? 2 : Math.max(2, (c / max) * 74) }}
                     />
                   );
                 })}
               </span>
-              <span className="mt-1 grid grid-cols-12 gap-[3px] text-center text-[9px] text-fg2">
+              <span className="mt-1 grid grid-cols-12 gap-[3px] text-center text-micro text-fg2">
                 {per.map((_, m) => (
                   <span key={m}>{monthLetter(m)}</span>
                 ))}
               </span>
             </span>
-            <span className="pb-4 text-right text-[14px] font-bold">{total}</span>
+            <span className="pb-4 text-right text-callout font-bold">{total}</span>
           </button>
         );
       })}
-      <p className="mt-4 text-[12.5px] text-fg2">Each bar is one month. Tap a year to open it.</p>
+      <p className="mt-4 text-caption text-fg2">Each bar is one month. Tap a year to open it.</p>
     </div>
   );
 }
@@ -376,7 +376,7 @@ export function ListView() {
 
       {weeks.map((wk) => (
         <div key={wk.start}>
-          <div className="mt-4 flex justify-between pb-1 text-[11px] font-bold tracking-[0.05em] text-fg2">
+          <div className="mt-4 flex justify-between pb-1 text-caps text-fg2">
             <span>{fmtWeekRange(wk.start)}</span>
             <span className="font-semibold tracking-normal">
               {weekTotals.get(wk.start)} {weekTotals.get(wk.start) === 1 ? 'workout' : 'workouts'}
@@ -387,9 +387,9 @@ export function ListView() {
           ))}
         </div>
       ))}
-      {!filtered.length && <p className="py-10 text-center text-[14px] text-fg2">{q ? `No workouts with "${query.trim()}".` : history.workouts.length ? 'No workouts for this routine yet.' : 'Nothing logged yet. Finished workouts appear here.'}</p>}
+      {!filtered.length && <p className="py-10 text-center text-callout text-fg2">{q ? `No workouts with "${query.trim()}".` : history.workouts.length ? 'No workouts for this routine yet.' : 'Nothing logged yet. Finished workouts appear here.'}</p>}
       {filtered.length > limit && (
-        <button type="button" onClick={() => setLimit((l) => l + PAGE)} className="mt-2 flex h-11 w-full items-center justify-center text-[15px] font-semibold text-accent">
+        <button type="button" onClick={() => setLimit((l) => l + PAGE)} className="mt-2 flex h-11 w-full items-center justify-center text-body font-semibold text-accent">
           Show more ({filtered.length - limit})
         </button>
       )}
@@ -401,8 +401,8 @@ function DateBlock({ ts }: { ts: number }) {
   const d = new Date(ts);
   return (
     <span className="w-10 flex-none text-center leading-[1.1]">
-      <small className="block text-[10.5px] font-bold text-fg2 uppercase">{weekdayShort(d.getDay())}</small>
-      <b className="text-[19px]">{d.getDate()}</b>
+      <small className="block text-caps text-fg2">{weekdayShort(d.getDay())}</small>
+      <b className="text-title3">{d.getDate()}</b>
     </span>
   );
 }
@@ -410,13 +410,13 @@ function DateBlock({ ts }: { ts: number }) {
 function ListRow({ w, onClick }: { w: HistoryWorkout; onClick: () => void }) {
   const { exerciseMap } = useData();
   return (
-    <button type="button" onClick={onClick} className="flex min-h-[56px] w-full items-center gap-3 border-b border-line text-left active:bg-surface/60">
+    <button type="button" onClick={onClick} className="flex min-h-15 w-full items-center gap-3 border-b border-line text-left active:bg-surface/60">
       <DateBlock ts={w.workout.startedAt} />
       <span className="min-w-0 flex-1">
-        <b className="block truncate text-[16px] font-semibold">{w.workout.name}</b>
-        <span className="block truncate text-[13px] text-fg2">{workoutLine(w, (id) => exerciseMap.get(id)?.type)}</span>
+        <b className="block truncate text-input font-semibold">{w.workout.name}</b>
+        <span className="block truncate text-footnote text-fg2">{workoutLine(w, (id) => exerciseMap.get(id)?.type)}</span>
       </span>
-      <span className="flex-none text-[13px] text-fg2">{w.workout.endedAt ? fmtDuration(w.workout.endedAt - w.workout.startedAt) : ''}</span>
+      <span className="flex-none text-footnote text-fg2">{w.workout.endedAt ? fmtDuration(w.workout.endedAt - w.workout.startedAt) : ''}</span>
       <ChevronRight size={13} className="flex-none text-fg3" />
     </button>
   );

@@ -55,15 +55,15 @@ export function EffortSettings() {
           <SectionLabel>More</SectionLabel>
           <div className="flex min-h-[60px] items-center justify-between gap-3 border-b border-line py-2">
             <span className="min-w-0">
-              <span className="block text-[16px]">Use effort in est. 1RM</span>
-              <span className="block text-[13px] text-fg2">185 × 8 {settings.effort === 'rir' ? 'with 2 RIR' : '@8'} counts as 10 reps to failure</span>
+              <span className="block text-input">Use effort in est. 1RM</span>
+              <span className="block text-footnote text-fg2">185 × 8 {settings.effort === 'rir' ? 'with 2 RIR' : '@8'} counts as 10 reps to failure</span>
             </span>
             <Toggle label="Use effort in est. 1RM" on={settings.effortIn1rm} onChange={(v) => void updateSettings({ effortIn1rm: v })} />
           </div>
         </>
       )}
       <button type="button" onClick={() => setSheet(true)} className="flex min-h-[52px] w-full items-center justify-between gap-3 border-b border-line text-left active:bg-surface/60">
-        <span className="text-[16px]">What are RPE and RIR?</span>
+        <span className="text-input">What are RPE and RIR?</span>
         <ChevronRight size={12} className="text-fg3" />
       </button>
       <Note className="mt-3">
@@ -86,8 +86,8 @@ function Choice({ on, onClick, detail, children }: { on: boolean; onClick: () =>
       className="flex min-h-[52px] w-full items-center justify-between gap-3 border-b border-line py-1.5 text-left active:bg-surface/60"
     >
       <span className="min-w-0">
-        <span className="block text-[16px]">{children}</span>
-        {detail && <span className="block text-[13px] text-fg2">{detail}</span>}
+        <span className="block text-input">{children}</span>
+        {detail && <span className="block text-footnote text-fg2">{detail}</span>}
       </span>
       <span className="w-4 flex-none">{on && <CheckGlyph size={16} className="text-accent" />}</span>
     </button>

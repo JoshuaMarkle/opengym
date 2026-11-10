@@ -57,15 +57,15 @@ export function Library() {
         key={e.id}
         type="button"
         onClick={() => navigate(`/exercises/${e.id}`)}
-        className={cx('flex min-h-[54px] w-full items-center gap-3 border-b border-line text-left active:bg-surface/60', dim && 'opacity-55')}
+        className={cx('flex min-h-13 w-full items-center gap-3 border-b border-line text-left active:bg-surface/60', dim && 'opacity-55')}
       >
         <span className="min-w-0 flex-1 py-1.5">
-          <b className="block truncate text-[16px] font-semibold">
+          <b className="block truncate text-input font-semibold">
             {e.name}
             {TYPE_TAG[e.type] && <Tag>{TYPE_TAG[e.type]}</Tag>}
             {e.isCustom && <Tag>CUSTOM</Tag>}
           </b>
-          <span className="block truncate text-[13px] text-fg2">
+          <span className="block truncate text-footnote text-fg2">
             {exerciseMeta(e, settings.units)}
             {n ? ` · ${sessionsText(n)}` : ''}
           </span>
@@ -83,7 +83,7 @@ export function Library() {
             left={<BackButton label="Settings" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/settings'))} />}
             title="Exercises"
             right={
-              <BarButton aria-label="New exercise" className="text-[30px] leading-none font-normal" onClick={() => navigate('/exercises/new')}>
+              <BarButton aria-label="New exercise" className="text-title1 leading-none font-normal" onClick={() => navigate('/exercises/new')}>
                 +
               </BarButton>
             }
@@ -135,15 +135,15 @@ export function Library() {
       )}
       {letters.map((g) => (
         <div key={g.letter}>
-          <div className="sticky top-0 z-[1] bg-bg pt-3 pb-0.5 text-[12px] font-bold text-fg2">{g.letter}</div>
+          <div className="sticky top-0 z-[1] bg-bg pt-3 pb-0.5 text-caption font-bold text-fg2">{g.letter}</div>
           {g.items.map((e) => row(e, !isShown(e, sessions, keep)))}
         </div>
       ))}
       {!searching && <HiddenFooter count={hiddenCount} shown={showHidden} onToggle={() => setShowHidden((v) => !v)} />}
       {empty && (
         <div className="py-10 text-center">
-          <p className="text-[14px] text-fg2">{searching ? `No exercise called "${query.trim()}".` : 'Nothing here yet.'}</p>
-          <button type="button" onClick={() => navigate(`/exercises/new${searching ? `?name=${encodeURIComponent(query.trim())}` : ''}`)} className="mt-2 h-11 px-3 text-[15px] font-semibold text-accent">
+          <p className="text-callout text-fg2">{searching ? `No exercise called "${query.trim()}".` : 'Nothing here yet.'}</p>
+          <button type="button" onClick={() => navigate(`/exercises/new${searching ? `?name=${encodeURIComponent(query.trim())}` : ''}`)} className="mt-2 h-11 px-3 text-body font-semibold text-accent">
             + New exercise{searching ? ` "${query.trim()}"` : ''}
           </button>
         </div>

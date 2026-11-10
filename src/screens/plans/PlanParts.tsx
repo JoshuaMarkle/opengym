@@ -307,7 +307,7 @@ export function DaySheet({ folder, day, view, onClose, onApply, onReset }: { fol
       subtitle={step === 'main' ? subtitle : undefined}
       action={
         step !== 'main' ? (
-          <button type="button" onClick={() => setStep('main')} className="-mr-2 flex h-11 items-center px-2 text-[15px] font-medium text-accent">
+          <button type="button" onClick={() => setStep('main')} className="-mr-2 flex h-11 items-center px-2 text-body font-medium text-accent">
             Back
           </button>
         ) : undefined
@@ -329,8 +329,8 @@ export function ScheduleWeek({ days, version, codes, onOpen, className = '' }: {
             const routineId = version.days[index];
             return (
               <span key={d.key} className="flex min-w-0 flex-col items-center justify-center">
-                <small className="text-[11px] font-bold text-fg2">{weekdayLetter(weekday)}</small>
-                <span className={cx('mt-1 max-w-full truncate text-[14px] leading-[18px] font-semibold', routineId ? 'text-plan-code' : 'text-fg3')}>{routineId ? codes.get(routineId) ?? '?' : '-'}</span>
+                <small className="text-caps normal-case tracking-normal font-bold text-fg2">{weekdayLetter(weekday)}</small>
+                <span className={cx('mt-1 max-w-full truncate text-callout leading-[18px] font-semibold', routineId ? 'text-plan-code' : 'text-fg3')}>{routineId ? codes.get(routineId) ?? '?' : '-'}</span>
               </span>
             );
           })}

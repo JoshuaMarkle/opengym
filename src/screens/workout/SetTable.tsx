@@ -117,8 +117,8 @@ export function SetTable({
   });
 
   return (
-    <div className="mt-3 text-[15px]" role="table" aria-label={`${exercise.name} sets`}>
-      <div role="row" className={cx('grid h-6 items-center px-1 text-[11px] font-bold tracking-[0.06em] text-fg2', cols)}>
+    <div className="mt-3 text-body" role="table" aria-label={`${exercise.name} sets`}>
+      <div role="row" className={cx('grid h-6 items-center px-1 text-caps text-fg2', cols)}>
         <span className="text-center">SET</span>
         {hasNext && onToggleNext ? (
           // Tap to switch between last time alone and last time → today's target.
@@ -127,7 +127,7 @@ export function SetTable({
             aria-pressed={showNext}
             aria-label={showNext ? 'Previous and next. Show previous only' : 'Previous. Also show next'}
             onClick={onToggleNext}
-            className="-my-2.5 flex h-11 min-w-0 items-center pl-1 text-left font-bold tracking-[0.06em] active:opacity-60"
+            className="-my-2.5 flex h-11 min-w-0 items-center pl-1 text-left font-bold active:opacity-60"
           >
             <span className="flex-none" style={withNext && fit.state?.headerAligned ? { width: fit.state.prevW } : undefined}>
               <span data-fit-prev className="inline-block w-max">
@@ -148,7 +148,9 @@ export function SetTable({
         )}
         {showWeight && <span className="text-center">{weightColumnLabel(exercise.type, unitColumn(units))}</span>}
         <span className="text-center">REPS</span>
-        <span className="text-center">✓</span>
+        <span className="flex justify-center">
+          <CheckGlyph size={11} />
+        </span>
       </div>
       <div ref={fit.ref} className="flex flex-col gap-[3px]">
         {sets.map((s) => {
@@ -182,7 +184,7 @@ export function SetTable({
                   : {
                       label: (
                         <span className="flex items-center gap-2">
-                          <span className="flex h-[19px] w-[19px] items-center justify-center rounded-[5px] bg-white text-[11px] font-extrabold text-black">{s.kind === 'warmup' ? '1' : 'W'}</span>
+                          <span className="flex h-5 w-5 items-center justify-center rounded-sm bg-white text-caps normal-case tracking-normal font-extrabold text-black">{s.kind === 'warmup' ? '1' : 'W'}</span>
                           {s.kind === 'warmup' ? 'Working set' : 'Warm-up'}
                         </span>
                       ),
@@ -196,7 +198,7 @@ export function SetTable({
                 role="row"
                 data-set-id={s.id}
                 className={cx(
-                  'grid h-11 items-center rounded-[9px] px-1 transition-colors',
+                  'grid h-11 items-center rounded-md px-1 transition-colors',
                   cols,
                   s.completed && 'bg-done',
                   isDrop && 'rounded-l-none border-l-2 border-warn',
@@ -207,7 +209,7 @@ export function SetTable({
                   type="button"
                   aria-label={`Set ${label} options`}
                   onClick={(e) => onMenu(s, (e.currentTarget.closest('[role=row]') as HTMLElement).getBoundingClientRect())}
-                  className={cx('flex h-11 items-center justify-center text-[14px] font-bold', s.kind === 'warmup' && 'text-fg2', isDrop && 'text-warn')}
+                  className={cx('flex h-11 items-center justify-center text-callout font-bold', s.kind === 'warmup' && 'text-fg2', isDrop && 'text-warn')}
                 >
                   {label}
                 </button>
@@ -222,12 +224,12 @@ export function SetTable({
                     fit={fit.state}
                   />
                 ) : (
-                  <span className="flex min-w-0 items-center gap-1.5 pl-1 text-[13.5px] whitespace-nowrap text-fg2">
+                  <span className="flex min-w-0 items-center gap-1.5 pl-1 text-footnote whitespace-nowrap text-fg2">
                     {/* Last time's effort sits under the set, small (A2): "185 × 8" over "@7". */}
                     {effort !== 'off' && p?.prev?.rpe != null && takesEffort(p.prev) ? (
                       <span className="flex min-w-0 flex-col leading-[1.15]">
                         <span className="truncate">{formatSet(p.prev, exercise.type, units)}</span>
-                        <small className="truncate text-[11px] text-fg3">{effortText(p.prev.rpe, effort)}</small>
+                        <small className="truncate text-caps normal-case tracking-normal font-normal text-fg3">{effortText(p.prev.rpe, effort)}</small>
                       </span>
                     ) : (
                       <span className="truncate">{p?.prev ? formatSet(p.prev, exercise.type, units) : '—'}</span>
@@ -265,7 +267,7 @@ export function SetTable({
                 >
                   <span
                     className={cx(
-                      'flex h-[28px] w-[28px] items-center justify-center rounded-[8px] border-[1.5px] transition-colors',
+                      'flex h-7 w-7 items-center justify-center rounded-sm border-[1.5px] transition-colors',
                       s.completed ? 'border-accent bg-accent text-white' : isCur ? 'border-fg3' : 'border-line-strong',
                     )}
                   >
@@ -368,7 +370,7 @@ function PrevNextCell({
   fit: PrevNextFit | null;
 }) {
   return (
-    <span data-fit-cell data-drop={drop ? '1' : undefined} className="flex min-w-0 items-center pl-1 text-[13.5px] whitespace-nowrap text-fg2">
+    <span data-fit-cell data-drop={drop ? '1' : undefined} className="flex min-w-0 items-center pl-1 text-footnote whitespace-nowrap text-fg2">
       <span className="flex flex-none items-center gap-1.5" style={fit ? { width: fit.prevW } : undefined}>
         <span data-fit-prev className="flex w-max flex-col leading-[1.15]">
           <span>
@@ -380,7 +382,7 @@ function PrevNextCell({
               </>
             )}
           </span>
-          {effort && <small className="text-[11px] text-fg3">{effort}</small>}
+          {effort && <small className="text-caps normal-case tracking-normal font-normal text-fg3">{effort}</small>}
         </span>
         {drop && <DropBadge />}
       </span>
@@ -457,7 +459,7 @@ export function Cell({
     <button type="button" aria-label={label} onClick={onClick} className="flex h-11 w-full items-center justify-center px-[3px]">
       <span
         className={cx(
-          'flex h-[32px] w-full items-center justify-center rounded-[7px] text-[16px] font-semibold',
+          'flex h-[32px] w-full items-center justify-center rounded-sm text-input font-semibold',
           editing ? 'border-2 border-accent bg-edit text-fg' : tone === 'done' ? 'bg-transparent' : 'bg-surface',
           !editing && tone === 'current' && 'ring-[1.5px] ring-accent/70 ring-inset',
           !editing && tone === 'ghost' && !filled && 'text-fg2',
@@ -468,7 +470,7 @@ export function Cell({
           <span className="truncate">{text}</span>
         ) : (
           // Still shown while editing an empty cell: Next / ✓ logs this value unless you type over it.
-          <span className="truncate text-[13px] font-medium text-fg2">{placeholder}</span>
+          <span className="truncate text-footnote font-medium text-fg2">{placeholder}</span>
         )}
       </span>
     </button>

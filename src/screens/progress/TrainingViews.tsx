@@ -1,10 +1,10 @@
 // Shared pieces for trends, goals and milestones on Progress (training-logic §15–§21,
 // proposal B, C, D, F).
 
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
-import { ChevronRight } from '../../components/icons';
-import { cx } from '../../components/ui';
+import { CheckGlyph, ChevronRight } from '../../components/icons';
+import { cx, TrendText } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { goalView, type GoalView } from '../../data/goals';
 import { liftTraining, recentLifts, type LiftTraining } from '../../data/training';
@@ -57,8 +57,8 @@ export const STATUS_TONE: Record<Status, string> = {
   notSure: 'text-fg2',
 };
 
-export function statusText(s: Status): string {
-  return (s === 'climbing' ? '▲ ' : s === 'slipping' ? '▼ ' : '') + STATUS_LABEL[s];
+export function statusText(s: Status): ReactNode {
+  return <TrendText dir={s === 'climbing' ? 'up' : s === 'slipping' ? 'down' : undefined}>{STATUS_LABEL[s]}</TrendText>;
 }
 
 /** "+4% · 8 wk", "+2 reps", or "6 sessions so far". */
@@ -151,12 +151,12 @@ export function GoalRow({ v, units }: { v: GoalView; units: Units }) {
   return (
     <button type="button" onClick={() => navigate(`/progress/goal/${goal.id}`)} className="flex min-h-[60px] w-full items-center gap-3 border-b border-line py-1.5 text-left active:bg-surface/60">
       <span className="min-w-0 flex-1">
-        <b className="block truncate text-[16px] font-semibold">
+        <b className="block truncate text-input font-semibold">
           {exercise.name} <span className="tabular-nums">{fmtGoal(goal, exercise, units)}</span>
         </b>
-        <span className="block truncate text-[13px] text-fg2 tabular-nums">{sub}</span>
+        <span className="block truncate text-footnote text-fg2 tabular-nums">{sub}</span>
       </span>
-      <span className={cx('flex-none text-[11px] font-bold tracking-[0.06em] uppercase', tone)}>{tag}</span>
+      <span className={cx('flex-none text-caps', tone)}>{tag}</span>
     </button>
   );
 }
@@ -174,12 +174,12 @@ export function MilestoneList({ rows, exercise, units, goals = [], onGoal }: { r
     <div>
       {rows.map((m) => (
         <div key={`${m.weight}-${m.reps}`} className="flex min-h-[52px] items-center gap-3 border-b border-line py-1.5">
-          <span className={cx('w-5 flex-none text-center text-[14px] font-bold', m.state === 'done' ? 'text-tip' : m.state === 'ready' ? 'text-warn' : 'text-fg3')}>
-            {m.state === 'done' ? '✓' : m.state === 'ready' ? '!' : '·'}
+          <span className={cx('w-5 flex-none text-center text-callout font-bold', m.state === 'done' ? 'text-tip' : m.state === 'ready' ? 'text-warn' : 'text-fg3')}>
+            {m.state === 'done' ? <CheckGlyph size={13} className="mx-auto" /> : m.state === 'ready' ? '!' : '·'}
           </span>
           <span className="min-w-0 flex-1">
-            <b className={cx('block text-[16px] font-semibold tabular-nums', m.state === 'done' && 'text-fg2')}>{label(m)}</b>
-            <span className="block text-[13px] text-fg2 tabular-nums">
+            <b className={cx('block text-input font-semibold tabular-nums', m.state === 'done' && 'text-fg2')}>{label(m)}</b>
+            <span className="block text-footnote text-fg2 tabular-nums">
               {m.state === 'done'
                 ? fmtMonthDay(m.date!)
                 : m.state === 'ready'
@@ -191,18 +191,18 @@ export function MilestoneList({ rows, exercise, units, goals = [], onGoal }: { r
                       : 'no estimate at your pace yet'}
             </span>
           </span>
-          {m.state === 'ready' && <span className="text-[11px] font-bold tracking-[0.06em] text-warn uppercase">Ready</span>}
+          {m.state === 'ready' && <span className="text-caps text-warn">Ready</span>}
           {(() => {
             const g = goalForMilestone(m, goals);
             if (g)
               return (
-                <button type="button" onClick={() => navigate(`/progress/goal/${g.id}`)} className="flex h-11 flex-none items-center gap-1 px-1 text-[11px] font-bold tracking-[0.06em] text-fg2 uppercase active:opacity-60">
+                <button type="button" onClick={() => navigate(`/progress/goal/${g.id}`)} className="flex h-11 flex-none items-center gap-1 px-1 text-caps text-fg2 active:opacity-60">
                   {g.doneAt ? 'Goal done' : 'Your goal'} <ChevronRight size={11} className="text-fg3" />
                 </button>
               );
             if (m.state !== 'done' && onGoal && m.weight != null && exercise.type !== 'assisted')
               return (
-                <button type="button" onClick={() => onGoal(m)} className="flex h-11 flex-none items-center px-1 text-[14px] font-semibold text-accent active:opacity-60">
+                <button type="button" onClick={() => onGoal(m)} className="flex h-11 flex-none items-center px-1 text-callout font-semibold text-accent active:opacity-60">
                   Goal
                 </button>
               );
@@ -217,12 +217,12 @@ export function MilestoneList({ rows, exercise, units, goals = [], onGoal }: { r
 /** A tappable row with a chevron (trend, goal, month review links). */
 export function NavRow({ title, detail, right, onClick, tone }: { title: React.ReactNode; detail?: React.ReactNode; right?: React.ReactNode; onClick: () => void; tone?: string }) {
   return (
-    <button type="button" onClick={onClick} className="flex min-h-[56px] w-full items-center gap-3 border-b border-line py-1.5 text-left active:bg-surface/60">
+    <button type="button" onClick={onClick} className="flex min-h-15 w-full items-center gap-3 border-b border-line py-1.5 text-left active:bg-surface/60">
       <span className="min-w-0 flex-1">
-        <b className={cx('block truncate text-[16px] font-semibold', tone)}>{title}</b>
-        {detail && <span className="block text-[13px] leading-snug text-fg2 tabular-nums">{detail}</span>}
+        <b className={cx('block truncate text-input font-semibold', tone)}>{title}</b>
+        {detail && <span className="block text-footnote leading-snug text-fg2 tabular-nums">{detail}</span>}
       </span>
-      {right && <span className="flex-none text-[14px] font-semibold tabular-nums">{right}</span>}
+      {right && <span className="flex-none text-callout font-semibold tabular-nums">{right}</span>}
       <ChevronRight size={12} className="flex-none text-fg3" />
     </button>
   );

@@ -178,10 +178,10 @@ export function PlanHistoryCalendar({ folder, month, onMonthChange }: { folder?:
         <WorkoutRow key={w.workout.id} w={w} />
       ))}
       {!!sel.planned && !workouts.length && (
-        <div className="flex min-h-[56px] items-center gap-3 border-b border-line">
+        <div className="flex min-h-15 items-center gap-3 border-b border-line">
           <button type="button" onClick={() => navigate(`/routine/${sel.planned}`)} className="min-h-11 min-w-0 flex-1 text-left">
-            <b className="block text-[16px] font-semibold">{view.routineName(sel.planned)}</b>
-            <span className="text-[13px] text-fg2">
+            <b className="block text-input font-semibold">{view.routineName(sel.planned)}</b>
+            <span className="text-footnote text-fg2">
               {view.plans.exercisesByRoutine.get(sel.planned)?.length ?? 0} exercises · {sel.state === 'missed' ? 'Planned, not logged' : 'Planned'}
             </span>
           </button>
@@ -193,7 +193,7 @@ export function PlanHistoryCalendar({ folder, month, onMonthChange }: { folder?:
         </div>
       )}
       {!workouts.length && !sel.planned && (
-        <p className="border-b border-line py-3.5 text-[13px] text-fg2">{sel.state === 'moved' ? `Moved to ${sel.movedTo}.` : sel.key < today ? 'Nothing logged.' : 'Rest · No workout planned.'}</p>
+        <p className="border-b border-line py-3.5 text-footnote text-fg2">{sel.state === 'moved' ? `Moved to ${sel.movedTo}.` : sel.key < today ? 'Nothing logged.' : 'Rest · No workout planned.'}</p>
       )}
       {sel.state === 'missed' && sel.planned && folder && (
         <AttentionNote
@@ -222,11 +222,11 @@ function WorkoutRow({ w }: { w: HistoryWorkout }) {
   const navigate = useNavigate();
   const { exerciseMap } = useData();
   return (
-    <button type="button" onClick={() => navigate(`/history/${w.workout.id}`)} className="flex min-h-[56px] w-full items-center gap-3 border-b border-line text-left active:bg-surface/60">
+    <button type="button" onClick={() => navigate(`/history/${w.workout.id}`)} className="flex min-h-15 w-full items-center gap-3 border-b border-line text-left active:bg-surface/60">
       <CheckGlyph size={16} className="flex-none text-accent" />
       <span className="min-w-0 flex-1 py-2">
-        <b className="block truncate text-[16px] font-semibold">{w.workout.name}</b>
-        <span className="block truncate text-[13px] text-fg2">
+        <b className="block truncate text-input font-semibold">{w.workout.name}</b>
+        <span className="block truncate text-footnote text-fg2">
           {w.workout.endedAt ? `${fmtDuration(w.workout.endedAt - w.workout.startedAt)} · ` : ''}
           {workoutLine(w, (id) => exerciseMap.get(id)?.type, false)}
         </span>
