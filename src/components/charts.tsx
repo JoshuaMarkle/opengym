@@ -109,7 +109,7 @@ export function LiftChart({
                 <polyline
                   points={points.map((p, i) => `${x(p.date)},${y(smooth[i])}`).join(' ')}
                   fill="none"
-                  stroke="#2e8bff"
+                  stroke="var(--og-accent)"
                   strokeWidth="2.5"
                   strokeLinejoin="round"
                   strokeLinecap="round"
@@ -123,7 +123,7 @@ export function LiftChart({
                 ),
               )}
               {points.length > 0 && (
-                <circle cx={x(points[points.length - 1].date)} cy={y(points[points.length - 1].value)} r="5.5" fill="#2e8bff" stroke="var(--og-bg)" strokeWidth="2" />
+                <circle cx={x(points[points.length - 1].date)} cy={y(points[points.length - 1].value)} r="5.5" fill="var(--og-accent)" stroke="var(--og-bg)" strokeWidth="2" />
               )}
             </>
           ) : (
@@ -133,7 +133,7 @@ export function LiftChart({
               )}
               {points.map((p, i) => (
                 <g key={i}>
-                  <circle cx={x(p.date)} cy={y(p.value)} r="3.6" fill={i === points.length - 1 ? '#2e8bff' : 'var(--og-fg)'} />
+                  <circle cx={x(p.date)} cy={y(p.value)} r="3.6" fill={i === points.length - 1 ? 'var(--og-accent)' : 'var(--og-fg)'} />
                   {p.label && points.length <= 40 && (
                     <text x={x(p.date)} y={y(p.value) - 8} fill="var(--og-fg2)" fontSize="10" fontWeight="700" textAnchor="middle">
                       {p.label}
@@ -164,7 +164,7 @@ export function Sparkline({ values, width = 70, height = 26 }: { values: number[
   const pts = sm.map((v, i) => `${(i / (sm.length - 1)) * width},${hi === lo ? height / 2 : height - 2 - ((v - lo) / (hi - lo)) * (height - 4)}`);
   return (
     <svg width={width} height={height} aria-hidden>
-      <polyline points={pts.join(' ')} fill="none" stroke="#2e8bff" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
+      <polyline points={pts.join(' ')} fill="none" stroke="var(--og-accent)" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   );
 }
@@ -215,7 +215,7 @@ export function WeeklyBars({ weeks, values, avg, height = 170, format = (v: numb
           ))}
           {values.map((v, i) => {
             const h = Math.max(v > 0 ? 2 : 0, (v / hi) * ih);
-            return <rect key={i} x={padL + slot * i + (slot - bw) / 2} y={padT + ih - h} width={bw} height={h} rx={Math.min(3, bw / 3)} fill={i === values.length - 1 ? '#2e8bff' : 'var(--og-bar)'} />;
+            return <rect key={i} x={padL + slot * i + (slot - bw) / 2} y={padT + ih - h} width={bw} height={h} rx={Math.min(3, bw / 3)} fill={i === values.length - 1 ? 'var(--og-accent)' : 'var(--og-bar)'} />;
           })}
           {avg !== undefined && avg > 0 && <line x1={padL} x2={width - padR} y1={y(avg)} y2={y(avg)} stroke="var(--og-fg2)" strokeDasharray="3 3" strokeWidth="1" />}
           {spaced.map((l) => (

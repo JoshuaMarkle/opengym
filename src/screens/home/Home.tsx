@@ -131,7 +131,7 @@ function WeekStrip({ now, weekStart, trained, live, onOpen }: { now: number; wee
                 'mx-auto mt-1.5 flex h-[34px] w-[34px] items-center justify-center rounded-full text-[13.5px] font-bold not-italic',
                 done ? 'bg-accent text-white' : future ? 'text-fg' : 'bg-surface text-fg',
                 isToday && !done && 'bg-transparent text-fg',
-                isToday && (live ? 'shadow-[inset_0_0_0_2px_var(--og-tip)]' : done ? 'shadow-[0_0_0_2px_var(--og-bg),0_0_0_4px_#2e8bff]' : 'shadow-[inset_0_0_0_2px_var(--og-fg)]'),
+                isToday && (live ? 'shadow-[inset_0_0_0_2px_var(--og-tip)]' : done ? 'shadow-[0_0_0_2px_var(--og-bg),0_0_0_4px_var(--og-accent)]' : 'shadow-[inset_0_0_0_2px_var(--og-fg)]'),
               )}
             >
               {date.getDate()}

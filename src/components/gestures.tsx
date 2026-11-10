@@ -162,7 +162,7 @@ export function SwipeRow({
   return (
     <div ref={elRef} className={cx('relative', moving && 'overflow-hidden', rounded && 'rounded-[9px]', className)}>
       {dx > 0 && right && (
-        <div className={cx('absolute inset-0 flex items-center pl-4 text-[14px] font-bold text-white transition-colors', armed ? 'bg-[#4a4a4a]' : 'bg-[#2e2e2e]')}>
+        <div className={cx('absolute inset-0 flex items-center pl-4 text-[14px] font-bold text-white transition-colors', armed ? 'bg-swipe-armed' : 'bg-swipe')}>
           {right.label}
         </div>
       )}

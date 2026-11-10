@@ -7,7 +7,7 @@
  */
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { logoSvg } from '../src/lib/logo.ts';
+import { LOGO_COLORS, logoSvg } from '../src/lib/logo.ts';
 import { Browser } from './chrome.ts';
 
 const root = new URL('..', import.meta.url).pathname;
@@ -16,15 +16,15 @@ const brand = at('design/brand');
 
 // ── SVGs
 const wordmark = (gym: string, open: string) =>
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 140" width="320" height="70"><text x="0" y="98" font-family="-apple-system,'SF Pro Display',Helvetica,Arial,sans-serif" font-size="96" letter-spacing="-3"><tspan font-weight="400" fill="${open}">open</tspan><tspan font-weight="800" fill="${gym}">gym</tspan><tspan font-weight="800" fill="#2E8BFF">.</tspan></text></svg>\n`;
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 140" width="320" height="70"><text x="0" y="98" font-family="-apple-system,'SF Pro Display',Helvetica,Arial,sans-serif" font-size="96" letter-spacing="-3"><tspan font-weight="400" fill="${open}">open</tspan><tspan font-weight="800" fill="${gym}">gym</tspan><tspan font-weight="800" fill="${LOGO_COLORS.plate}">.</tspan></text></svg>\n`;
 
 const files: Record<string, string> = {
   'design/brand/logos/opengym-logo-dark.svg': logoSvg('dark'),
   'design/brand/logos/opengym-logo-light.svg': logoSvg('light'),
   'design/brand/logos/opengym-icon-dark.svg': logoSvg('dark', 224),
   'design/brand/logos/opengym-icon-light.svg': logoSvg('light', 224),
-  'design/brand/logos/opengym-wordmark-dark.svg': wordmark('#FFFFFF', '#8E8E8E'),
-  'design/brand/logos/opengym-wordmark-light.svg': wordmark('#000000', '#6B6B6B'),
+  'design/brand/logos/opengym-wordmark-dark.svg': wordmark('#FFFFFF', '#A1A1AA'),
+  'design/brand/logos/opengym-wordmark-light.svg': wordmark('#000000', '#63636B'),
   'public/favicon.svg': logoSvg('dark', 224),
 };
 for (const [p, svg] of Object.entries(files)) writeFileSync(at(p), svg);
@@ -35,8 +35,17 @@ function tokens(theme: 'dark' | 'light'): [string, string][] {
   const block = theme === 'dark' ? css.match(/:root,\s*\[data-theme='dark'\]\s*{([^}]*)}/)![1] : css.match(/\[data-theme='light'\]\s*{([^}]*)}/)![1];
   return [...block.matchAll(/--og-([\w-]+):\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]);
 }
-const meaning = [...readFileSync(at('src/index.css'), 'utf8').matchAll(/--color-(accent|warn|danger):\s*(#[0-9a-f]+);/gi)].map((m) => [m[1], m[2]]);
-const ROLE: Record<string, string> = { accent: 'Actions, done, plates', tip: 'Up, records, live', warn: 'Drops, backup due', danger: 'Delete, down' };
+const meaning = [...readFileSync(at('src/index.css'), 'utf8').matchAll(/--og-(accent|action|warn|danger|danger-fill|cyan|gold):\s*(#[0-9a-f]+);/gi)].map((m) => [m[1], m[2]]);
+const ROLE: Record<string, string> = {
+  accent: 'Text, lines, rings, marks, plates',
+  action: 'Every filled surface with white on it',
+  tip: 'Up, records, live',
+  warn: 'Attention, drops, backup due',
+  danger: 'Delete, down',
+  'danger-fill': 'Filled destructive button',
+  cyan: 'Carbs (nutrition only)',
+  gold: 'Fat (nutrition only)',
+};
 const tabs = ['home', 'plans', 'history', 'progress', 'settings'].map((n) => [n, readFileSync(join(brand, 'tabs', `${n}.svg`), 'utf8')]);
 const dark = tokens('dark');
 const light = new Map(tokens('light'));
@@ -45,13 +54,13 @@ const tip = dark.find(([k]) => k === 'tip')![1];
 const swatch = (c: string) => `<i style="background:${c}"></i>`;
 const board = `<!doctype html><html><head><meta charset="utf-8"><title>OpenGym brand board</title><style>
 *{box-sizing:border-box;margin:0}body{background:#000;color:#fff;font:15px/1.4 -apple-system,'SF Pro Text','Helvetica Neue',Helvetica,Arial,sans-serif;font-variant-numeric:tabular-nums;padding:48px;width:1200px}
-h1{font-size:34px;letter-spacing:-.02em}h2{font-size:10px;letter-spacing:.12em;color:#8e8e8e;font-weight:700;margin:40px 0 14px;text-transform:uppercase}
-p{color:#8e8e8e}.row{display:flex;gap:28px;align-items:flex-end}.cap{font-size:12px;color:#8e8e8e;margin-top:8px;text-align:center}
-.logo img{display:block}.logo img[src*=icon-dark]{border-radius:22%;box-shadow:0 0 0 1px #2c2c2c}.light{background:#fff;padding:24px;border-radius:14px}
-table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #1f1f1f;padding:7px 10px 7px 0;text-align:left;font-size:13px}th{color:#8e8e8e;font-weight:600;font-size:11px}
-td i{display:inline-block;width:18px;height:18px;border-radius:4px;vertical-align:-4px;margin-right:8px;border:1px solid #2c2c2c}
-.tabs{display:flex;border-top:1px solid #1f1f1f;width:390px}.tabs div{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0;font-size:10.5px;font-weight:600;color:#8e8e8e}.tabs div:first-child{color:#2e8bff}.tabs svg{width:23px;height:23px}
-.glyphs span{display:inline-flex;min-width:44px;height:44px;align-items:center;justify-content:center;border:1px solid #1f1f1f;border-radius:10px;font-size:18px;margin-right:8px}
+h1{font-size:34px;letter-spacing:-.02em}h2{font-size:10px;letter-spacing:.12em;color:#a1a1aa;font-weight:700;margin:40px 0 14px;text-transform:uppercase}
+p{color:#a1a1aa}.row{display:flex;gap:28px;align-items:flex-end}.cap{font-size:12px;color:#a1a1aa;margin-top:8px;text-align:center}
+.logo img{display:block}.logo img[src*=icon-dark]{border-radius:22%;box-shadow:0 0 0 1px #38383b}.light{background:#fff;padding:24px;border-radius:14px}
+table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #222222;padding:7px 10px 7px 0;text-align:left;font-size:13px}th{color:#a1a1aa;font-weight:600;font-size:11px}
+td i{display:inline-block;width:18px;height:18px;border-radius:4px;vertical-align:-4px;margin-right:8px;border:1px solid #38383b}
+.tabs{display:flex;border-top:1px solid #222222;width:390px}.tabs div{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0;font-size:10.5px;font-weight:600;color:#a1a1aa}.tabs div:first-child{color:#007aff}.tabs svg{width:23px;height:23px}
+.glyphs span{display:inline-flex;min-width:44px;height:44px;align-items:center;justify-content:center;border:1px solid #222222;border-radius:10px;font-size:18px;margin-right:8px}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:48px}
 </style></head><body>
 <h1>OpenGym brand</h1><p>Generated by <code>npm run brand</code> from <code>src/lib/logo.ts</code> and <code>src/index.css</code>. Don't edit by hand.</p>
@@ -73,8 +82,8 @@ ${dark.map(([k, v]) => `<tr><td>--og-${k}</td><td>${swatch(v)}${v}</td><td>${swa
 ${[...meaning, ['tip', tip]].map(([k, v]) => `<tr><td>${swatch(v)}${k} ${v}</td><td>${ROLE[k] ?? ''}</td></tr>`).join('')}
 </table>
 <h2>Tab bar (solid icons, design/brand/tabs)</h2><div class="tabs">${tabs.map(([n, s]) => `<div>${s.replace('<svg', '<svg fill="currentColor"')}${n[0].toUpperCase() + n.slice(1)}</div>`).join('')}</div>
-<h2>In-app glyphs</h2><div class="glyphs"><span>▶</span><span>+</span><span style="color:#2e8bff">✓</span><span>•••</span><span>≡</span><span style="color:#8e8e8e;font-weight:700">W</span><span style="color:#ff8c1a;font-weight:700">D</span></div>
-<h2>Type</h2><p style="color:#fff"><b style="font-size:34px">34 Title</b> · <b style="font-size:22px">22 Exercise</b> · <span style="font-size:17px">17 Row</span> · <span style="font-size:13px;color:#8e8e8e">13 Meta</span> · <b style="font-size:10px;letter-spacing:.12em;color:#8e8e8e">10 CAPS</b></p>
+<h2>In-app glyphs</h2><div class="glyphs"><span>▶</span><span>+</span><span style="color:#007aff">✓</span><span>•••</span><span>≡</span><span style="color:#a1a1aa;font-weight:700">W</span><span style="color:#ff9500;font-weight:700">D</span></div>
+<h2>Type</h2><p style="color:#fff"><b style="font-size:34px">34 Title</b> · <b style="font-size:22px">22 Exercise</b> · <span style="font-size:17px">17 Row</span> · <span style="font-size:13px;color:#a1a1aa">13 Meta</span> · <b style="font-size:10px;letter-spacing:.12em;color:#a1a1aa">10 CAPS</b></p>
 </div></div>
 </body></html>
 `;

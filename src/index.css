@@ -1,6 +1,9 @@
 @import 'tailwindcss';
 
-/* Design tokens (SPEC §8). Dark first; light swaps the neutrals. Meaning colors never change role. */
+/*
+ * Design tokens (design/DESIGN.md §1). Dark first; light swaps the neutrals. Meaning colors
+ * never change role, and every tinted fill is mixed from a meaning color, never a literal.
+ */
 :root,
 [data-theme='dark'] {
   --og-bg: #000000;
@@ -8,20 +11,22 @@
   --og-surface: #161616;
   --og-surface-2: #1c1c1c;
   --og-raised: #101010;
-  --og-line: #1f1f1f;
-  --og-line-strong: #2c2c2c;
+  --og-line: #222222;
+  --og-line-strong: #38383b;
   --og-fg: #ffffff;
-  --og-fg2: #8e8e8e;
-  --og-fg3: #555555;
+  --og-fg2: #a1a1aa;
+  --og-fg3: #71717a;
+  --og-disabled: #55555b;
   --og-kp-bg: #0d0d0d;
   --og-key: #1e1e1e;
   --og-key-fn: #2a2a2a;
   --og-scrim: rgba(0, 0, 0, 0.6);
-  --og-tip: #2ee66b;
-  --og-input-edit: #0b1a2e;
+  --og-tip: #32c66d;
   --og-chart-grid: #1c1c1c;
-  --og-chart-dot: #4a4a4a;
-  --og-bar: #3a3a3a;
+  --og-chart-dot: #66666f;
+  --og-bar: #52525b;
+  --og-swipe: #2e2e2e;
+  --og-swipe-armed: #4a4a4a;
   --og-badge-shadow: rgba(0, 0, 0, 0.7);
   color-scheme: dark;
 }
@@ -29,28 +34,55 @@
 [data-theme='light'] {
   --og-bg: #ffffff;
   --og-logo-bar: #c8c8c8;
-  --og-surface: #f5f5f5;
-  --og-surface-2: #ececec;
+  --og-surface: #f4f4f5;
+  --og-surface-2: #ececee;
   --og-raised: #ffffff;
-  --og-line: #e5e5e5;
-  --og-line-strong: #d4d4d4;
+  --og-line: #e4e4e7;
+  --og-line-strong: #d4d4d8;
   --og-fg: #000000;
-  --og-fg2: #6b6b6b;
-  --og-fg3: #a8a8a8;
+  /* 5.4 : 1 on white. */
+  --og-fg2: #63636b;
+  --og-fg3: #a1a1aa;
+  --og-disabled: #c4c4cc;
   --og-kp-bg: #e4e4e7;
   --og-key: #ffffff;
   --og-key-fn: #d1d1d6;
   --og-scrim: rgba(0, 0, 0, 0.32);
+  /* Darker green so it still reads as text on white. */
   --og-tip: #12a344;
-  --og-input-edit: #e8f2ff;
-  --og-chart-grid: #ececec;
-  --og-chart-dot: #c4c4c4;
-  --og-bar: #c8c8c8;
+  --og-chart-grid: #ececee;
+  --og-chart-dot: #a1a1aa;
+  --og-bar: #c4c4cc;
+  --og-swipe: #d4d4d8;
+  --og-swipe-armed: #a1a1aa;
   --og-badge-shadow: rgba(0, 0, 0, 0.18);
   color-scheme: light;
 }
 
+/* Meaning colors: the same in both themes. */
+:root {
+  --og-accent: #007aff;
+  --og-action: #0066d6;
+  --og-action-pressed: #0054b0;
+  --og-warn: #ff9500;
+  --og-danger: #ff453a;
+  --og-danger-fill: #c9342b;
+  --og-cyan: #2dafc3;
+  --og-gold: #ebc22d;
+  --og-done: color-mix(in srgb, var(--og-accent) 14%, var(--og-bg));
+  --og-edit: color-mix(in srgb, var(--og-accent) 12%, var(--og-bg));
+  --og-accent-soft: color-mix(in srgb, var(--og-accent) 12%, transparent);
+  --og-effort: color-mix(in srgb, var(--og-accent) 45%, var(--og-bg));
+  --og-success-soft: color-mix(in srgb, var(--og-tip) 18%, var(--og-bg));
+  --og-danger-soft: color-mix(in srgb, var(--og-danger) 18%, var(--og-bg));
+}
+
 @theme inline {
+  --color-*: initial;
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-transparent: transparent;
+  --color-current: currentColor;
   --color-bg: var(--og-bg);
   --color-surface: var(--og-surface);
   --color-surface-2: var(--og-surface-2);
@@ -60,23 +92,35 @@
   --color-fg: var(--og-fg);
   --color-fg2: var(--og-fg2);
   --color-fg3: var(--og-fg3);
+  --color-disabled: var(--og-disabled);
   --color-plan-code: color-mix(in srgb, var(--og-fg2) 65%, var(--og-fg));
   --color-kp: var(--og-kp-bg);
   --color-key: var(--og-key);
   --color-key-fn: var(--og-key-fn);
   --color-tip: var(--og-tip);
-  --color-edit: var(--og-input-edit);
-  --color-accent: #2e8bff;
-  --color-warn: #ff8c1a;
-  --color-danger: #ff3b3b;
-  --color-done: color-mix(in srgb, #2e8bff 14%, var(--og-bg));
+  --color-accent: var(--og-accent);
+  --color-action: var(--og-action);
+  --color-action-pressed: var(--og-action-pressed);
+  --color-warn: var(--og-warn);
+  --color-danger: var(--og-danger);
+  --color-danger-fill: var(--og-danger-fill);
+  --color-cyan: var(--og-cyan);
+  --color-gold: var(--og-gold);
+  --color-done: var(--og-done);
+  --color-edit: var(--og-edit);
+  --color-accent-soft: var(--og-accent-soft);
+  --color-success-soft: var(--og-success-soft);
+  --color-danger-soft: var(--og-danger-soft);
   /* A logged effort badge on a done set: a faded blue fill inside a full blue ring (V2B). */
-  --color-effort: color-mix(in srgb, #2e8bff 45%, var(--og-bg));
+  --color-effort: var(--og-effort);
   /* The glow around the effort badge being picked. */
-  --color-effort-glow: color-mix(in srgb, #2e8bff 55%, transparent);
+  --color-effort-glow: color-mix(in srgb, var(--og-accent) 55%, transparent);
   /* The soft shadow that floats the effort badge over the reps box. */
   --color-badge-shadow: var(--og-badge-shadow);
-  --color-accent-soft: color-mix(in srgb, #2e8bff 12%, transparent);
+  --color-swipe: var(--og-swipe);
+  --color-swipe-armed: var(--og-swipe-armed);
+  --color-chart-dot: var(--og-chart-dot);
+  --color-bar: var(--og-bar);
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
@@ -176,7 +220,7 @@
     color: var(--og-fg2);
   }
   :focus-visible {
-    outline: 2px solid #2e8bff;
+    outline: 2px solid var(--og-accent);
     outline-offset: 2px;
   }
 }

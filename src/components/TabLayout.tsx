@@ -57,7 +57,7 @@ function ResumeBar() {
     <button
       type="button"
       onClick={() => navigate('/workout')}
-      className="anim-fade mx-2.5 mb-1.5 flex h-12 flex-none items-center justify-between rounded-[13px] border border-accent/50 bg-[color-mix(in_srgb,#2e8bff_14%,var(--og-bg))] px-3.5 text-left active:opacity-80"
+      className="anim-fade mx-2.5 mb-1.5 flex h-12 flex-none items-center justify-between rounded-[13px] border border-accent/50 bg-done px-3.5 text-left active:opacity-80"
     >
       <span className="flex min-w-0 items-center gap-2">
         <i className="anim-pulse h-[7px] w-[7px] flex-none rounded-full bg-tip" />

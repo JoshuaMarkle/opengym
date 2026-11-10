@@ -17,7 +17,7 @@ export function Ring({ done, total, size = 32 }: { done: number; total: number; 
     <span className="relative flex flex-none items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="absolute inset-0 -rotate-90" aria-hidden>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--og-line-strong)" strokeWidth="2.5" />
-        {frac > 0 && <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#2e8bff" strokeWidth="2.5" strokeDasharray={`${c * frac} ${c}`} strokeLinecap="round" />}
+        {frac > 0 && <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--og-accent)" strokeWidth="2.5" strokeDasharray={`${c * frac} ${c}`} strokeLinecap="round" />}
       </svg>
       <span className={cx('relative text-[10px] font-bold', frac > 0 ? 'text-fg' : 'text-fg2')}>
         {done}/{total}

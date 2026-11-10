@@ -23,7 +23,7 @@ export const LOGO_RECTS: LogoRect[] = [
 export const LOGO_COLORS = {
   dark: { bg: '#000000', bar: '#3A3A3A' },
   light: { bg: '#FFFFFF', bar: '#C8C8C8' },
-  plate: '#2E8BFF',
+  plate: '#007AFF',
 } as const;
 
 /** The logo as an SVG document. `radius` rounds the square (224 = iOS-style app icon; 0 = full bleed). */
