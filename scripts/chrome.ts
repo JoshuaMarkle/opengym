@@ -31,10 +31,12 @@ export class Browser {
   private pending = new Map<number, Pending>();
   private listeners: ((m: any) => void)[] = [];
 
-  static async launch(): Promise<Browser> {
+  /** `camera`: a .y4m / .mjpeg file the page's camera shows (getUserMedia is allowed without asking). */
+  static async launch({ camera }: { camera?: string } = {}): Promise<Browser> {
     const b = new Browser();
     b.dir = mkdtempSync(join(tmpdir(), 'og-chrome-'));
-    b.proc = spawn(findChrome(), ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${b.dir}`, '--no-first-run', '--hide-scrollbars', '--force-color-profile=srgb', '--lang=en-US', 'about:blank'], {
+    const media = camera ? ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', `--use-file-for-fake-video-capture=${camera}`] : [];
+    b.proc = spawn(findChrome(), ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${b.dir}`, '--no-first-run', '--hide-scrollbars', '--force-color-profile=srgb', '--lang=en-US', ...media, 'about:blank'], {
       stdio: ['ignore', 'ignore', 'pipe'],
     });
     const url = await new Promise<string>((resolve, reject) => {

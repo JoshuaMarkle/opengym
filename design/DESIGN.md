@@ -78,7 +78,7 @@ Text: a set is `185 × 8` (`BW × 12`, `+25 × 8`, `−40 × 10`), real minus `�
 
 ## 3 · Icons (`src/components/icons.tsx`)
 
-Solid tab icons (`HomeIcon`, `HistoryIcon`, `ProgressIcon`, `SettingsIcon`) are for the tab bar only, at 23 px. Everything else is a stroked glyph in `currentColor`.
+Solid tab icons (`HomeIcon`, `HistoryIcon`, `FoodIcon`, `ProgressIcon`, `SettingsIcon`) are for the tab bar only, at 23 px. Everything else is a stroked glyph in `currentColor`.
 
 **Only `+ − × W D ✕ —` are typed.** Everything else is a glyph: `CheckGlyph` (not ✓), `ArrowGlyph` (→), `TrendUp` / `TrendDown` (▲ ▼), `ChevronRight` / `ChevronLeft` (› ‹), `ChevronDown` (▾ ⌄), `MoreGlyph` (•••), `PlayGlyph` (▶), `Handle` (≡). Prose inside a string that can't hold a glyph is allowlisted with a reason.
 
@@ -101,6 +101,11 @@ Solid tab icons (`HomeIcon`, `HistoryIcon`, `ProgressIcon`, `SettingsIcon`) are 
 | `KeyboardGlyph` | 22 | Floating keypad button |
 | `BackspaceIcon` | 24 | Keypad, effort pad |
 | `Handle` | 14 × 12, fg3, in a 44 target | Drag to reorder |
+| `BarcodeGlyph` | 20 | Scan a barcode (Food) |
+| `BoltGlyph` | 20 | Quick add (Food) |
+| `StackGlyph` | 20 | Saved meals (Food) |
+| `StarGlyph` | 20, gold fill when on | Star a food |
+| `FlashGlyph` | 20, a flashlight (not the bolt) | The scanner's light |
 
 No emoji, no icon fonts.
 
@@ -121,7 +126,7 @@ Import from `src/components/ui` (the folder's `index.ts`). Each component's comm
 | Component | Use | Props |
 | --- | --- | --- |
 | `Screen` (`ui/layout.tsx`) | Full-height screen: header, scrolling body, pinned footer | `header`, `footer`, `bodyClass`, `noPad`, `scrollRef` |
-| `LargeHeader` | Tab roots only (Home, Calendar, Progress, Settings). Display 34, subtitle Footnote fg2 | `title`, `subtitle`, `right` (≤ 2 controls) |
+| `LargeHeader` | Tab roots only (Home, Calendar, Food, Progress, Settings; the Food week too). Display 34, subtitle Footnote fg2 | `title`, `subtitle`, `right` (≤ 2 controls) |
 | `TopBar` | Pushed screens. min-h 52, Headline title, hairline | `left`, `title`, `right`, `border` |
 | `BarButton` | Top-bar text button, 44 tall, 17 | `kind: 'plain' \| 'bold' \| 'muted'` |
 | `BackButton` | ChevronLeft 17 + label | `label`, `onClick` |
@@ -158,12 +163,17 @@ Import from `src/components/ui` (the folder's `index.ts`). Each component's comm
 
 | Component | Use | Props |
 | --- | --- | --- |
-| `TargetBar` | h8, the one main number against its target | `frac`, `tone` |
-| `LabeledBar` | h4 under a Caps label, ≤ 3 side by side | `frac`, `color` |
+| `TargetBar` | h8, the one main number against its target. `over`: past the target it fills to the end, with a canvas notch at the target and orange after it | `frac`, `tone`, `over` |
+| `LabeledBar` | h4 under a Caps label, ≤ 3 side by side. `over` as TargetBar | `frac`, `color`, `over` |
 | `GoalBar` | h8, green ahead / orange behind, white 3 × 16 marker | `frac`, `marker`, `behind`, `markerLabel` |
 | `SegmentBar` | h4 steps, gap 4: done blue, current white, to do surface-2 | `steps: ('done' \| 'current' \| 'todo')[]` |
-| `Ring` | S 36/3 (28/3 in rows), M 104/8, L 144/10. Progress or segments | `size: 's' \| 'row' \| 'm' \| 'l'`, `progress`, `segments`, `color`, `children` |
+| `Ring` | S 36/3 (28/3 in rows), M 104/8, L 144/10. Progress or segments | `size: 's' \| 'row' \| 'm' \| 'l'`, `progress`, `segments`, `color`, `track`, `children` |
 | `CountRing` | Row ring with "2/4" inside; full ring + CheckGlyph when complete (All exercises) | `done`, `total` |
+| `TargetSummary` | Food's main number: Title 1 value + "/ target unit", "N left" / "N over" (orange, with the word), then a TargetBar. No target: just the value | `value`, `target`, `unit`, `over` |
+| `MacroBars` | Three LabeledBars for protein · carbs · fat: Caps name (CheckGlyph when a floor is met), "value / target g", bars in the macro colors | `items: MacroBar[]` |
+| `MacroRing` | Ring L split by macro calories with kcal inside, and a legend of % · grams · name per macro. Hairlines above and below | `kcal`, `grams: [p, c, f]` |
+| `MacroLegend` | MacroRing's legend with − + steppers per macro (custom split) | `grams`, `pct`, `steps` |
+| `macroSegments` | The Ring segments for a split | `grams`, `pct` |
 
 ### §9 Buttons · `ui/buttons.tsx`
 
@@ -179,6 +189,7 @@ Import from `src/components/ui` (the folder's `index.ts`). Each component's comm
 | `TextButton` | Low-weight action in content: 15/600 (or 13/600 `small`) blue, 44 tall | `tone`, `small` |
 | `NavCard` | Previous / Next card: 52 (44 with keypad), r10, Caps 11 over Callout 14/600, drawn chevrons | `small` (caps line), `children` (name), `side`, `tone?: 'action'`, `align`, `compact` |
 | `Fab` | Floating 48 / r10 surface-2, `data-dock-side` | `label`, `onClick`, `className` |
+| `ShortcutTile` | 60 r10 surface tile: glyph 20 in accent over a Caption 12/600 label; four in a row (Add food) | `icon`, `onClick` |
 
 ### §10 Controls · `ui/controls.tsx`
 
@@ -196,7 +207,9 @@ Import from `src/components/ui` (the folder's `index.ts`). Each component's comm
 | `PickerBox` | Value box that opens a sheet, ChevronDown 9 | `label`, `onClick` |
 | `InlineInput` | 32 r8 min-w 80, 16/600 right + unit | `value`, `unit` |
 | `Stepper` | Two 36 × 32 r8 buttons with Minus / Plus 14 | `onDown`, `onUp`, `children` |
-| `SearchField` | 40 r10 surface-2, SearchGlyph 14 | `value`, `onChange`, `placeholder` |
+| `SearchField` | 40 r10 surface-2, SearchGlyph 14; `trailing` puts one blue glyph button (40, glyph 20) at the end: the barcode on Add food | `value`, `onChange`, `placeholder`, `trailing` |
+| `InlineValue` | A number typed on the keypad dock, in a row: 32 r8 min-w 80 surface-2, 16/600 right + Footnote unit, in a 44 target; editing = blue border + edit fill. "—" in fg3 when empty | `value`, `unit`, `placeholder`, `on`, `onClick`, `label` |
+| `ValueButton` | The value-box look as a button that opens the keypad (Food's Amount) | `value`, `unit`, `on`, `onClick`, `label` |
 | `Toggle` / `Radio` / `Check` | 51 × 31 action · 22 ring · 24 round action | `on` |
 | `Badge` | 16 r4 10/700: `next` (action), `tag` (outline), `muted`, `d` (orange, black), `success` | `variant` |
 | `Pill` / `Tag` / `DropBadge` | Badge presets kept for existing call sites | — |
@@ -225,12 +238,15 @@ Import from `src/components/ui` (the folder's `index.ts`). Each component's comm
 | `DayDots` / `DayCode` | Marks under a DayCell number: workout dots, or a routine code | `count`, `selected` / `selected` |
 | `ChangedOutline` | The 1 px dashed fg2 outline of a changed day | `round` |
 | `CalendarLegend` | Micro 10 legend with swatches | `items: LegendItem[]` |
+| `RingStrip` | Food's week: Caps letters over Ring S (36/3) per day, filled toward the day's calories (fg2, white for today on a line-strong track); orange with a 4 px dot under it past 3% over; the selected day's letter is white; future days empty with an fg3 number | `days: RingDay[]`, `onPick` |
 
 `PlanStrip`, `PlanGrid`, `CodesSwitch` and `MONTH_LEGEND` live in `screens/plans/PlanParts.tsx` and are built from these.
 
 Day marks are the same everywhere: done / selected = action fill · **today = white ring** (2 on discs, 1.5 on cells), green while a workout is live · today done = action fill + canvas gap + blue ring · missed = 1 px orange ring · changed = 1 px dashed fg2 · past nothing = surface disc / fg2 number · rest = fg3. Blue means done or selected, nothing else.
 
 ### §13 Keypad (`src/components/Keypad.tsx`, `PlatePad.tsx`)
+
+`useNumberPad(fields, { onDone })` (`src/components/useNumberPad.tsx`) docks the keypad under a form of `InlineValue` / `ValueButton` fields (Food): the field switch, ± steps, ½, and confirm move between fields.
 
 Dock: kp fill, line-strong top, px 8 pt 6 pb 8 + safe area. Toolbar min-h 44, gap 6: `CompactSegmented` mode switch (neutral), field switch (action), `BarChip`, confirm 28 r8 action + CheckGlyph 14. Body 218 for every pad (4 × 50 + 3 × 6). Keys h50 r10 gap 6. Plate keys gap 6, total Title 2, action row 15/600 with Done 15/700.
 
@@ -240,7 +256,7 @@ Dock: kp fill, line-strong top, px 8 pt 6 pb 8 + safe area. Toolbar min-h 44, ga
 
 ### §15 Charts (`src/components/charts.tsx`)
 
-Main line accent 2.5 · past points chart-dot r2.2 · latest accent r5.5 with 2 px canvas ring · grid chart-grid, ≤ 4 lines · axis labels 11/400 fg2 · target white 1.2 dash 4 4, labelled with the target · bars `bar`, latest accent, r4 top · macros accent · cyan · gold.
+Main line accent 2.5 · past points chart-dot r2.2 · latest accent r5.5 with 2 px canvas ring · grid chart-grid, ≤ 4 lines · axis labels 11/400 fg2 · target white 1.2 dash 4 4, labelled with the target · bars `bar`, latest accent, r4 top · macros accent · cyan · gold. `MacroWeekBars` (Food week): 28 wide stacked protein · carbs · fat by their calories, r4 top, calories without macros in `bar`, future days at 40%, an orange r3 dot over days past 3% over, weekday Micro 10/700 (today white).
 
 ## Rules (§17)
 

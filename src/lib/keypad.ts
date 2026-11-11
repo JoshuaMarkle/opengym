@@ -6,6 +6,7 @@ export type KeypadKey =
   | { type: 'minus' }
   | { type: 'dash' }
   | { type: 'colon' }
+  | { type: 'half' }
   | { type: 'backspace' }
   | { type: 'inc' }
   | { type: 'dec' };
@@ -31,6 +32,7 @@ const MAX_LEN = 7;
  * focused, so the first digit replaces what's there (like a selected field).
  */
 export function applyKey(text: string, fresh: boolean, key: KeypadKey, o: KeypadOptions): string {
+  if (key.type === 'half') return applyHalf(text, fresh, o);
   if (o.mode === 'time') return applyTimeKey(text, fresh, key, o.step || 60);
   if (o.mode === 'int' && key.type === 'dot') return text;
   if (o.mode === 'decimal' || o.mode === 'int') {
@@ -92,6 +94,17 @@ export function applyKey(text: string, fresh: boolean, key: KeypadKey, o: Keypad
       return formatNumber(next, 3);
     }
   }
+}
+
+/**
+ * The ½ key (food amounts, nutrition-plan §3.5): half a serving. Empty or fresh → 0.5, a whole
+ * number gets .5 (1 → 1.5), anything with a decimal already is left alone. Decimal mode only.
+ */
+function applyHalf(text: string, fresh: boolean, o: KeypadOptions): string {
+  if (o.mode !== 'decimal') return text;
+  if (fresh || text === '' || text === '0') return '0.5';
+  if (/^\d+$/.test(text)) return `${text}.5`;
+  return text;
 }
 
 /** Format seconds the way the time box shows them while typing: "5:00", "1:05:00". */

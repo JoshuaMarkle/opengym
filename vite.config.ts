@@ -43,6 +43,20 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
+        // The food database (≈1 MB gzipped) and the barcode decoder load on first use, not at
+        // install; once fetched they stay cached so both work offline (nutrition-plan §3.8).
+        runtimeCaching: [
+          {
+            urlPattern: /\/foods\/usda-.*\.json$/,
+            handler: 'CacheFirst',
+            options: { cacheName: 'og-foods', expiration: { maxEntries: 2 } },
+          },
+          {
+            urlPattern: /\.wasm$/,
+            handler: 'CacheFirst',
+            options: { cacheName: 'og-wasm', expiration: { maxEntries: 4 } },
+          },
+        ],
       },
       devOptions: { enabled: false },
     }),
@@ -55,7 +69,8 @@ export default defineConfig({
         codeSplitting: {
           groups: [
             { name: 'react', test: /node_modules[\\/](react|react-dom|scheduler|react-router)[\\/]/ },
-            { name: 'vendor', test: /node_modules/ },
+            // zxing-wasm stays out: the scanner loads it the first time you scan.
+            { name: 'vendor', test: /node_modules[\\/](?!zxing-wasm)/ },
           ],
         },
       },
@@ -64,6 +79,6 @@ export default defineConfig({
   server: { host: true },
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
   },
 });

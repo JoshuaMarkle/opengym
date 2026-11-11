@@ -343,8 +343,11 @@ export function Stepper({ children, onDown, onUp, label }: { children: ReactNode
   );
 }
 
-/** design §10 Search: 40 / r10 / surface-2, SearchGlyph 14 fg2, gap 8, 16/400. Clear is a ✕ in a 17 px fg3 circle. */
-export function SearchField({ value, onChange, placeholder, autoFocus }: { value: string; onChange: (v: string) => void; placeholder: string; autoFocus?: boolean }) {
+/**
+ * design §10 Search: 40 / r10 / surface-2, SearchGlyph 14 fg2, gap 8, 16/400. Clear is a ✕ in a
+ * 17 px fg3 circle. `trailing` is one blue glyph button at the end (the barcode on Add food, 10.14).
+ */
+export function SearchField({ value, onChange, placeholder, autoFocus, trailing }: { value: string; onChange: (v: string) => void; placeholder: string; autoFocus?: boolean; trailing?: ReactNode }) {
   return (
     <label className="mt-2.5 flex h-10 items-center gap-2 rounded-md bg-surface-2 px-3 text-fg2">
       <SearchGlyph size={14} />
@@ -365,6 +368,7 @@ export function SearchField({ value, onChange, placeholder, autoFocus }: { value
           <span className="flex h-4.25 w-4.25 items-center justify-center rounded-full bg-fg3 text-micro text-bg">✕</span>
         </button>
       )}
+      {trailing}
     </label>
   );
 }
@@ -478,6 +482,48 @@ export function BarChip({ label, onPress, ariaLabel }: { label: ReactNode; onPre
         {label}
         <ChevronDown size={9} />
       </span>
+    </button>
+  );
+}
+
+/**
+ * design §10 Inline value (Food setup 10.6, targets 10.10): an inline input typed on the app's
+ * keypad dock instead of the phone keyboard. Same look as InlineInput (32 / r8 / min-w 80, 16/600
+ * right-aligned + unit 13 fg2) in a 44 target; the one being typed in gets the blue border and
+ * edit fill. Empty shows the placeholder in fg3.
+ */
+export function InlineValue({ value, unit, placeholder = '—', on, onClick, label }: { value: string; unit?: string; placeholder?: string; on?: boolean; onClick: () => void; label: string }) {
+  return (
+    <button type="button" aria-label={label} aria-pressed={on} onClick={onClick} className="flex h-11 flex-none items-center">
+      <span
+        className={cx(
+          'flex h-8 min-w-20 items-center justify-end gap-1 rounded-sm border-[1.5px] px-2.5 text-input font-semibold',
+          on ? 'border-accent bg-edit' : 'border-transparent bg-surface-2',
+        )}
+      >
+        {value ? <span>{value}</span> : <span className="text-fg3">{placeholder}</span>}
+        {unit && <span className="text-footnote font-normal text-fg2">{unit}</span>}
+      </span>
+    </button>
+  );
+}
+
+/**
+ * design §10 Value button (Food amount 10.16): a value box typed on the keypad dock. 44 / r10 /
+ * surface-2, centered 17/700 + unit Footnote 13/600 fg2; being typed in = 1.5 blue border + edit
+ * fill.
+ */
+export function ValueButton({ value, unit, on, onClick, label, className = '' }: { value: string; unit?: string; on?: boolean; onClick: () => void; label: string; className?: string }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      aria-pressed={on}
+      onClick={onClick}
+      className={cx('mt-1.5 flex h-11 w-full items-center justify-center gap-1 rounded-md border-[1.5px] px-3', on ? 'border-accent bg-edit' : 'border-transparent bg-surface-2', className)}
+    >
+      <span className={cx('text-headline', !value && 'text-fg3')}>{value || '0'}</span>
+      {unit && <span className="text-footnote font-semibold text-fg2">{unit}</span>}
     </button>
   );
 }

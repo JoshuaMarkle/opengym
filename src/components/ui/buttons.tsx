@@ -235,3 +235,16 @@ export function Fab({ children, label, onClick, className = '' }: { children: Re
     </button>
   );
 }
+
+/**
+ * design §9 Shortcut tile (Add food, 10.14): four in a row, gap 8. 60 / r10 / surface, a blue
+ * 20 px glyph over a 12/600 label. A tap target, not a choice: it never shows a selected state.
+ */
+export function ShortcutTile({ icon, children, onClick }: { icon: ReactNode; children: ReactNode; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="flex h-15 flex-col items-center justify-center gap-1.5 rounded-md bg-surface text-caption font-semibold active:opacity-60">
+      <span className="flex text-accent">{icon}</span>
+      {children}
+    </button>
+  );
+}

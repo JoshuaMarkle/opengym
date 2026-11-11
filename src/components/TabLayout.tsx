@@ -2,12 +2,14 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { useActiveWorkout } from '../data/DataProvider';
 import { useNow } from '../hooks/useNow';
 import { fmtClock } from '../lib/dates';
-import { ChevronRight, HistoryIcon, HomeIcon, ProgressIcon, SettingsIcon } from './icons';
+import { ChevronRight, FoodIcon, HistoryIcon, HomeIcon, ProgressIcon, SettingsIcon } from './icons';
 import { cx, LiveDot } from './ui';
 
 const TABS = [
   { to: '/', label: 'Home', Icon: HomeIcon, end: true },
   { to: '/calendar', label: 'Calendar', Icon: HistoryIcon },
+  // SPEC §5 / §14: Food sits between Calendar and Progress. Tapping it on a past day goes back to today.
+  { to: '/food', label: 'Food', Icon: FoodIcon },
   { to: '/progress', label: 'Progress', Icon: ProgressIcon },
   { to: '/settings', label: 'Settings', Icon: SettingsIcon },
 ];

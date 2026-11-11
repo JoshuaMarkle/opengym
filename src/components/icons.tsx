@@ -31,6 +31,20 @@ export function HistoryIcon({ size = 24, ...p }: P) {
   );
 }
 
+/** The Food tab (design/brand/tabs/food.svg): a bowl with three scoops. */
+export function FoodIcon({ size = 24, ...p }: P) {
+  return (
+    <svg viewBox="0 0 24 24" {...svg(size, p)}>
+      <g fill="currentColor">
+        <path d="M2.6 11.4h18.8a1 1 0 0 1 1 1.1A10.4 10.4 0 0 1 15.6 20.6v.4a1 1 0 0 1-1 1H9.4a1 1 0 0 1-1-1v-.4A10.4 10.4 0 0 1 1.6 12.5a1 1 0 0 1 1-1.1z" />
+        <circle cx="7.6" cy="8.1" r="2.5" />
+        <circle cx="12.4" cy="6.2" r="3.1" />
+        <circle cx="17.1" cy="8.3" r="2.3" />
+      </g>
+    </svg>
+  );
+}
+
 export function ProgressIcon({ size = 24, ...p }: P) {
   return (
     <svg viewBox="0 0 24 24" {...svg(size, p)}>
@@ -316,6 +330,59 @@ export function ClipboardIcon({ size = 18, ...p }: P) {
         <path d="M8 5H5v16h14V5h-3M8 11h8M8 15h8" />
         <rect x="8" y="3" width="8" height="4" rx="1" />
       </g>
+    </svg>
+  );
+}
+
+/** Barcode in a frame: the search field's scan button and the Scan tile (C1), 20 px. */
+export function BarcodeGlyph({ size = 20, ...p }: P) {
+  return (
+    <svg viewBox="0 0 24 24" {...svg(size, p)}>
+      <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" />
+        <path d="M7 8v8M10 8v8M13 8v8M17 8v8" strokeWidth="1.6" />
+      </g>
+    </svg>
+  );
+}
+
+/** Lightning bolt: Quick add (C1), 20 px. */
+export function BoltGlyph({ size = 20, ...p }: P) {
+  return (
+    <svg viewBox="0 0 24 24" {...svg(size, p)}>
+      <path d="M13 3 5 13.5h6L10 21l8-10.5h-6z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** Stacked layers: saved meals (C1 Meals tile), 20 px. */
+export function StackGlyph({ size = 20, ...p }: P) {
+  return (
+    <svg viewBox="0 0 24 24" {...svg(size, p)}>
+      <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <rect x="4" y="4" width="16" height="5" rx="1.5" />
+        <rect x="4" y="11" width="16" height="4" rx="1.5" />
+        <path d="M6 19h12" />
+      </g>
+    </svg>
+  );
+}
+
+/** Star: favorite a food (F1), 20 px. `filled` once it's a favorite. */
+export function StarGlyph({ size = 20, filled = false, ...p }: P & { filled?: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" {...svg(size, p)}>
+      <path d="M12 3.2l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 17l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8z" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** Torch on the scanner (C3), 20 px. */
+export function FlashGlyph({ size = 20, ...p }: P) {
+  return (
+    <svg viewBox="0 0 24 24" {...svg(size, p)}>
+      {/* A flashlight, so it can't be mistaken for Quick add's bolt. */}
+      <path d="M7 3h10v3l-2.5 4v10a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1V10L7 6zM7 6h10M12 13.5v2.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   );
 }

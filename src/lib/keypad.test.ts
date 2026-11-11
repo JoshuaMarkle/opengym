@@ -92,3 +92,13 @@ describe('cardio modes', () => {
     expect(applyKey('500', false, { type: 'inc' }, o)).toBe('550');
   });
 });
+
+describe('½ key (food amounts)', () => {
+  const o = { mode: 'decimal' as const, step: 0.25 };
+  it('types half servings', () => {
+    expect(applyKey('', true, { type: 'half' }, o)).toBe('0.5');
+    expect(applyKey('1', false, { type: 'half' }, o)).toBe('1.5');
+    expect(applyKey('1.25', false, { type: 'half' }, o)).toBe('1.25');
+    expect(applyKey('200', false, { type: 'half' }, { mode: 'int', step: 10 })).toBe('200');
+  });
+});

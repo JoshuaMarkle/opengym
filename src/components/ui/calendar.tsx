@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cx } from './layout';
+import { Ring } from './progress';
 
 // design §12 Calendars. Week strips and month grids share one set of day marks, so a day means
 // the same thing everywhere. Blue means done or selected, nothing else. Today is a white ring
@@ -132,6 +133,54 @@ export function CalendarLegend({ items, className = '' }: { items: LegendItem[];
           )}
           {it.label}
         </span>
+      ))}
+    </div>
+  );
+}
+
+export interface RingDay {
+  key: string;
+  /** Screen-reader name, "Thu, Nov 5". */
+  label?: string;
+  letter: string;
+  number: number;
+  /** Calories against target, 0–1+ (no ring fill when undefined). */
+  frac?: number;
+  /** More than 3% over: orange ring and an orange dot under the day. */
+  over?: boolean;
+  today?: boolean;
+  future?: boolean;
+  selected?: boolean;
+}
+
+/**
+ * design §12 Ring strip (Food day page, 10.1): seven columns of a Caps weekday over a Ring S
+ * (36 / 3) with the date inside, 13/700. Today's ring is white on a line-strong track, past days
+ * grey, days over target orange with an orange dot under them (color plus a mark). Future days
+ * are an empty ring with a fg3 date. The selected day's weekday is white.
+ */
+export function RingStrip({ days, onPick, className = '' }: { days: RingDay[]; onPick: (key: string) => void; className?: string }) {
+  return (
+    <div className={cx('grid grid-cols-7 gap-1', className)}>
+      {days.map((d) => (
+        <button
+          key={d.key}
+          type="button"
+          aria-label={d.label ?? d.key}
+          aria-current={d.selected ? 'date' : undefined}
+          onClick={() => onPick(d.key)}
+          className="flex flex-col items-center gap-1.5 active:opacity-60"
+        >
+          <Weekday today={d.selected}>{d.letter}</Weekday>
+          <Ring
+            progress={d.future ? 0 : d.frac}
+            color={d.over ? 'var(--og-warn)' : d.today ? 'var(--og-fg)' : 'var(--og-fg2)'}
+            track={d.today ? 'var(--og-line-strong)' : undefined}
+          >
+            <span className={cx('text-footnote font-bold', d.future ? 'text-fg3' : 'text-fg')}>{d.number}</span>
+          </Ring>
+          <i className={cx('-mt-0.5 block h-1 w-1 rounded-full', d.over ? 'bg-warn' : 'bg-transparent')} aria-hidden />
+        </button>
       ))}
     </div>
   );

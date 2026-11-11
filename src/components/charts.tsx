@@ -343,3 +343,92 @@ export function ForecastChart({
     </div>
   );
 }
+
+export interface MacroDay {
+  key: string;
+  /** Weekday letter under the bar. */
+  letter: string;
+  kcal: number;
+  p: number;
+  c: number;
+  f: number;
+  /** More than 3% over the day's target: an orange dot over the bar (with "over" in the day list). */
+  over?: boolean;
+  today?: boolean;
+  future?: boolean;
+}
+
+/**
+ * Week of calories as stacked macro bars (board A5, design §15): 28 wide, top rounded r4, protein ·
+ * carbs · fat from the bottom in accent · cyan · gold, sized by their calories and scaled to the
+ * day's total. Calories without macros (a quick add) stack on top in the plain bar color. The
+ * target is the dashed white line; days over it get an orange dot. Tap a bar to open the day.
+ */
+export function MacroWeekBars({ days, target, onPick, height = 160 }: { days: MacroDay[]; target?: number; onPick?: (key: string) => void; height?: number }) {
+  const [ref, width] = useWidth<HTMLDivElement>();
+  const padL = 36;
+  const padT = 14;
+  const padB = 20;
+  const max = Math.max(1, ...days.map((d) => d.kcal), (target ?? 0) * 1.1);
+  const ticks = niceTicks(0, max, 3).filter((t) => t > 0);
+  const hi = Math.max(max, ticks[ticks.length - 1] ?? 1);
+  const iw = Math.max(1, width - padL);
+  const ih = height - padT - padB;
+  const slot = iw / Math.max(1, days.length);
+  const bw = Math.min(28, slot * 0.7);
+  const y = (v: number) => padT + ih - (v / hi) * ih;
+  const kLabel = (v: number) => (v >= 1000 ? `${formatNumber(v / 1000, 1)}k` : formatNumber(v, 0));
+  return (
+    <div ref={ref} className="mt-4 w-full">
+      {width > 0 && (
+        <svg width={width} height={height} role="img" aria-label="Calories by day, split into protein, carbs and fat" className="block overflow-visible">
+          {ticks.map((t) => (
+            <g key={t}>
+              <line x1={padL} x2={width} y1={y(t)} y2={y(t)} stroke="var(--og-chart-grid)" />
+              <text x={0} y={y(t) + 4} fill="var(--og-fg2)" fontSize="11">
+                {kLabel(t)}
+              </text>
+            </g>
+          ))}
+          {days.map((d, i) => {
+            const x = padL + slot * i + (slot - bw) / 2;
+            const parts = [d.p * 4, d.c * 4, d.f * 9];
+            const fromMacros = parts.reduce((a, b) => a + b, 0);
+            const sc = fromMacros > d.kcal && fromMacros > 0 ? d.kcal / fromMacros : 1;
+            const segs = [...parts.map((v) => v * sc), Math.max(0, d.kcal - fromMacros * sc)];
+            const colors = ['var(--og-accent)', 'var(--og-cyan)', 'var(--og-gold)', 'var(--og-bar)'];
+            const total = (d.kcal / hi) * ih;
+            const top = padT + ih - total;
+            let acc = padT + ih;
+            const id = `mwb-${d.key}`;
+            return (
+              <g key={d.key} onClick={onPick ? () => onPick(d.key) : undefined} className={onPick ? 'cursor-pointer' : undefined}>
+                <rect x={padL + slot * i} y={0} width={slot} height={height} fill="transparent" />
+                {total > 0 && (
+                  <>
+                    <clipPath id={id}>
+                      <path d={`M${x} ${padT + ih}V${top + Math.min(4, total)}Q${x} ${top} ${x + 4} ${top}H${x + bw - 4}Q${x + bw} ${top} ${x + bw} ${top + Math.min(4, total)}V${padT + ih}Z`} />
+                    </clipPath>
+                    {/* Logged ahead: faded until the day comes. */}
+                    <g clipPath={`url(#${id})`} opacity={d.future ? 0.4 : 1}>
+                      {segs.map((v, j) => {
+                        const h = (v / hi) * ih;
+                        acc -= h;
+                        return h > 0 ? <rect key={j} x={x} y={acc} width={bw} height={h + 0.5} fill={colors[j]} /> : null;
+                      })}
+                    </g>
+                  </>
+                )}
+                {d.over && <circle cx={x + bw / 2} cy={top - 8} r={3} fill="var(--og-warn)" />}
+                <text x={x + bw / 2} y={height - 4} fill={d.today ? 'var(--og-fg)' : 'var(--og-fg2)'} fontSize="10" fontWeight="700" textAnchor="middle">
+                  {d.letter}
+                </text>
+              </g>
+            );
+          })}
+          {target ? <line x1={padL} x2={width} y1={y(target)} y2={y(target)} stroke="var(--og-fg)" strokeWidth="1.2" strokeDasharray="4 4" /> : null}
+        </svg>
+      )}
+    </div>
+  );
+}

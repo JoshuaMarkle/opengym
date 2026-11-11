@@ -46,8 +46,8 @@ const ROLE: Record<string, string> = {
   cyan: 'Carbs (nutrition only)',
   gold: 'Fat (nutrition only)',
 };
-const TAB_LABEL: Record<string, string> = { home: 'Home', history: 'Calendar', progress: 'Progress', settings: 'Settings' };
-const tabs = ['home', 'history', 'progress', 'settings'].map((n) => [n, readFileSync(join(brand, 'tabs', `${n}.svg`), 'utf8')]);
+const TAB_LABEL: Record<string, string> = { home: 'Home', history: 'Calendar', food: 'Food', progress: 'Progress', settings: 'Settings' };
+const tabs = ['home', 'history', 'food', 'progress', 'settings'].map((n) => [n, readFileSync(join(brand, 'tabs', `${n}.svg`), 'utf8')]);
 const dark = tokens('dark');
 const light = new Map(tokens('light'));
 const tip = dark.find(([k]) => k === 'tip')![1];

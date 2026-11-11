@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Food: what the board didn't draw</title>
+<style>
+  body { margin: 0; background: #000; color: #fff; font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; }
+  main { max-width: 1400px; margin: 0 auto; padding: 40px 24px 80px; }
+  h1 { font-size: 34px; margin: 0 0 6px; }
+  p.lead { color: #a1a1aa; max-width: 760px; margin: 0 0 32px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 32px 24px; }
+  figure { margin: 0; }
+  img { width: 100%; border-radius: 18px; border: 1px solid #27272a; display: block; }
+  figcaption { margin-top: 10px; font-size: 13px; color: #a1a1aa; }
+  figcaption b { display: block; color: #fff; font-size: 15px; margin-bottom: 2px; }
+  code { color: #fff; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Food: what the board didn't draw</h1>
+  <p class="lead">The pieces <code>nutrition.html</code> (v5) implies but doesn't show, as built from <code>DESIGN.md</code>'s components. The images are the storyboard's screenshots (<code>npm run screens</code>), so this page can't drift from the app. Behavior is in SPEC §14; the choices the plan left open are in <code>nutrition-plan.md</code> §9.</p>
+  <div class="grid">
+  <figure><img src="../screens/10.5.png" alt="Screen 10.5: Before setup" loading="lazy"><figcaption><b>10.5 · Before setup</b><span>The Food tab before setup: one line on what it does, Set targets, or Just log.</span></figcaption></figure>
+  <figure><img src="../screens/10.13.png" alt="Screen 10.13: Nutrient targets" loading="lazy"><figcaption><b>10.13 · Nutrient targets</b><span>Every micronutrient from the DRIs for your sex and age. Limits say so. Type your own; Reset brings the DRI back.</span></figcaption></figure>
+  <figure><img src="../screens/10.18.png" alt="Screen 10.18: Meal sheet" loading="lazy"><figcaption><b>10.18 · Meal sheet</b><span>The four fixed meals.</span></figcaption></figure>
+  <figure><img src="../screens/10.19.png" alt="Screen 10.19: New food (D3)" loading="lazy"><figcaption><b>10.19 · New food (D3)</b><span>The label as rows, per serving; More nutrients holds the rest of the catalog. A quiet note when calories don't match the macros.</span></figcaption></figure>
+  <figure><img src="../screens/10.20.png" alt="Screen 10.20: Quick add (D2)" loading="lazy"><figcaption><b>10.20 · Quick add (D2)</b><span>Calories plus optional macros and a name. Never joins your foods.</span></figcaption></figure>
+  <figure><img src="../screens/10.21.png" alt="Screen 10.21: Saved meal (D4)" loading="lazy"><figcaption><b>10.21 · Saved meal (D4)</b><span>Delete disc, amount on the keypad, drag handle; Add food searches inside the editor.</span></figcaption></figure>
+  <figure><img src="../screens/10.23.png" alt="Screen 10.23: Copy a day" loading="lazy"><figcaption><b>10.23 · Copy a day</b><span>The last 14 days with food. + copies a whole day into the same meals, one Undo.</span></figcaption></figure>
+  <figure><img src="../screens/10.24.png" alt="Screen 10.24: Meal options" loading="lazy"><figcaption><b>10.24 · Meal options</b><span>Save as meal · Copy to today · Clear meal, from the ••• on an open meal (and long-press on its row).</span></figcaption></figure>
+  <figure><img src="../screens/10.25.png" alt="Screen 10.25: Day nutrients" loading="lazy"><figcaption><b>10.25 · Day nutrients</b><span>Amount / target, a 4 px bar and the %. Missing data gets the warn glyph and a count, never a guess.</span></figcaption></figure>
+  <figure><img src="../screens/10.26.png" alt="Screen 10.26: A nutrient's top foods" loading="lazy"><figcaption><b>10.26 · A nutrient's top foods</b><span>Where the day's sodium came from, with each food's share.</span></figcaption></figure>
+  <figure><img src="../screens/10.27.png" alt="Screen 10.27: Missing data" loading="lazy"><figcaption><b>10.27 · Missing data</b><span>Foods with no value for the nutrient, listed under Missing from; each opens its food to fill it in.</span></figcaption></figure>
+  <figure><img src="../screens/10.28.png" alt="Screen 10.28: Fill in missing nutrients" loading="lazy"><figcaption><b>10.28 · Fill in missing nutrients</b><span>The closest built-in foods by name; only what's missing is copied, marked "~".</span></figcaption></figure>
+  <figure><img src="../screens/10.29.png" alt="Screen 10.29: Scan" loading="lazy"><figcaption><b>10.29 · Scan</b><span>Camera under a translucent top bar; Type the number is always there.</span></figcaption></figure>
+  <figure><img src="../screens/10.30.png" alt="Screen 10.30: Scan result" loading="lazy"><figcaption><b>10.30 · Scan result</b><span>Name and source, the ring, the amount and Log. Wrong food? Fix the numbers.</span></figcaption></figure>
+  <figure><img src="../screens/10.31.png" alt="Screen 10.31: Settings › Food" loading="lazy"><figcaption><b>10.31 · Settings › Food</b><span>Targets, the online toggle, and the database status.</span></figcaption></figure>
+  <figure><img src="../screens/10.32.png" alt="Screen 10.32: Week (A5)" loading="lazy"><figcaption><b>10.32 · Week (A5)</b><span>As drawn, plus the seven days as rows: a visible way back to each day.</span></figcaption></figure>
+  <figure><img src="../screens/3.1.png" alt="Screen 3.1: Home (A6)" loading="lazy"><figcaption><b>3.1 · Home (A6)</b><span>Today's calories and macros under the routines, with + Log food.</span></figcaption></figure>
+  </div>
+</main>
+</body>
+</html>

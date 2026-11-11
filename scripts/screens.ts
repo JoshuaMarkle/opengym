@@ -100,7 +100,7 @@ export const CATALOG: Section[] = [
     title: 'Starting',
     blurb: 'Opening the app at the gym.',
     screens: [
-      ['3.1', 'Home', 'This week as a strip (blue = trained, ring = today); with a scheduled plan, the plan\'s week instead (3.4). Then the active folder, longest-ago first: ▶ starts a routine, tapping the name opens it.'],
+      ['3.1', 'Home', 'This week as a strip (blue = trained, ring = today); with a scheduled plan, the plan\'s week instead (3.4). Then the active folder, longest-ago first: ▶ starts a routine, tapping the name opens it. Once Food is set up, today\'s calories and macros sit under the routines with + Log food.'],
       ['3.2', 'Home, workout running', 'An unfinished workout leads Home: timer, where you were, Resume.'],
       ['3.3', 'Resume bar', 'On every other tab while a workout runs, one tap back to your sets.'],
       ['3.4', 'Home, scheduled', 'With a scheduled active folder, Home follows the plan: a blue Today label and compact Start pill, upcoming workouts without rest rows, and Blank workout at the bottom.'],
@@ -236,6 +236,45 @@ export const CATALOG: Section[] = [
       ['9.8', 'RPE and RIR', 'Opened from Settings › Effort, and the first time effort is turned on. Both terms, then one table mapping RPE, RIR and how a set feels.'],
     ],
   },
+  {
+    n: 10,
+    title: 'Food',
+    blurb: 'Calories, macros and micronutrients against your own targets (SPEC §14). Built from design/proposals/nutrition.html; the sample log is a 190 lb lifter on 2,700 kcal.',
+    screens: [
+      ['10.1', 'Day, lunchtime', 'Lunch opens itself between 11:00 and 4:00 pm. Rings in the strip fill toward the day\'s calories; orange with a dot means more than 3% over.'],
+      ['10.2', 'Day, evening', 'Dinner is the meal now: open and empty, so just its Add row. The other meals read as four summary rows.'],
+      ['10.3', 'Past day, over target', 'Every folder closed. Over by more than 3%: the number and "over" turn orange and the bar gets a canvas notch at the target. Protein is a floor, so it gets a check instead.'],
+      ['10.4', 'Future day', 'Logged ahead. The strip ring stays grey and the day counts in the week only once it arrives.'],
+      ['10.5', 'Before setup', 'The first time Food opens: Set targets, or Just log for totals without a target.'],
+      ['10.6', 'Setup: about you', 'Sex, age, height and weight are typed on the keypad dock; the box being typed in gets the blue border. Activity is the day outside the gym, in steps.'],
+      ['10.7', 'Setup: goal', 'Lose fat, maintain, build muscle, or just log. A goal weight is optional and only dates the pace.'],
+      ['10.8', 'Setup: pace', 'kcal a day for each rate and when you\'d reach the goal weight. 0.5 lb a week is suggested for losing; the fastest says strength may drop. A pace under your safe minimum is disabled with the reason.'],
+      ['10.9', 'Setup: result', 'Maintenance from Mifflin–St Jeor × activity, the pace, and the target rounded to 50. The ring shows the split; Change picks another diet.'],
+      ['10.10', 'Targets', 'Calories (type a number, or Recalculate), the L ring, grams per macro, then the diets. Lifter: protein 1 g per lb, fat 27%, rest carbs.'],
+      ['10.11', 'Targets: another diet', 'Picking a diet applies from today; past days keep the target they had. The active diet moves to the top.'],
+      ['10.12', 'Targets: custom', '+ adds 2% to a macro and takes 1% from each of the others; no macro goes under 5%.'],
+      ['10.14', 'Add food', 'The meal is the title (tap to switch). Search with the barcode, four shortcuts, then Usually at dinner (3+ times in 30 days) and Recent. + logs your last amount at once and turns into a check; the check takes it back off.'],
+      ['10.15', 'Searching', 'Your foods and foods you log first, then the built-in USDA database (about 13,000 foods, offline), short names first. Open Food Facts results follow under Online when there are fewer than 8.'],
+      ['10.16', 'Amount', 'Tapping a row opens the amount with the keypad up: g · serv · oz, ± 10 g / ¼ / 0.5 oz, and ½. The ring follows every key; ✓ Log logs it and goes back with the row checked.'],
+      ['10.17', 'A logged food', 'Tap a food on the day page: the same screen with Save, Star and •••. Change the amount or move it to another meal. Every nutrient shows % of your own target; missing values are —.'],
+      ['10.18', 'Meal sheet', 'The four meals. Fixed: they can\'t be renamed or reordered.'],
+      ['10.19', 'New food', 'A nutrition label as rows: name, brand, the serving, then calories and macros per serving as the label prints them. More nutrients holds the rest. Stored per 100 g; a quiet note shows when calories are far from 4·P + 4·C + 9·F.'],
+      ['10.20', 'Quick add', 'Calories plus optional protein, carbs and fat, logged straight into the meal. It never joins your foods.'],
+      ['10.21', 'Saved meal', 'Built like the routine builder: the name, the ring, the foods with a delete disc, amount and drag handle, and Add food.'],
+      ['10.22', 'Add food: Meals', '+ logs a whole saved meal into this meal, one entry per food, and turns into a check that takes it back off. Copy a day sits underneath.'],
+      ['10.23', 'Copy a day', 'The last two weeks of logged days. + copies a whole day into the same meals, with one Undo.'],
+      ['10.24', 'Meal options', 'The ••• on an open meal (and long-press on its row): Save as meal, Copy to today, Clear meal.'],
+      ['10.25', 'Day nutrients', 'Every tracked nutrient for the day against your target: amount / target, a 4 px bar and the %. Macros in their colors; the rest neutral, orange only past a limit or upper limit, with "over". A floor reached gets a check.'],
+      ['10.26', 'A nutrient\'s top foods', 'Where the day\'s sodium came from: the foods that gave the most, with their share.'],
+      ['10.27', 'Missing data', 'A food with no value for a nutrient adds nothing, and is listed under Missing from. Totals are never guessed.'],
+      ['10.28', 'Fill in missing nutrients', 'A packaged food lacking most vitamins and minerals borrows them from the closest built-in food. Only what\'s missing is copied; borrowed values show with "~".'],
+      ['10.29', 'Scan', 'The camera fills the screen under a white top bar: Cancel, the meal, and the light when the phone has one. Two matching reads in a row look the code up. Type the number is always there; with no camera it\'s the whole screen.'],
+      ['10.30', 'Scan result', 'Your own food for a barcode wins, then Open Food Facts. Nothing is logged until Log; the amount box opens the full amount screen. Wrong food? opens New food filled in from the scan, with the barcode.'],
+      ['10.31', 'Settings: Food', 'Targets, and where foods come from. Look up foods online turns Open Food Facts search and barcode lookups on or off; the built-in USDA foods always work offline.'],
+      ['10.32', 'Week', 'Average per day, days on target (90–103%) and days protein was hit, counting only past days with food. Stacked macro bars against the dashed target, an orange dot over days that went over; averages against target; then the seven days. Tap a bar or a day to open it.'],
+      ['10.13', 'Nutrient targets', 'Every micronutrient from the US Dietary Reference Intakes for your sex and age. Limits say so; type your own number and Reset brings the DRI back.'],
+    ],
+  },
 ];
 
 // ───────────────────────────── scenes
@@ -253,10 +292,10 @@ type Ctx = {
   scrollTo: (text: string) => Promise<void>;
   scratch: string;
 };
-type Scene = { server: 'sample' | 'empty'; ids: string[]; run: (c: Ctx) => Promise<void> };
+type Scene = { server: 'sample' | 'empty'; ids: string[]; run: (c: Ctx) => Promise<void>; clock?: Date };
 
 const SCENES: Scene[] = [];
-const scene = (server: Scene['server'], ids: string, run: Scene['run']) => SCENES.push({ server, ids: ids.split(' '), run });
+const scene = (server: Scene['server'], ids: string, run: Scene['run'], clock?: Date) => SCENES.push({ server, ids: ids.split(' '), run, clock });
 
 scene('sample', '0.1', async ({ go, shotTall }) => {
   await go('/dev/ui');
@@ -460,7 +499,7 @@ scene('sample', '2.16 2.17 2.18 2.19 3.4 2.15 2.14 2.20 2.21 2.23 2.24 3.5', asy
   await go('/plans');
   await p.click({ sel: '[role=tab]', text: 'Routines' });
   await p.click({ sel: 'button', text: 'PPL', nth: 0 });
-  await p.click('Change');
+  await p.click('No schedule');
   await p.click('Weekly split');
   await shot('2.16');
   await p.click('Repeating cycle');
@@ -939,6 +978,185 @@ scene('sample', '9.9 9.11 9.10', async ({ p, go, shot }) => {
   await shot('9.10');
 });
 
+// ───────────────────────────── 10 Food
+
+/** Wait for the built-in food database to finish loading, so no progress line shows. */
+const foodReady = async (p: Page) => {
+  for (let i = 0; i < 120; i++) {
+    if (await p.eval<boolean>(`(async () => !!(await __og.db.settings.get('settings'))?.food?.usdaRelease)()`)) return;
+    await sleep(500);
+  }
+  throw new Error('food database did not load');
+};
+
+scene(
+  'sample',
+  '10.1',
+  async ({ p, go, shot }) => {
+    await go('/food');
+    await foodReady(p);
+    await shot('10.1');
+  },
+  new Date(2026, 10, 5, 12, 40),
+);
+
+scene('sample', '10.2 10.3 10.4', async ({ p, go, shot }) => {
+  await go('/food');
+  await foodReady(p);
+  await shot('10.2');
+  await go('/food/day/2026-11-04');
+  await shot('10.3');
+  await go('/food/day/2026-11-06');
+  await shot('10.4');
+});
+
+scene('sample', '10.14 10.15 10.16 10.17 10.18', async ({ p, go, shot, dismiss }) => {
+  await go('/food');
+  await foodReady(p);
+  await go('/food/add?day=2026-11-05&meal=dinner');
+  await shot('10.14');
+  await p.click('Search foods');
+  await p.type('chicken');
+  await sleep(900);
+  await shot('10.15');
+  await p.click('Chicken breast, grilled');
+  await shot('10.16');
+  await go('/food/day/2026-11-05');
+  await p.click('Lunch');
+  await p.click('Chicken breast, grilled');
+  await shot('10.17');
+  await p.click('Meal');
+  await shot('10.18');
+  await dismiss();
+});
+
+const padKeys = async (p: Page, keys: string) => {
+  for (const k of keys) await p.click({ sel: '[aria-label="Keypad"] button', text: k, start: true });
+};
+
+scene('sample', '10.19 10.20 10.21 10.22 10.23 10.24', async ({ p, go, shot, dismiss }) => {
+  await go('/food');
+  await foodReady(p);
+  await go('/food/new?day=2026-11-05&meal=breakfast&name=Overnight%20oats&kcal=410&p=24&c=52&f=11');
+  await p.click('Serving size');
+  await padKeys(p, '250');
+  await shot('10.19');
+  await go('/food/quick?day=2026-11-05&meal=dinner');
+  await padKeys(p, '850');
+  await p.click('Protein');
+  await padKeys(p, '45');
+  await shot('10.20');
+  await go('/food/copy-day?day=2026-11-05');
+  await shot('10.23');
+  await go('/food/day/2026-11-04');
+  await p.click('Lunch');
+  await p.click('Lunch options');
+  await shot('10.24');
+  await dismiss();
+  await go('/food/add?day=2026-11-05&meal=dinner');
+  await p.click({ sel: 'button', text: 'Meals' });
+  await p.click('Post-workout shake');
+  await shot('10.21');
+  await p.click('Cancel');
+  await p.click('Add Chicken rice bowl');
+  await sleep(300);
+  await shot('10.22');
+});
+
+scene('sample', '10.25 10.26 10.27 10.28', async ({ p, go, shot }) => {
+  await go('/food');
+  await foodReady(p);
+  await go('/food/nutrients/2026-11-05');
+  await shot('10.25');
+  await go('/food/nutrients/2026-11-05/sodium');
+  await shot('10.26');
+  await go('/food/nutrients/2026-11-05/vitD');
+  await shot('10.27');
+  await go('/food/fill/sample-bar');
+  await sleep(600);
+  await shot('10.28');
+});
+
+const OFF_MOCK = {
+  search: [],
+  products: {
+    '5012345678900': {
+      product_name: 'Oat & honey granola bar',
+      brands: 'Field Day',
+      serving_size: '1 bar (40 g)',
+      serving_quantity: 40,
+      nutriments: { 'energy-kcal_100g': 430, proteins_100g: 8.5, carbohydrates_100g: 62, fat_100g: 16, fiber_100g: 6, sugars_100g: 24, 'saturated-fat_100g': 3, sodium_100g: 0.18 },
+    },
+  },
+};
+
+scene('sample', '10.29 10.30 10.31', async ({ p, go, shot }) => {
+  await go('/food');
+  await foodReady(p);
+  await p.eval(`__og.off = ${JSON.stringify(OFF_MOCK)}`);
+  await go('/food/scan?day=2026-11-05&meal=dinner');
+  await sleep(1500);
+  await shot('10.29');
+  await go('/food');
+  await go('/food/scan?day=2026-11-05&meal=dinner&code=5012345678900');
+  await sleep(1200);
+  await shot('10.30');
+  await go('/settings/food');
+  await shot('10.31');
+});
+
+scene('sample', '10.32', async ({ p, go, shot }) => {
+  await go('/food');
+  await foodReady(p);
+  await go('/food/week/2026-11-05');
+  await shot('10.32');
+});
+
+scene('sample', '10.10 10.11 10.12 10.13', async ({ p, go, shot }) => {
+  await go('/food/targets');
+  await shot('10.10');
+  await p.click('High protein');
+  await shot('10.11');
+  await p.click('Custom');
+  await p.click('More protein');
+  await shot('10.12');
+  await p.click('Lifter');
+  await p.click('Nutrient targets');
+  await shot('10.13');
+});
+
+scene('empty', '10.5 10.6 10.7 10.8 10.9', async ({ p, go, shot }) => {
+  await go('/welcome');
+  await p.click('Get started');
+  await p.click('Continue in');
+  await p.click('Continue');
+  await p.click('Continue');
+  await p.click('3+ years');
+  await p.click('Done');
+  await go('/food');
+  await shot('10.5');
+  await p.click('Set targets');
+  await p.click('Male');
+  for (const [field, keys] of [['Age', '29'], ['Height · feet', '5'], ['Height · inches', '11'], ['Weight', '190']]) {
+    await p.click(field);
+    for (const k of keys) await p.click({ sel: '[aria-label="Keypad"] button', text: k, start: true });
+  }
+  await p.click('On your feet');
+  await p.click('Weight');
+  await shot('10.6');
+  await p.click('Close keypad');
+  await p.click('Next');
+  await p.click('Lose fat');
+  await p.click('Goal weight');
+  for (const k of '180') await p.click({ sel: '[aria-label="Keypad"] button', text: k, start: true });
+  await p.click('Close keypad');
+  await shot('10.7');
+  await p.click('Next');
+  await shot('10.8');
+  await p.click('Next');
+  await shot('10.9');
+});
+
 const STRONG_CSV = `Date,Workout Name,Duration,Exercise Name,Set Order,Weight,Reps,Distance,Seconds,Notes,Workout Notes,RPE
 2024-06-03 18:04:11,"Push A",1h 2m,"Bench Press (Barbell)",W,95.0,10,0,0,"","",
 2024-06-03 18:04:11,"Push A",1h 2m,"Bench Press (Barbell)",1,135.0,8,0,0,"","",
@@ -976,24 +1194,63 @@ async function waitFor(url: string) {
   throw new Error(`${url} didn't start`);
 }
 
+/**
+ * The camera picture for the scanner (10.29): a package with an EAN-13 barcode on a dark counter,
+ * as one landscape Y4M frame (Chrome loops it as the fake camera). The check digit is wrong on
+ * purpose, so the capture shows the scanner waiting; 10.30 looks the code up through the URL.
+ */
+function writeCameraFrame(path: string, code = '5012345678901') {
+  const W = 1280;
+  const H = 720;
+  const y = new Uint8Array(W * H).fill(52);
+  const u = new Uint8Array((W / 2) * (H / 2)).fill(126);
+  const v = new Uint8Array((W / 2) * (H / 2)).fill(131);
+  const rect = (x0: number, y0: number, x1: number, y1: number, Y: number, U = 128, V = 128) => {
+    for (let r = y0; r < y1; r++) for (let c = x0; c < x1; c++) y[r * W + c] = Y;
+    for (let r = y0 >> 1; r < y1 >> 1; r++)
+      for (let c = x0 >> 1; c < x1 >> 1; c++) {
+        u[r * (W / 2) + c] = U;
+        v[r * (W / 2) + c] = V;
+      }
+  };
+  rect(470, 0, 810, 720, 150, 104, 150); // the package
+  rect(530, 290, 750, 430, 236); // the white label
+  const L = ['0001101', '0011001', '0010011', '0111101', '0100011', '0110001', '0101111', '0111011', '0110111', '0001011'];
+  const R = L.map((p) => [...p].map((b) => (b === '1' ? '0' : '1')).join(''));
+  const G = R.map((p) => [...p].reverse().join(''));
+  const PARITY = ['LLLLLL', 'LLGLGG', 'LLGGLG', 'LLGGGL', 'LGLLGG', 'LGGLLG', 'LGGGLL', 'LGLGLG', 'LGLGGL', 'LGGLGL'];
+  const d = [...code].map(Number);
+  let bits = '101';
+  for (let i = 1; i <= 6; i++) bits += (PARITY[d[0]][i - 1] === 'L' ? L : G)[d[i]];
+  bits += '01010';
+  for (let i = 7; i <= 12; i++) bits += R[d[i]];
+  bits += '101';
+  const m = 2;
+  const x0 = (W - bits.length * m) >> 1;
+  [...bits].forEach((b, i) => b === '1' && rect(x0 + i * m, 310, x0 + (i + 1) * m, 410, 18));
+  writeFileSync(path, Buffer.concat([Buffer.from(`YUV4MPEG2 W${W} H${H} F30:1 Ip A1:1 C420jpeg\nFRAME\n`), y, u, v]));
+}
+
 async function main() {
   const filters = process.argv.slice(2);
   const wanted = (id: string) => !filters.length || filters.some((f) => id === f || id.startsWith(f.endsWith('.') ? f : `${f}.`) || id.startsWith(f + '.'));
   const scenes = SCENES.filter((s) => s.ids.some(wanted));
   mkdirSync(OUT, { recursive: true });
   const scratch = mkdtempSync(join(tmpdir(), 'og-screens-'));
+  const camera = join(scratch, 'camera.y4m');
+  writeCameraFrame(camera);
   const ports = { sample: 5180, empty: 5181 };
   const servers = [startServer(ports.sample, true), startServer(ports.empty, false)];
   let failed = 0;
   try {
     await Promise.all(Object.values(ports).map((port) => waitFor(`http://localhost:${port}/`)));
     for (const s of scenes) {
-      const b = await Browser.launch();
+      const b = await Browser.launch({ camera });
       try {
         const p = await b.newPage();
         await p.viewport(390, 844, 2);
         await p.send('Emulation.setUserAgentOverride', { userAgent: IPHONE, platform: 'iPhone' });
-        await p.fixClock(NOW);
+        await p.fixClock(s.clock ?? NOW);
         const base = `http://localhost:${ports[s.server]}/`;
         await p.goto(base);
         await p.find({ sel: 'nav, h1' }, 20000); // seeded and rendered

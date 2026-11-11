@@ -1,27 +1,33 @@
 import { db, TABLE_NAMES, type TableName } from '../db/db';
 import { ensureSeeded } from '../db/seed';
-import type { Exercise, ExerciseType, Folder, PlanSchedule, Routine, RoutineExercise, RoutineSet, Settings, Workout, WorkoutExercise, WorkoutSet } from '../db/types';
+import type { Exercise, ExerciseType, Folder, Food, FoodEntry, MealId, PlanSchedule, Routine, RoutineExercise, RoutineSet, Settings, Workout, WorkoutExercise, WorkoutSet } from '../db/types';
 import { isoDate } from '../lib/dates';
 import { uuid } from '../lib/id';
 import type { ImportedWorkout, ParsedImport } from '../lib/importParser';
 import { guessExerciseMeta } from '../lib/match';
 import { orderSets } from '../lib/sets';
 import { toCsv } from '../lib/csv';
+import { amountLabel, keepInBackup, loggedDays, MEAL_LABEL, NUTRIENT, NUTRIENTS } from '../lib/nutrition';
 import { formatWeight, fromDisplay } from '../lib/units';
+import { foodSettingsOf, writeWords } from './food';
+import { resetFoodDb } from './foodDb';
 import { getSettings, updateSettings } from './settings';
 
 /**
  * 2: cardio fields on sets, cardio columns on exercises, superset groups.
- * 3: training goals, suggestions on workout exercises, training settings. Older backups load as is.
+ * 3: training goals, suggestions on workout exercises, training settings.
+ * 4: Food (SPEC §14): your foods, food entries, saved meals and target versions. Built-in USDA
+ *    foods are left out unless you made them yours (they come back from the database file).
+ * Older backups load as is, with empty food tables.
  */
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export interface BackupFile {
   app: 'opengym';
   schemaVersion: number;
   appVersion: string;
   exportedAt: number;
-  counts: { workouts: number; routines: number; exercises: number };
+  counts: { workouts: number; routines: number; exercises: number; foodDays?: number };
   tables: Record<TableName, unknown[]>;
 }
 
@@ -31,12 +37,13 @@ declare const __APP_VERSION__: string;
 const appVersion = () => (typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : 'dev');
 
 async function counts() {
-  const [workouts, routines, exercises] = await Promise.all([
+  const [workouts, routines, exercises, foodDays] = await Promise.all([
     db.workouts.where('status').equals('done').count(),
     db.routines.filter((r) => !r.deletedAt).count(),
     db.exercises.filter((e) => !e.deletedAt).count(),
+    db.foodEntries.orderBy('day').uniqueKeys().then((k) => k.length),
   ]);
-  return { workouts, routines, exercises };
+  return { workouts, routines, exercises, foodDays };
 }
 
 export async function dataCounts() {
@@ -47,7 +54,7 @@ export async function dataCounts() {
 export async function buildBackup(): Promise<BackupFile> {
   return db.transaction('r', db.allTables, async () => {
     const tables = {} as Record<TableName, unknown[]>;
-    for (const name of TABLE_NAMES) tables[name] = await db.table(name).toArray();
+    for (const name of TABLE_NAMES) tables[name] = name === 'foods' ? (await db.foods.toArray()).filter(keepInBackup) : await db.table(name).toArray();
     return {
       app: 'opengym',
       schemaVersion: SCHEMA_VERSION,
@@ -63,26 +70,29 @@ export function backupFileName(ts = Date.now()) {
   return `opengym-backup-${isoDate(ts)}.json`;
 }
 
-/** Hand a file to the iPhone share sheet; fall back to a download. Returns false if the user cancelled. */
-export async function shareOrDownload(file: File): Promise<boolean> {
+/** Hand files to the iPhone share sheet; fall back to downloads. Returns false if the user cancelled. */
+export async function shareOrDownload(file: File | File[]): Promise<boolean> {
+  const files = Array.isArray(file) ? file : [file];
   const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
-  if (nav.share && nav.canShare?.({ files: [file] })) {
+  if (nav.share && nav.canShare?.({ files })) {
     try {
-      await nav.share({ files: [file], title: file.name });
+      await nav.share({ files, title: files[0].name });
       return true;
     } catch (e) {
       if ((e as DOMException)?.name === 'AbortError') return false;
       // Some browsers refuse certain types: fall through to download.
     }
   }
-  const url = URL.createObjectURL(file);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = file.name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  for (const f of files) {
+    const url = URL.createObjectURL(f);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = f.name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  }
   return true;
 }
 
@@ -111,22 +121,46 @@ export async function readBackup(file: File): Promise<BackupFile> {
   }
   for (const name of TABLE_NAMES) if (!Array.isArray(b.tables[name])) b.tables[name] = [];
   const workouts = (b.tables.workouts as Workout[]).filter((w) => w.status === 'done').length;
-  b.counts = { ...(b.counts ?? { routines: 0, exercises: 0 }), workouts } as BackupFile['counts'];
+  b.counts = { ...(b.counts ?? { routines: 0, exercises: 0 }), workouts, foodDays: loggedDays(b.tables.foodEntries as FoodEntry[]) } as BackupFile['counts'];
   return b as BackupFile;
 }
 
-/** 9.4 Restore: replace everything with the backup. */
+/**
+ * 9.4 Restore: replace everything with the backup. The built-in USDA foods already on this phone
+ * stay (a backup doesn't carry them), stripped of your marks; the backup's foods go on top and the
+ * search index is rebuilt for them.
+ */
 export async function restoreBackup(backup: BackupFile): Promise<void> {
-  await db.transaction('rw', db.allTables, async () => {
-    for (const name of TABLE_NAMES) await db.table(name).clear();
+  await db.transaction('rw', [...db.allTables], async () => {
+    const usdaRelease = foodSettingsOf(await getSettings()).usdaRelease;
+    for (const name of TABLE_NAMES) if (name !== 'foods') await db.table(name).clear();
+    // Foods: drop yours and their index words; keep the built-in rows but forget your marks on them.
+    const mine = await db.foods.where('source').noneOf(['usda']).primaryKeys();
+    await db.foods.bulkDelete(mine);
+    await db.foodWords.where('foodId').anyOf(mine).delete();
+    await db.foods
+      .where('source')
+      .equals('usda')
+      .filter((f) => keepInBackup(f))
+      .modify((f) => {
+        delete f.mine;
+        delete f.favorite;
+        delete f.last;
+        delete f.filledFrom;
+        delete f.estimated;
+      });
     for (const name of TABLE_NAMES) {
       if (name === 'settings') continue;
       await db.table(name).bulkPut(backup.tables[name]);
     }
+    for (const f of backup.tables.foods as Food[]) await writeWords(f);
     const s = (backup.tables.settings as Settings[])[0];
     const t = Date.now();
     const base = await getSettings();
-    await db.settings.put({ ...base, ...(s ?? {}), id: 'settings', onboarded: true, updatedAt: t });
+    const merged = { ...base, ...(s ?? {}), id: 'settings' as const, onboarded: true, updatedAt: t };
+    // Whether the built-in database is loaded is about this phone, not the backup.
+    if (merged.food || usdaRelease) merged.food = { ...foodSettingsOf(merged), usdaRelease };
+    await db.settings.put(merged);
   });
   await ensureSeeded();
 }
@@ -184,11 +218,12 @@ export async function importRoutinesFromBackup(backup: BackupFile): Promise<numb
   });
 }
 
-/** 9.6 Delete all data, then put back the built-in library and default settings. */
+/** 9.6 Delete all data, then put back the built-in library and default settings. The food database reloads on the next visit to Food. */
 export async function deleteAllData(): Promise<void> {
   await db.transaction('rw', db.allTables, async () => {
     for (const t of db.allTables) await t.clear();
   });
+  resetFoodDb();
   await ensureSeeded();
 }
 
@@ -241,6 +276,32 @@ export async function exportCsv(): Promise<File> {
   );
   return new File([csv], `opengym-workouts-${isoDate(Date.now())}.csv`, { type: 'text/csv' });
 }
+
+/**
+ * Export CSV, food log (SPEC §14): one row per logged food, oldest first. Date, meal, food,
+ * brand, amount as shown in the app, grams, then one column per nutrient for that amount. A
+ * nutrient the food has no value for is blank, never 0; borrowed values are marked in Estimated.
+ */
+export async function exportFoodCsv(): Promise<File | undefined> {
+  const entries = await db.foodEntries.toArray();
+  if (!entries.length) return undefined;
+  entries.sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : MEAL_ORDER[a.meal] - MEAL_ORDER[b.meal] || a.order - b.order));
+  const num = (v: number | undefined) => (v == null ? '' : Math.round(v * 100) / 100);
+  const rows = entries.map((e) => [
+    e.day,
+    MEAL_LABEL[e.meal],
+    e.name,
+    e.brand ?? '',
+    e.quick ? 'Quick add' : e.grams != null ? amountLabel(e.grams, e.unit, e.basis ?? 'g', e.servings, e.serving) : '',
+    num(e.grams),
+    ...NUTRIENTS.map((n) => num(e.totals[n.id])),
+    (e.estimated ?? []).map((id) => NUTRIENT[id].name).join('; '),
+  ]);
+  const csv = toCsv(['Date', 'Meal', 'Food', 'Brand', 'Amount', 'Grams', ...NUTRIENTS.map((n) => `${n.id === 'kcal' ? 'Calories' : n.name} (${n.unit})`), 'Estimated'], rows);
+  return new File([csv], `opengym-food-${isoDate(Date.now())}.csv`, { type: 'text/csv' });
+}
+
+const MEAL_ORDER: Record<MealId, number> = { breakfast: 0, lunch: 1, dinner: 2, snacks: 3 };
 
 // ───────────────────────────── Strong / Hevy import (9.5)
 

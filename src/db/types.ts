@@ -3,6 +3,7 @@
 
 import type { EffortAsk, EffortMode } from '../lib/effort';
 import type { Experience, PhaseKind } from '../lib/training';
+import type { NutrientId, Nutrients } from '../lib/nutrition/nutrients';
 
 export type ID = string;
 
@@ -257,11 +258,134 @@ export interface Settings {
   librarySeed?: number;
   /** Home "Lately" lines already shown (so slipping shows once). */
   latelySeen?: string[];
+  /** The Food tab (SPEC §14): body profile and setup answers. Unset until Food is first opened. */
+  food?: FoodSettings;
   createdAt: number;
   updatedAt: number;
 }
 
 export type SuggestMode = 'off' | 'suggest' | 'auto';
+
+// ───────────────────────────── food (SPEC §14, design/proposals/nutrition-plan.md)
+
+export type MealId = 'breakfast' | 'lunch' | 'dinner' | 'snacks';
+export type FoodSource = 'usda' | 'off' | 'custom';
+/** The unit an amount was typed in. With an ml basis, g reads as ml and oz as fl oz. */
+export type AmountUnit = 'g' | 'oz' | 'serv';
+export type Activity = 1 | 2 | 3 | 4;
+export type FoodGoal = 'lose' | 'maintain' | 'gain' | 'log';
+export type DietId = 'lifter' | 'balanced' | 'highProtein' | 'lowCarb' | 'keto' | 'endurance' | 'custom';
+/** Protein / carbs / fat, in that order. */
+export type Triple = [number, number, number];
+
+export interface FoodServing {
+  /** "1 cup, chopped", "1 bar", "1 scoop". */
+  label: string;
+  grams: number;
+}
+
+export interface Food extends BaseRecord {
+  name: string;
+  /** Second line: USDA's full description, or a label note. */
+  detail?: string;
+  brand?: string;
+  barcode?: string;
+  source: FoodSource;
+  fdcId?: number;
+  offCode?: string;
+  /** Per 100 g, or per 100 ml for liquids. */
+  basis: 'g' | 'ml';
+  per100: Nutrients;
+  /** Nutrients borrowed from a similar USDA food ("Fill in missing nutrients", shown with ~). */
+  estimated?: NutrientId[];
+  filledFrom?: ID;
+  servings: FoodServing[];
+  /** Index into `servings`. */
+  defaultServing?: number;
+  /** Starred (the Saved chip). */
+  favorite?: boolean;
+  /** In your library (you made, logged, starred or scanned it). USDA rows are only in it once used. */
+  mine?: boolean;
+  /** The amount you logged last time, so the + disc repeats it. `grams` is in the basis unit. */
+  last?: { grams: number; unit: AmountUnit; serving?: number };
+  /** A copy made to edit a USDA or Open Food Facts food. */
+  copiedFrom?: ID;
+  deletedAt?: number;
+}
+
+export interface FoodEntry extends BaseRecord {
+  /** The food day (3 am to 3 am, foodDayKey). */
+  day: string;
+  meal: MealId;
+  order: number;
+  loggedAt: number;
+  /** Absent for quick add. */
+  foodId?: ID;
+  name: string;
+  brand?: string;
+  /** Amount in the food's basis unit (g or ml). Absent for quick add. */
+  grams?: number;
+  basis?: 'g' | 'ml';
+  unit?: AmountUnit;
+  serving?: number;
+  /** The food's servings when logged, so the amount can be edited later without the food. */
+  servings?: FoodServing[];
+  /** Snapshot for this amount: editing the food later never changes a logged day. */
+  totals: Nutrients;
+  estimated?: NutrientId[];
+  quick?: boolean;
+  savedMealId?: ID;
+  /** Groups a saved meal or a copied day, for one Undo. */
+  batchId?: ID;
+}
+
+export interface SavedMealItem {
+  foodId: ID;
+  grams: number;
+  unit: AmountUnit;
+  serving?: number;
+}
+
+export interface SavedMeal extends BaseRecord {
+  name: string;
+  order: number;
+  items: SavedMealItem[];
+  deletedAt?: number;
+}
+
+/** A target version: the latest with `from` ≤ a day applies to it (like plan schedules). */
+export interface FoodTarget extends BaseRecord {
+  from: string;
+  mode: 'target' | 'log';
+  kcal?: number;
+  diet: DietId;
+  pct: Triple;
+  grams: Triple;
+  /** Per-nutrient target overrides; everything else comes from the DRI tables. */
+  overrides?: Partial<Record<NutrientId, number>>;
+  /** Sex and birth year when saved, so past days keep their micronutrient targets. */
+  sex?: 'm' | 'f';
+  birthYear?: number;
+}
+
+export interface FoodSettings {
+  sex?: 'm' | 'f';
+  birthYear?: number;
+  heightIn?: number;
+  weightLb?: number;
+  activity?: Activity;
+  goal?: FoodGoal;
+  paceLb?: number;
+  goalWeightLb?: number;
+  /** The last Custom split, so picking Custom again restores it. */
+  customPct?: Triple;
+  /** Look up foods on Open Food Facts (Settings › Food). */
+  online: boolean;
+  /** Setup finished, or Just log picked. */
+  setUp: boolean;
+  /** USDA database release fully loaded into `foods`. */
+  usdaRelease?: string;
+}
 
 export interface TrainingPhase {
   kind: PhaseKind;

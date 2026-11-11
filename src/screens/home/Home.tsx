@@ -1,3 +1,4 @@
+import { FoodBlock } from './FoodBlock';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useLongPress } from '../../components/gestures';
@@ -104,6 +105,7 @@ export function Home() {
               + Blank workout
             </TextButton>
           )}
+          <FoodBlock now={now} />
           <Lately now={now} />
         </>
       )}

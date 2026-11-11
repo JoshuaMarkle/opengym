@@ -10,6 +10,21 @@ import { ExerciseScreen } from './screens/exercises/ExerciseScreen';
 import { Library } from './screens/exercises/Library';
 import { EditWorkout } from './screens/history/EditWorkout';
 import { WorkoutDetail } from './screens/history/WorkoutDetail';
+import { AddFood } from './screens/food/AddFood';
+import { CopyDay } from './screens/food/CopyDay';
+import { DayNutrients } from './screens/food/DayNutrients';
+import { FillNutrients } from './screens/food/FillNutrients';
+import { NutrientFoods } from './screens/food/NutrientFoods';
+import { FoodForm } from './screens/food/FoodForm';
+import { QuickAdd } from './screens/food/QuickAdd';
+import { SavedMealScreen } from './screens/food/SavedMeal';
+import { FoodDay } from './screens/food/FoodDay';
+import { FoodWeek } from './screens/food/FoodWeek';
+import { EntryItem, FoodItem } from './screens/food/FoodItem';
+import { NutrientTargets } from './screens/food/NutrientTargets';
+import { Scanner } from './screens/food/Scanner';
+import { FoodSetup } from './screens/food/Setup';
+import { Targets } from './screens/food/Targets';
 import { Home } from './screens/home/Home';
 import { InstallGuide } from './screens/onboarding/InstallGuide';
 import { Setup } from './screens/onboarding/Setup';
@@ -30,6 +45,7 @@ import { ImportScreen } from './screens/settings/ImportScreen';
 import { SettingPicker } from './screens/settings/SettingPicker';
 import { Settings } from './screens/settings/Settings';
 import { EffortSettings } from './screens/settings/EffortSettings';
+import { FoodSettings } from './screens/settings/FoodSettings';
 import { EffortTargetScreen, PhaseScreen, TrainingSettings } from './screens/settings/Training';
 import { Summary } from './screens/workout/Summary';
 import { WorkoutScreen } from './screens/workout/WorkoutScreen';
@@ -60,6 +76,9 @@ function AppRoutes() {
         <Route path="calendar" element={<Plans />} />
         <Route path="plans" element={<Navigate to="/calendar?view=routines" replace />} />
         <Route path="history" element={<Navigate to="/calendar?view=history" replace />} />
+        <Route path="food" element={<FoodDay />} />
+        <Route path="food/day/:day" element={<FoodDay />} />
+        <Route path="food/week/:day" element={<FoodWeek />} />
         <Route path="progress" element={<Progress />} />
         <Route path="progress/lift/:id" element={<LiftDetail />} />
         <Route path="progress/lift/:id/trend" element={<LiftTrend />} />
@@ -69,11 +88,27 @@ function AppRoutes() {
         <Route path="progress/cardio-records" element={<DistanceRecords />} />
         <Route path="settings" element={<Settings />} />
         <Route path="settings/effort" element={<EffortSettings />} />
+        <Route path="settings/food" element={<FoodSettings />} />
         <Route path="settings/training" element={<TrainingSettings />} />
         <Route path="settings/effort-target" element={<EffortTargetScreen />} />
         <Route path="settings/:key" element={<SettingPicker />} />
       </Route>
       <Route path="settings/import" element={<ImportScreen />} />
+      <Route path="food/setup" element={<FoodSetup />} />
+      <Route path="food/targets" element={<Targets />} />
+      <Route path="food/targets/nutrients" element={<NutrientTargets />} />
+      <Route path="food/add" element={<AddFood />} />
+      <Route path="food/item/:foodId" element={<FoodItem />} />
+      <Route path="food/entry/:entryId" element={<EntryItem />} />
+      <Route path="food/new" element={<FoodForm />} />
+      <Route path="food/edit/:id" element={<FoodForm />} />
+      <Route path="food/quick" element={<QuickAdd />} />
+      <Route path="food/meal/:id" element={<SavedMealScreen />} />
+      <Route path="food/copy-day" element={<CopyDay />} />
+      <Route path="food/nutrients/:day" element={<DayNutrients />} />
+      <Route path="food/nutrients/:day/:nid" element={<NutrientFoods />} />
+      <Route path="food/fill/:id" element={<FillNutrients />} />
+      <Route path="food/scan" element={<Scanner />} />
       <Route path="progress/pinned" element={<PinnedLifts />} />
       <Route path="settings/phase" element={<PhaseScreen />} />
       <Route path="progress/goal/new" element={<NewGoal />} />

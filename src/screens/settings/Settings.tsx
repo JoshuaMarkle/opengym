@@ -1,3 +1,4 @@
+import { foodSettingsOf } from '../../data/food';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
@@ -5,7 +6,7 @@ import { ChevronRight, LogoMark } from '../../components/icons';
 import { Alert, useToast } from '../../components/overlays';
 import { LargeHeader, Screen, SectionLabel, TextField, Toggle } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
-import { backUpNow, dataCounts, deleteAllData, exportCsv, shareOrDownload } from '../../data/backup';
+import { backUpNow, dataCounts, deleteAllData, exportCsv, exportFoodCsv, shareOrDownload } from '../../data/backup';
 import { updateSettings } from '../../data/settings';
 import { TEST_MODE } from '../../db/testMode';
 import { fmtAgo } from '../../lib/dates';
@@ -34,6 +35,7 @@ export function Settings() {
   const [resetting, setResetting] = useState(false);
 
   const unit = settings.units;
+  const food = foodSettingsOf(settings);
 
   const backup = async () => {
     setBusy(true);
@@ -45,8 +47,8 @@ export function Settings() {
   };
 
   const csv = async () => {
-    const file = await exportCsv();
-    await shareOrDownload(file);
+    const [workouts, food] = await Promise.all([exportCsv(), exportFoodCsv()]);
+    await shareOrDownload(food ? [workouts, food] : workouts);
   };
 
   const closeDelete = () => {
@@ -60,6 +62,7 @@ export function Settings() {
       <Item label="Units" value={unit === 'lb' ? 'lbs' : 'kg'} to="/settings/units" />
       <Item label="Theme" value={THEME_LABEL[settings.theme]} to="/settings/theme" />
       <Item label="Week starts on" value={settings.weekStart === 0 ? 'Sunday' : 'Monday'} to="/settings/weekStart" />
+      <Item label="Food" value={!food.setUp ? 'Not set up' : food.online ? 'Online lookups on' : 'Offline only'} to="/settings/food" />
 
       <SectionLabel>Workout</SectionLabel>
       <Item label="Weight step" value={`${formatNumber(settings.weightStep)} ${unit}`} to="/settings/weightStep" />

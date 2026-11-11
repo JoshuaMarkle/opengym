@@ -13,7 +13,7 @@ export function useRestoreFlow(): { pick: () => void; element: ReactNode } {
   const navigate = useNavigate();
   const toast = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [pending, setPending] = useState<{ backup: BackupFile; here: number } | null>(null);
+  const [pending, setPending] = useState<{ backup: BackupFile; here: number; hereFood: number } | null>(null);
   const [error, setError] = useState('');
   const [backedUp, setBackedUp] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -21,9 +21,9 @@ export function useRestoreFlow(): { pick: () => void; element: ReactNode } {
   const onFile = async (file: File) => {
     try {
       const backup = await readBackup(file);
-      const here = (await dataCounts()).workouts;
+      const c = await dataCounts();
       setBackedUp(false);
-      setPending({ backup, here });
+      setPending({ backup, here: c.workouts + c.foodDays, hereFood: c.foodDays });
     } catch (e) {
       setError(e instanceof BackupError ? e.message : "Couldn't read that file.");
     }
@@ -49,7 +49,7 @@ export function useRestoreFlow(): { pick: () => void; element: ReactNode } {
         title={pending && pending.here === 0 ? 'Restore this backup?' : 'Replace everything?'}
         message={
           pending
-            ? `Backup from ${fmtDay(pending.backup.exportedAt)} has ${pending.backup.counts.workouts} ${pending.backup.counts.workouts === 1 ? 'workout' : 'workouts'}. This phone has ${pending.here}.${pending.here ? ' Everything here will be replaced.' : ''}`
+            ? restoreMessage(fmtDay(pending.backup.exportedAt), { workouts: pending.backup.counts.workouts, foodDays: pending.backup.counts.foodDays ?? 0 }, { workouts: pending.here - pending.hereFood, foodDays: pending.hereFood })
             : undefined
         }
         onClose={close}
@@ -98,4 +98,14 @@ export function useRestoreFlow(): { pick: () => void; element: ReactNode } {
   );
 
   return { pick: () => fileRef.current?.click(), element };
+}
+
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/** "Backup from Nov 3 has 120 workouts and 28 days of food. This phone has 4 workouts. Everything here will be replaced." */
+function restoreMessage(date: string, backup: { workouts: number; foodDays: number }, here: { workouts: number; foodDays: number }): string {
+  const food = backup.foodDays > 0 || here.foodDays > 0;
+  const what = (c: { workouts: number; foodDays: number }) => (food ? `${plural(c.workouts, 'workout', 'workouts')} and ${plural(c.foodDays, 'day', 'days')} of food` : plural(c.workouts, 'workout', 'workouts'));
+  const any = here.workouts + here.foodDays > 0;
+  return `Backup from ${date} has ${what(backup)}. This phone has ${any ? what(here) : 'nothing logged'}.${any ? ' Everything here will be replaced.' : ''}`;
 }

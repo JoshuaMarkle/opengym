@@ -31,7 +31,7 @@ These touch principle 1, logging is the product.
 Principle 9 promises reminders; today the only one is an orange header on Settings, a tab people rarely open at the gym.
 
 1. **Backup nudge where people look.** When the last backup is over 7 days old and there are workouts since, add one quiet line at the bottom of the summary (5.3): "Last backup 12 days ago · Back up now", one tap to the share sheet. Never an alert.
-2. **Tests for the write paths.** `src/lib` is well tested; `src/data` has none, and it's where data could be lost: finishing (count / drop unticked, update routine), restore (every table, backups of version 1, 2 and 3), Strong / Hevy import, delete-all. `fake-indexeddb` is already a dev dependency and unused. Start with a backup → restore round trip.
+2. **Tests for the write paths.** `src/lib` is well tested; `src/data` has two `fake-indexeddb` tests so far: logging a missed workout (`workouts.test.ts`) and the food tables' backup → restore round trip, older backups and the food CSV (`backup.test.ts`). Still untested, and where data could be lost: finishing (count / drop unticked, update routine), restore of the workout tables (backups of version 1, 2 and 3), Strong / Hevy import, delete-all.
 
 ## 5. Tooling
 
@@ -49,6 +49,12 @@ These cut against something the spec decided on purpose, so they need a call bef
 - **Two workouts on one scheduled day** (§9 open question, the 2.19 toggle). Still open.
 - **A cue when an exercise is finished.** After the last set, nothing changes; you press Next. The bottom bar is grey on purpose. A small "done here" in the Next button's label would help without adding colour.
 
+## 7. Food, next
+
+- **Weigh-ins.** The Food tab asks your weight once in setup (`design/proposals/nutrition-plan.md` §3.4). A small weigh-in log (one number a day, a line on the Food week view) would keep Lifter's protein and the calorie target current, and could later feed the bodyweight question in §6. Left out of the first build on purpose.
+- **Try the scanner on a real iPhone install.** It's been run against a generated camera frame in headless Chrome (the screenshots) and decodes there through ZXing. iOS Safari in a Home Screen PWA has no `BarcodeDetector` and asks for the camera per session; check the permission flow, focus on small barcodes and the light.
+- **Open Food Facts quality.** Search results are only used when local results are thin, and scans show the source. If bad products keep showing up, hide results without calories or with impossible macros (`offUsable` already drops ones with no name or no kcal).
+
 ## Not doing
 
-Still out per §1 and principle 10: volume / tonnage charts, social, routine sharing, videos, diet, gym profiles, intervals, a warm-up ramp. Watch sync stays parked (`proposals/watch-sync-future.html`).
+Still out per §1 and principle 10: volume / tonnage charts, social, routine sharing, videos, meal plans or diet coaching, gym profiles, intervals, a warm-up ramp. Watch sync stays parked (`proposals/watch-sync-future.html`).

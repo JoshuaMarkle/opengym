@@ -31,13 +31,19 @@ export function Keypad({
   onKey,
   onClose,
   panel,
+  nextLabel,
+  nextAria,
 }: {
   left: ReactNode;
   tabs?: KeypadTab[];
   tab?: string;
   onTab?: (id: string) => void;
   next?: { done: boolean; onPress: () => void };
-  bottomLeft: { key: 'minus' | 'dash' | 'colon'; enabled: boolean };
+  bottomLeft: { key: 'minus' | 'dash' | 'colon' | 'half'; enabled: boolean };
+  /** A word after the confirm's check ("Log" on the food amount, C2). */
+  nextLabel?: string;
+  /** Screen-reader label for the confirm outside a workout ("Next field", "Done"). */
+  nextAria?: string;
   decimal?: boolean;
   stepLabel: string;
   onKey: (k: KeypadKey) => void;
@@ -60,7 +66,7 @@ export function Keypad({
           {next && (
             <button
               type="button"
-              aria-label={next.done ? 'Done: complete the set and go to the next one' : 'Done with this box: go to the next one'}
+              aria-label={nextAria ?? nextLabel ?? (next.done ? 'Done: complete the set and go to the next one' : 'Done with this box: go to the next one')}
               onPointerDown={(e) => {
                 e.preventDefault();
                 next.onPress();
@@ -74,8 +80,9 @@ export function Keypad({
               className="flex h-11 min-w-11 items-center justify-center active:opacity-80"
             >
               {/* design §13 Confirm: drawn the size of a selected field tab (28 / r8, action fill); the button keeps the 44 px target. */}
-              <span className="flex h-7 items-center rounded-sm bg-action px-2.5 text-white">
+              <span className="flex h-7 items-center gap-1 rounded-sm bg-action px-2.5 text-white">
                 <CheckGlyph size={14} />
+                {nextLabel && <span className="text-footnote font-semibold">{nextLabel}</span>}
               </span>
             </button>
           )}
@@ -101,7 +108,11 @@ export function Keypad({
           <Key fn onPress={key({ type: 'dec' })} label={`Minus ${stepLabel}`}>
             −{small(stepLabel)}
           </Key>
-          {bottomLeft.key === 'dash' ? (
+          {bottomLeft.key === 'half' ? (
+            <Key onPress={key({ type: 'half' })} disabled={!bottomLeft.enabled} label="Half">
+              ½
+            </Key>
+          ) : bottomLeft.key === 'dash' ? (
             <Key onPress={key({ type: 'dash' })} disabled={!bottomLeft.enabled} label="Range">
               –{small('range')}
             </Key>

@@ -1,7 +1,10 @@
 import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
+import { MacroWeekBars } from '../../components/charts';
 import {
   ArrowGlyph,
+  BarcodeGlyph,
+  BoltGlyph,
   CalendarIcon,
   ChartIcon,
   CheckGlyph,
@@ -10,6 +13,7 @@ import {
   ChevronRight,
   ClipboardIcon,
   CloseIcon,
+  FlashGlyph,
   Handle,
   KeyboardGlyph,
   ListIcon,
@@ -19,6 +23,8 @@ import {
   PlayGlyph,
   PlusGlyph,
   SearchGlyph,
+  StackGlyph,
+  StarGlyph,
   TargetGlyph,
   TrendDown,
   TrendUp,
@@ -97,9 +103,17 @@ import {
   StatusPill,
   Stepper,
   Tag,
+  InlineValue,
+  MacroBars,
+  MacroLegend,
+  MacroRing,
+  RingStrip,
+  ShortcutTile,
   TargetBar,
+  TargetSummary,
   TextButton,
   TextField,
+  ValueButton,
   Toggle,
   TopBar,
   ValueBox,
@@ -125,6 +139,7 @@ export default function Gallery() {
       <Controls />
       <Notices />
       <Calendars />
+      <FoodParts />
       <Glyphs />
     </Screen>
   );
@@ -726,6 +741,75 @@ function Calendars() {
   );
 }
 
+/** Food (SPEC §14): the nutrition parts of §8, §9, §10, §12 and §15. */
+function FoodParts() {
+  const [on, setOn] = useState<'kcal' | 'p' | null>('kcal');
+  const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  return (
+    <Group id="food" title="Food">
+      <Spec name="RingStrip: under, over (orange + dot), today, future">
+        <RingStrip
+          onPick={noop}
+          days={days.map((letter, i) => ({ key: String(i), letter, number: i + 1, frac: [0.9, 1.08, 0.7, 0.95, 0.6, 0, 0][i], over: i === 1, today: i === 4, selected: i === 4, future: i > 4 }))}
+        />
+      </Spec>
+      <Spec name="TargetSummary · left / over">
+        <TargetSummary value={1855} target={2700} unit="kcal" className="mt-0" />
+        <TargetSummary value={2836} target={2700} unit="kcal" over />
+      </Spec>
+      <Spec name="MacroBars: protein met, fat over">
+        <MacroBars
+          items={[
+            { label: 'Protein', value: 196, target: 190, color: 'bg-accent', met: true },
+            { label: 'Carbs', value: 200, target: 305, color: 'bg-cyan' },
+            { label: 'Fat', value: 95, target: 80, color: 'bg-gold', over: true },
+          ]}
+        />
+      </Spec>
+      <Spec name="MacroRing">
+        <MacroRing kcal={545} grams={[50, 52, 17]} />
+      </Spec>
+      <Spec name="MacroLegend with steppers (custom split)">
+        <MacroLegend grams={[190, 305, 80]} pct={[28, 45, 27]} steps={{ canDown: () => true, canUp: (i) => i !== 0, onStep: noop }} />
+      </Spec>
+      <Spec name="InlineValue editing / filled / empty · ValueButton">
+        <Row>
+          <span className="flex-1 text-body-lg">Calories</span>
+          <InlineValue label="Calories" value="410" unit="kcal" on={on === 'kcal'} onClick={() => setOn('kcal')} />
+        </Row>
+        <Row>
+          <span className="flex-1 text-body-lg">Protein</span>
+          <InlineValue label="Protein" value="24" unit="g" on={on === 'p'} onClick={() => setOn('p')} />
+        </Row>
+        <Row>
+          <span className="flex-1 text-body-lg">Fiber</span>
+          <InlineValue label="Fiber" value="" unit="g" onClick={() => setOn(null)} />
+        </Row>
+        <ValueButton label="Amount" value="1.5" unit="scoop" onClick={noop} className="mt-2" />
+      </Spec>
+      <Spec name="ShortcutTile ×4 · SearchField with trailing">
+        <SearchField value="" onChange={noop} placeholder="Search foods" trailing={
+            <button type="button" aria-label="Scan a barcode" onClick={noop} className="-mr-2 flex h-10 w-10 items-center justify-center text-accent">
+              <BarcodeGlyph size={20} />
+            </button>
+          } />
+        <div className="mt-3 grid grid-cols-4 gap-2">
+          <ShortcutTile icon={<BarcodeGlyph size={20} />} onClick={noop}>Scan</ShortcutTile>
+          <ShortcutTile icon={<BoltGlyph size={20} />} onClick={noop}>Quick add</ShortcutTile>
+          <ShortcutTile icon={<StackGlyph size={20} />} onClick={noop}>Meals</ShortcutTile>
+          <ShortcutTile icon={<PencilGlyph size={20} />} onClick={noop}>New food</ShortcutTile>
+        </div>
+      </Spec>
+      <Spec name="MacroWeekBars: target, an over day, a future day">
+        <MacroWeekBars
+          target={2700}
+          days={days.map((letter, i) => ({ key: `d${i}`, letter, kcal: [2450, 2380, 2670, 2840, 1850, 520, 0][i], p: [190, 180, 210, 200, 167, 30, 0][i], c: [260, 270, 300, 290, 200, 60, 0][i], f: [85, 80, 70, 95, 47, 17, 0][i], over: i === 3, today: i === 4, future: i === 5 }))}
+        />
+      </Spec>
+    </Group>
+  );
+}
+
 function Glyphs() {
   const glyphs: [string, ReactNode][] = [
     ['ChevronLeft', <ChevronLeft size={17} />],
@@ -750,6 +834,11 @@ function Glyphs() {
     ['CalendarIcon', <CalendarIcon size={18} />],
     ['ClipboardIcon', <ClipboardIcon size={18} />],
     ['ListIcon', <ListIcon size={18} />],
+    ['BarcodeGlyph', <BarcodeGlyph size={20} />],
+    ['BoltGlyph', <BoltGlyph size={20} />],
+    ['StackGlyph', <StackGlyph size={20} />],
+    ['StarGlyph', <StarGlyph size={20} />],
+    ['FlashGlyph', <FlashGlyph size={20} />],
   ];
   return (
     <Group id="glyphs" title="§3 Glyphs">
