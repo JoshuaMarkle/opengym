@@ -1,6 +1,6 @@
 import { foodSettingsOf } from '../../data/food';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { ChevronRight, LogoMark } from '../../components/icons';
 import { Alert, useToast } from '../../components/overlays';
@@ -28,7 +28,7 @@ export function Settings() {
   const pinned = usePinned();
   const restore = useRestoreFlow();
   const counts = useLiveQuery(dataCounts, []);
-  const persisted = useLiveQuery(isStoragePersistent, []);
+  const persisted = useStoragePersisted();
   const [deleting, setDeleting] = useState(false);
   const [typed, setTyped] = useState('');
   const [busy, setBusy] = useState(false);
@@ -170,6 +170,23 @@ export function Settings() {
       </Alert>
     </Screen>
   );
+}
+
+/**
+ * 9.1 storage note. Read once outside useLiveQuery: a Dexie querier may only await Dexie
+ * promises, and awaiting navigator.storage.persisted() inside one corrupts Dexie's promise
+ * zone on iOS Safari, which blacked out the app when Settings opened.
+ */
+function useStoragePersisted(): boolean | undefined {
+  const [persisted, setPersisted] = useState<boolean>();
+  useEffect(() => {
+    let live = true;
+    void isStoragePersistent().then((p) => live && setPersisted(p));
+    return () => {
+      live = false;
+    };
+  }, []);
+  return persisted;
 }
 
 function Item({ label, value, to, onClick }: { label: string; value?: ReactNode; to?: string; onClick?: () => void }) {
