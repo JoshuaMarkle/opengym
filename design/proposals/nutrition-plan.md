@@ -349,7 +349,7 @@ One commit per phase. `npm run typecheck`, `npm test`, `npm run lint:design` and
 - CSV export adds a food log: date, meal, food, brand, amount, then one column per nutrient.
 - `src/lib/sampleData.ts`: a few weeks of food logs for the test database, including an over-target day, a future day and a packaged food with missing micronutrients.
 - `fake-indexeddb` round-trip test for the food tables (ROADMAP §4.2 asks for this anyway).
-- SPEC §14 Nutrition, SPEC §3 data model, `design/README.md` row, `CLAUDE.md` layout lines for `src/screens/food/` and `src/lib/nutrition/`, `npm run screens`.
+- SPEC §14 Nutrition, SPEC §3 data model, `design/README.md` row, `AGENTS.md` layout lines for `src/screens/food/` and `src/lib/nutrition/`, `npm run screens`.
 
 ### Size and order
 

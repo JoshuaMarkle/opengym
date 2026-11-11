@@ -36,6 +36,7 @@ Principle 9 promises reminders; today the only one is an orange header on Settin
 ## 5. Tooling
 
 - **Lint for hooks.** There are 14 `eslint-disable-line react-hooks/exhaustive-deps` comments, but no ESLint in the project. Add `eslint` + `eslint-plugin-react-hooks` (stale closures are the usual bug with `useLiveQuery`), or drop the comments.
+- **Faster screens.** A full `npm run screens:check` takes ~9 min (518 s for 174 screens on Nov 11 2026). Fast iteration is the priority. `scripts/screens.ts` runs scenes one after another, launches a fresh Chrome for each, and waits on fixed sleeps (700 ms per `go`, 450 ms per `dismiss`, plus `settle`). Ideas: run scenes in parallel across a few browsers (each scene already has its own browser and the servers are shared), reuse a browser between scenes with a fresh context, swap fixed sleeps for waiting on the DOM or network to go idle, and add a mode that captures only the screens whose source files changed since the last commit.
 - **CI.** A GitHub Action that runs `npm run typecheck`, `npm test` and `npm run build` on push.
 - **Split `WorkoutScreen.tsx`** (1,433 lines) when it's next touched: the keypad wiring, the training bar and the finish flow are separate concerns.
 
