@@ -41,6 +41,9 @@ Offline-first lifting log PWA (React + TypeScript + Vite + Dexie + Tailwind). No
 - UI: build from `src/components/ui/`; no arbitrary Tailwind values; read `design/DESIGN.md` first.
 - New or changed screen: add its catalog entry and scene in `scripts/screens.ts`, re-run it, and cite its ID in comments.
 
+## Git
+- Always work and commit directly on `main`, and push to `origin main`. Never create branches or worktrees, and never open PRs. Several agents may work on `main` at once; that's fine. Before pushing, `git pull --rebase`, fix any conflicts, then push.
+
 ## Gotchas
 - Live queries lag a navigation by a frame. Screens opened right after a write (workout, summary) wait briefly via `useGiveUp` before deciding their record is missing.
 - Toasts dock above anything marked `data-dock` (tab bar, keypad, pinned footers). A floating button marked `data-dock-side` shares the toast's row instead; the toast leaves room for it on the right.
