@@ -8,9 +8,9 @@ import { updateSettings } from '../../data/settings';
 import type { EffortAsk, EffortMode } from '../../lib/effort';
 
 /**
- * 9.7 (A1): Settings › Effort. Off by default; RPE or RIR (one stored value, two ways
- * to show it), when Next on reps asks for it, and whether est. 1RM counts it.
- * Turning effort on the first time opens the RPE and RIR sheet (9.8).
+ * 9.7 (A1): Settings › Effort. RIR by default (the effort target is set in RIR); RPE or
+ * RIR (one stored value, two ways to show it), when Next on reps asks for it, and whether
+ * est. 1RM counts it. The RPE and RIR sheet (9.8) opens only from its row.
  */
 export function EffortSettings() {
   const navigate = useNavigate();
@@ -19,10 +19,7 @@ export function EffortSettings() {
   const on = settings.effort !== 'off';
 
   const setMode = (effort: EffortMode) => {
-    if (effort === settings.effort) return;
-    const first = effort !== 'off' && !settings.effortExplained;
-    void updateSettings({ effort, ...(first ? { effortExplained: true } : {}) });
-    if (first) setSheet(true);
+    if (effort !== settings.effort) void updateSettings({ effort });
   };
   const setAsk = (effortAsk: EffortAsk) => void updateSettings({ effortAsk });
 
@@ -69,7 +66,7 @@ export function EffortSettings() {
       <Note className="mt-3">
         {on
           ? 'Warm-ups, drops and cardio never ask. Effort is stored once, so switching between RPE and RIR never loses it.'
-          : 'Off by default. Turn it on to rate how hard each working set was, as a small badge on the reps box.'}
+          : 'Turn it on to rate how hard each working set was, as a small badge on the reps box. Suggestions work best with it on.'}
       </Note>
 
       <EffortSheet open={sheet} onClose={() => setSheet(false)} mode={settings.effort} onSwitch={() => void updateSettings({ effort: settings.effort === 'rpe' ? 'rir' : 'rpe' })} />

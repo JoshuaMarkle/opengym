@@ -85,9 +85,10 @@ export function canStep(rpe: number | undefined, dir: 'inc' | 'dec', mode: 'rpe'
 
 /**
  * A key on the effort pad. A digit picks its value (plus ½ when the toggle is on), "."
- * flips the ½ toggle (always, even with nothing picked or on the top key, where it
- * waits for the next pick), + / − move one whole key in the pad's own units (keeping
- * ½), backspace clears both. Keys the pad doesn't take change nothing.
+ * flips the ½ toggle (always, even on the top key, where it waits for the next pick),
+ * + / − move one whole key in the pad's own units (keeping ½), backspace clears both.
+ * Empty RIR takes "." as RIR ½ (a second press makes it 0, like any ½ toggle); empty RPE
+ * just turns the toggle on for the next pick. Keys the pad doesn't take change nothing.
  */
 export function pressEffortPad(st: EffortPadState, k: KeypadKey, mode: 'rpe' | 'rir'): EffortPadState {
   if (k.type === 'backspace') return { rpe: undefined, half: false };
@@ -96,6 +97,7 @@ export function pressEffortPad(st: EffortPadState, k: KeypadKey, mode: 'rpe' | '
     return key ? { ...st, rpe: rpeFromPad({ base: key.value, half: st.half }, mode) } : st;
   }
   if (k.type === 'dot') {
+    if (st.rpe == null && mode === 'rir') return { half: true, rpe: rpeFromPad({ base: 0, half: true }, mode) };
     const half = !st.half;
     const base = padFromRpe(st.rpe, mode).base;
     return { half, rpe: base != null && canHalf(base, mode) ? rpeFromPad({ base, half }, mode) : st.rpe };

@@ -6,7 +6,7 @@ import { Key } from './Keypad';
 import { Sheet } from './overlays';
 import { cx, Disc } from './ui';
 
-export type BadgeTone = 'logged' | 'active' | 'target' | 'add';
+export type BadgeTone = 'logged' | 'active' | 'target' | 'auto' | 'add';
 
 /**
  * The effort badge on the lower right corner of a reps box (A2–A4), V2B in
@@ -15,7 +15,8 @@ export type BadgeTone = 'logged' | 'active' | 'target' | 'add';
  * it, floating on a soft shadow. `logged`: a saved rating, grey ring; on a done set
  * a faded blue fill in a full blue ring · `active`: the one being picked, blue ring
  * and glow · `target`: the routine's target, grey text in a grey ring · `add`: a blue
- * + in a blue ring on an unrated set. Every state is the same size; only colours change.
+ * + in a blue ring on an unrated set · `auto`: an assumed value (RIR 0 on a done set left
+ * unrated), grey like a target even on a done set. Every state is the same size; only colours change.
  *
  * Its parent must be a box-sized, positioned overlay of the reps box. The badge hangs
  * off that box's corner, centred on its bottom edge and 8 px past its right edge
@@ -57,7 +58,7 @@ export function EffortBadge({
         'flex h-4 min-w-4 items-center justify-center rounded-full text-[10.5px] leading-none font-extrabold whitespace-nowrap tabular-nums',
         solid ? 'bg-accent' : tone === 'logged' && done ? 'bg-effort' : 'bg-bg',
         plus ? 'w-4' : 'px-[5px]',
-        solid ? 'text-white' : plus ? 'text-accent' : tone === 'target' ? 'text-fg2' : 'text-fg',
+        solid ? 'text-white' : plus ? 'text-accent' : tone === 'target' || tone === 'auto' ? 'text-fg2' : 'text-fg',
       )}
       style={
         solid
@@ -112,7 +113,7 @@ export function EffortBadge({
  * under them (RIR 0 Failure … 5+ Easy; RPE ≤5 … 9, and 0 is 10 Max); the others are off,
  * so no RIR of 6 or more. "." is a sticky ½: always pressable, it stays on between picks
  * and applies to the next one; on the top key (RIR 5+, RPE 10) it shows greyed but can
- * still be flipped. + / − move a whole step (empty RIR starts at 0), off at the ends.
+ * still be flipped. On an empty RIR it picks ½ straight away (again: 0). + / − move a whole step (empty RIR starts at 0), off at the ends.
  * ⌫ clears, ⌄ closes. Every press saves; the keypad's ✓ Done completes the set.
  * Key it by set so the ½ toggle starts from each set's own value.
  */

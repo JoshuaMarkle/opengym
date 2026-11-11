@@ -6,10 +6,11 @@ import { ChevronRight, LogoMark } from '../../components/icons';
 import { Alert, useToast } from '../../components/overlays';
 import { LargeHeader, Screen, SectionLabel, TextField, Toggle } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
-import { backUpNow, dataCounts, deleteAllData, exportCsv, exportFoodCsv, shareOrDownload } from '../../data/backup';
+import { backUpNow, buildBackup, dataCounts, deleteAllData, exportCsv, exportFoodCsv, shareOrDownload } from '../../data/backup';
 import { isStoragePersistent, updateSettings } from '../../data/settings';
 import { TEST_MODE } from '../../db/testMode';
 import { fmtAgo } from '../../lib/dates';
+import { approxSize } from '../../lib/fileSize';
 import { EFFORT_LABEL } from '../../lib/effort';
 import { formatNumber } from '../../lib/units';
 import { usePinned } from '../progress/Progress';
@@ -29,6 +30,7 @@ export function Settings() {
   const restore = useRestoreFlow();
   const counts = useLiveQuery(dataCounts, []);
   const persisted = useStoragePersisted();
+  const size = useBackupSize(counts);
   const [deleting, setDeleting] = useState(false);
   const [typed, setTyped] = useState('');
   const [busy, setBusy] = useState(false);
@@ -81,8 +83,9 @@ export function Settings() {
       <Item label="Exercise library" value={exercises.length} to="/exercises" />
 
       <SectionLabel>Data · last backup {fmtAgo(settings.lastBackupAt)}</SectionLabel>
-      <button type="button" disabled={busy} onClick={() => void backup()} className="flex min-h-[52px] w-full items-center border-b border-line text-left text-input font-semibold text-accent disabled:opacity-50">
-        Back up now
+      <button type="button" disabled={busy} onClick={() => void backup()} className="flex min-h-[52px] w-full items-center justify-between gap-3 border-b border-line text-left text-input disabled:opacity-50">
+        <span className="font-semibold text-accent">Back up now</span>
+        {size && <span className="text-fg2 tabular-nums">{size}</span>}
       </button>
       <Item label="Restore from backup" onClick={restore.pick} />
       <Item label="Import from Strong / Hevy" to="/settings/import" />
@@ -204,4 +207,23 @@ function Item({ label, value, to, onClick }: { label: string; value?: ReactNode;
       </span>
     </button>
   );
+}
+
+/**
+ * The backup file's rough size ("<1 MB", "~2.4 GB") for the Back up now row: the real file,
+ * built and measured off screen. Rebuilt when the counts change (a workout or food day added).
+ */
+function useBackupSize(counts: unknown): string | undefined {
+  const [size, setSize] = useState<string>();
+  const key = JSON.stringify(counts ?? null);
+  useEffect(() => {
+    let live = true;
+    void buildBackup()
+      .then((b) => live && setSize(approxSize(new Blob([JSON.stringify(b)]).size)))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [key]);
+  return size;
 }

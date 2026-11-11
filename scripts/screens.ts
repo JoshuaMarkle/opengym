@@ -231,11 +231,11 @@ export const CATALOG: Section[] = [
       ['9.4', 'Restore', 'After picking a backup: both workout counts, and a chance to back up first.'],
       ['9.5', 'Import from Strong / Hevy', 'Their CSV export, matched to the library. Unsure matches are flagged orange.'],
       ['9.6', 'Delete all data', 'The only irreversible action, so it needs typing DELETE.'],
-      ['9.7', 'Effort', 'Off by default. RPE or RIR, which sets Next on reps asks on, and whether est. 1RM counts reps in reserve. Warm-ups, drops and cardio never ask.'],
+      ['9.7', 'Effort', 'RIR by default. RPE or RIR, which sets Next on reps asks on, and whether est. 1RM counts reps in reserve. Warm-ups, drops and cardio never ask.'],
       ['9.9', 'Training', 'Every training option on one screen. Step size, matching and pace are worked out from the log, never asked.'],
       ['9.10', 'Training phase', 'Maintaining makes holding count as a win and keeps topped-out sets at their weight; Coming back ramps every lift. Ends on a date and falls back to Building.'],
       ['9.11', 'Effort target', 'The setup question, editable later. "Only the last set to failure" gives earlier sets one more rep in reserve.'],
-      ['9.8', 'RPE and RIR', 'Opened from Settings › Effort, and the first time effort is turned on. Both terms, then one table mapping RPE, RIR and how a set feels.'],
+      ['9.8', 'RPE and RIR', 'Opened from What are RPE and RIR? in Settings › Effort, never on its own. Both terms, then one table mapping RPE, RIR and how a set feels.'],
     ],
   },
   {
@@ -807,6 +807,7 @@ scene('sample', '9.1 9.2 9.6 9.5 9.3 9.4', async ({ p, go, shot, scratch }) => {
 scene('sample', '9.8 9.7 2.22 4.25 4.26 7.10 7.11', async ({ p, go, shot, dismiss }) => {
   await go('/settings/effort');
   await p.click({ sel: 'button', text: 'RPE', start: true });
+  await p.click({ sel: 'button', text: 'What are RPE and RIR?' });
   await shot('9.8');
   await dismiss();
   await p.click('Use effort in est. 1RM');
@@ -1282,8 +1283,8 @@ async function main() {
         const base = `http://localhost:${ports[s.server]}/`;
         await p.goto(base);
         await p.find({ sel: 'nav, h1' }, 20000); // seeded and rendered
-        // Sample data turns effort on as RIR; captures show the default (off) unless a scene turns it on.
-        if (s.server === 'sample') await p.eval(`__og.db.settings.update('settings', { effort: 'off', effortExplained: false })`);
+        // Captures show the default effort mode (RIR) unless a scene changes it.
+        if (s.server === 'sample') await p.eval(`__og.db.settings.update('settings', { effort: 'rir' })`);
         const ctx: Ctx = {
           p,
           scratch,

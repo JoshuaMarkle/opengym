@@ -429,7 +429,7 @@ export const DEFAULT_SETTINGS: Omit<Settings, 'createdAt' | 'updatedAt'> = {
   pinnedExerciseIds: [],
   pinnedCustomized: false,
   historyView: 'calendar',
-  effort: 'off',
+  effort: 'rir',
   effortAsk: 'every',
   effortIn1rm: false,
   onboarded: false,

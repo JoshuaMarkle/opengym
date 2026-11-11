@@ -43,7 +43,8 @@ describe('effort pad keys', () => {
     expect(applyEffortKey(8.5, { type: 'dot' }, 'rir')).toBe(9);
     expect(applyEffortKey(8, { type: 'dot' }, 'rpe')).toBe(8.5);
     expect(applyEffortKey(5, { type: 'dot' }, 'rir')).toBe(5);
-    expect(applyEffortKey(undefined, { type: 'dot' }, 'rir')).toBeUndefined();
+    expect(applyEffortKey(undefined, { type: 'dot' }, 'rir')).toBe(9.5);
+    expect(applyEffortKey(undefined, { type: 'dot' }, 'rpe')).toBeUndefined();
   });
 
   it('+ / − step a whole unit and stay in range; backspace clears', () => {
@@ -79,10 +80,17 @@ describe('effort pad ½ toggle', () => {
   const dot = { type: 'dot' as const };
   const digit = (d: string) => ({ type: 'digit' as const, d });
 
-  it('turns on with nothing picked, and the next pick takes it', () => {
-    const on = pressEffortPad({ half: false }, dot, 'rir');
+  it('on empty RIR picks ½, then 0 on the next press', () => {
+    const half = pressEffortPad({ half: false }, dot, 'rir');
+    expect(half).toEqual({ rpe: 9.5, half: true });
+    expect(pressEffortPad(half, dot, 'rir')).toEqual({ rpe: 10, half: false });
+    expect(pressEffortPad(half, digit('1'), 'rir')).toEqual({ rpe: 8.5, half: true });
+  });
+
+  it('on empty RPE turns on, and the next pick takes it', () => {
+    const on = pressEffortPad({ half: false }, dot, 'rpe');
     expect(on).toEqual({ rpe: undefined, half: true });
-    expect(pressEffortPad(on, digit('1'), 'rir')).toEqual({ rpe: 8.5, half: true });
+    expect(pressEffortPad(on, digit('8'), 'rpe')).toEqual({ rpe: 8.5, half: true });
   });
 
   it('stays on through 5+ without changing it, and comes back on the next key', () => {

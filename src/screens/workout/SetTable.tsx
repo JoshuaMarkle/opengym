@@ -413,7 +413,7 @@ function PrevNextCell({
 /**
  * The badge on a set's reps box (A2, A3): the logged rating (blue once the set is done);
  * while picking, a blue ring; otherwise the routine's target in grey, or a blue + where
- * effort is asked for.
+ * effort is asked for. A done set with no RIR shows an assumed 0R in grey.
  * Warm-ups, drops and effort Off get nothing.
  */
 export function effortBadgeFor(
@@ -428,7 +428,9 @@ export function effortBadgeFor(
   if (mode === 'off' || !takesEffort(s)) return null;
   if (picking) return <EffortBadge tone="active" done={s.completed} text={s.rpe != null ? effortBadge(s.rpe, mode, narrow) : '+'} label="Picking effort" />;
   if (s.rpe != null) return <EffortBadge tone="logged" done={s.completed} text={effortBadge(s.rpe, mode, narrow)} label={`${effortSpoken(s.rpe, mode)}. Change effort`} onPress={onPress} />;
-  if (s.completed) return null;
+  // RIR left empty on a done set counts as 0 (taken to failure): shown grey, never the done
+  // blue, so it reads as assumed rather than logged. A tap rates it properly.
+  if (s.completed) return mode === 'rir' ? <EffortBadge tone="auto" done text={effortBadge(10, mode, narrow)} label="No effort logged, taken as 0 reps in reserve. Add effort" onPress={onPress} /> : null;
   if (s.rpeTarget != null) return <EffortBadge tone="target" text={effortBadge(s.rpeTarget, mode, narrow)} label={`Target ${effortSpoken(s.rpeTarget, mode)}. Add effort`} onPress={onPress} />;
   if (ask === 'tap' || asksEffort(ask, s, sets)) return <EffortBadge tone="add" label="Add effort" onPress={onPress} />;
   return null;

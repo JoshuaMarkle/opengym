@@ -73,15 +73,18 @@ export function Scanner() {
     (async () => {
       try {
         if (!navigator.mediaDevices?.getUserMedia) throw new Error('no camera');
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+        // 1080p: thin bars stay sharp enough to read from further away.
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
         if (stop) return stream.getTracks().forEach((t) => t.stop());
         const v = video.current!;
         v.srcObject = stream;
         await v.play().catch(() => undefined);
         setCamera('on');
         const track = stream.getVideoTracks()[0];
-        const caps = (track.getCapabilities?.() ?? {}) as { torch?: boolean };
+        const caps = (track.getCapabilities?.() ?? {}) as { torch?: boolean; focusMode?: string[] };
         if (caps.torch) setTorch({ on: false, track });
+        // Keep refocusing as the phone moves in (Android; iOS does this already).
+        if (caps.focusMode?.includes('continuous')) await track.applyConstraints({ advanced: [{ focusMode: 'continuous' } as MediaTrackConstraintSet] }).catch(() => undefined);
         const decode = await getDecoder();
         let last = '';
         const tick = async () => {
@@ -250,7 +253,7 @@ function FoundSheet({ food, onLog, onAmount, onFix }: { food: Food; onLog: () =>
   );
 }
 
-/** Four corners and a scan line, centered: where to hold the barcode. */
+/** Four corners, centered: where to hold the barcode. */
 function Viewfinder() {
   const corner = 'absolute h-6 w-6 border-white';
   return (
@@ -260,7 +263,6 @@ function Viewfinder() {
         <i className={cx(corner, 'top-0 right-0 rounded-tr-md border-t-4 border-r-4')} />
         <i className={cx(corner, 'bottom-0 left-0 rounded-bl-md border-b-4 border-l-4')} />
         <i className={cx(corner, 'right-0 bottom-0 rounded-br-md border-r-4 border-b-4')} />
-        <u className="absolute inset-x-4 top-1/2 h-0.5 bg-danger" />
       </div>
     </div>
   );
