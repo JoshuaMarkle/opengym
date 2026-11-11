@@ -72,8 +72,8 @@
   {
     "role": "Primary button",
     "foreground": "#FFFFFF",
-    "background": "#0066D6",
-    "ratio": 5.42,
+    "background": "#007AFF",
+    "ratio": 4.02,
     "minimum": 4.5
   },
   {

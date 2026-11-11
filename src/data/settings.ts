@@ -29,10 +29,21 @@ export async function setUnits(units: Units): Promise<void> {
   await updateSettings({ units, ...UNIT_DEFAULTS[units] });
 }
 
+/** Read the best-effort storage status for Settings (9.1, 9.12). */
+export async function isStoragePersistent(): Promise<boolean> {
+  try {
+    return (await navigator.storage?.persisted?.()) ?? false;
+  } catch {
+    // Storage permission checks can be denied even while IndexedDB works.
+    // 9.1: this informational check must never take Settings down.
+    return false;
+  }
+}
+
 /** Ask the browser not to evict our storage (SPEC §2). Best effort. */
 export async function requestPersistentStorage(): Promise<boolean> {
   try {
-    if (navigator.storage?.persisted && (await navigator.storage.persisted())) return true;
+    if (await isStoragePersistent()) return true;
     return (await navigator.storage?.persist?.()) ?? false;
   } catch {
     return false;

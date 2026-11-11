@@ -115,23 +115,23 @@ export function DayCode({ children, selected }: { children: ReactNode; selected?
 
 export type LegendItem = { label: string; mark: 'missed' | 'workout' | 'changed' | 'done' | 'today' };
 
-/** design §12 Legend: Micro 10 fg2, swatches 10, dot 4, gap 8. */
+/** design §12 Legend (PH3.2): Micro 10 fg2, swatches 10, dot 4, gap 8; labels have a 1 px optical offset to center their glyphs against the markers. */
 export function CalendarLegend({ items, className = '' }: { items: LegendItem[]; className?: string }) {
   return (
     <div className={cx('flex flex-wrap items-center gap-x-2 gap-y-1 text-micro font-normal text-fg2', className)}>
       {items.map((it) => (
-        <span key={it.label} className="flex items-center gap-1">
+        <span key={it.label} className="inline-flex items-center gap-1 leading-none">
           {it.mark === 'workout' ? (
-            <i className="h-1 w-1 rounded-full bg-accent" />
+            <i aria-hidden="true" className="h-1 w-1 shrink-0 rounded-full bg-accent" />
           ) : (
             <i
               className={cx(
-                'h-2.5 w-2.5 rounded-xs',
+                'h-2.5 w-2.5 shrink-0 rounded-xs',
                 it.mark === 'missed' ? 'border border-warn' : it.mark === 'changed' ? 'border border-dashed border-fg2' : it.mark === 'done' ? 'bg-action' : 'border border-fg',
               )}
             />
           )}
-          {it.label}
+          <span className="relative top-px">{it.label}</span>
         </span>
       ))}
     </div>

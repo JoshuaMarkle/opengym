@@ -7,7 +7,7 @@ import { Alert, useToast } from '../../components/overlays';
 import { LargeHeader, Screen, SectionLabel, TextField, Toggle } from '../../components/ui';
 import { useData } from '../../data/DataProvider';
 import { backUpNow, dataCounts, deleteAllData, exportCsv, exportFoodCsv, shareOrDownload } from '../../data/backup';
-import { updateSettings } from '../../data/settings';
+import { isStoragePersistent, updateSettings } from '../../data/settings';
 import { TEST_MODE } from '../../db/testMode';
 import { fmtAgo } from '../../lib/dates';
 import { EFFORT_LABEL } from '../../lib/effort';
@@ -28,7 +28,7 @@ export function Settings() {
   const pinned = usePinned();
   const restore = useRestoreFlow();
   const counts = useLiveQuery(dataCounts, []);
-  const persisted = useLiveQuery(async () => (navigator.storage?.persisted ? navigator.storage.persisted() : false), []);
+  const persisted = useLiveQuery(isStoragePersistent, []);
   const [deleting, setDeleting] = useState(false);
   const [typed, setTyped] = useState('');
   const [busy, setBusy] = useState(false);

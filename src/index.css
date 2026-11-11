@@ -62,7 +62,8 @@
 /* Meaning colors: the same in both themes. */
 :root {
   --og-accent: #007aff;
-  --og-action: #0066d6;
+  /* Same blue for text and filled actions (screens 0.1, 1.1, 4.2). */
+  --og-action: #007aff;
   --og-action-pressed: #0054b0;
   --og-warn: #ff9500;
   --og-danger: #ff453a;

@@ -80,19 +80,19 @@ export function visibleAZ<T extends Rankable>(list: T[], opts: Pick<RankOptions,
 }
 
 /**
- * Variation chips (B1, B3): this one, then the ones you've logged (most
- * sessions first; always a chip, even past the cap), then the most popular
- * visible ones up to `max`. `more` is how many sit behind "All N".
+ * Variation chips (4.1, 8.2): logged variations first, then popular ones up
+ * to `max`. Selection never reorders those chips. An otherwise hidden current
+ * variation is appended so picking from All keeps the existing buttons in place.
  */
 export function variationChips<T extends Rankable>(current: T, members: T[], sessions: (id: string) => number, max = CHIPS_MAX): { chips: T[]; more: number } {
-  const others = members.filter((m) => m.id !== current.id);
-  const logged = others.filter((m) => sessions(m.id) > 0).sort((a, b) => sessions(b.id) - sessions(a.id) || byPopularity(a, b));
-  const fill = others.filter((m) => sessions(m.id) === 0 && !isRare(m)).sort(byPopularity);
-  const chips = [current, ...logged];
+  const logged = members.filter((m) => sessions(m.id) > 0).sort((a, b) => sessions(b.id) - sessions(a.id) || byPopularity(a, b));
+  const fill = members.filter((m) => sessions(m.id) === 0 && !isRare(m)).sort(byPopularity);
+  const chips = [...logged];
   for (const m of fill) {
     if (chips.length >= max) break;
     chips.push(m);
   }
+  if (!chips.some((m) => m.id === current.id)) chips.push(current);
   const all = members.some((m) => m.id === current.id) ? members.length : members.length + 1;
   return { chips, more: all - chips.length };
 }

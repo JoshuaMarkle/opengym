@@ -58,7 +58,7 @@ describe('rankPopular', () => {
 describe('variation chips', () => {
   const group = seed.filter((e) => SEED_EXERCISES.find((s) => s.name === e.name)?.group === 'vg-row');
   const sessions = counts({ 'Barbell Row': 42, 'DB Row': 12, 'Underhand Barbell Row': 3 });
-  it('B1: this, then yours, then the most popular, up to 4', () => {
+  it('logged, then the most popular, up to 4', () => {
     const { chips, more } = variationChips(ex('Barbell Row'), group, sessions);
     expect(group.length).toBe(14);
     expect(names(chips)).toEqual(['Barbell Row', 'DB Row', 'Underhand Barbell Row', 'T-Bar Row']);
@@ -66,9 +66,21 @@ describe('variation chips', () => {
   });
   it('a logged variation always gets a chip, even past 4; rare ones never fill', () => {
     const { chips } = variationChips(ex('Barbell Row'), group, counts({ 'DB Row': 5, 'Kroc Row': 4, 'Yates Row': 3, 'Helms Row': 2, 'Seal Row': 1 }));
-    expect(names(chips)).toEqual(['Barbell Row', 'DB Row', 'Kroc Row', 'Yates Row', 'Helms Row', 'Seal Row']);
+    expect(names(chips)).toEqual(['DB Row', 'Kroc Row', 'Yates Row', 'Helms Row', 'Seal Row', 'Barbell Row']);
     const { chips: fresh } = variationChips(ex('Seal Row'), group, () => 0);
-    expect(names(fresh)).toEqual(['Seal Row', 'Barbell Row', 'DB Row', 'T-Bar Row']);
+    expect(names(fresh)).toEqual(['Barbell Row', 'DB Row', 'T-Bar Row', 'Chest-Supported Row', 'Seal Row']);
+  });
+  it('keeps every visible chip in place when switching variations', () => {
+    for (const history of [sessions, () => 0]) {
+      const initial = variationChips(ex('Barbell Row'), group, history);
+      for (const current of initial.chips) {
+        expect(variationChips(current, group, history)).toEqual(initial);
+      }
+      const hidden = variationChips(ex('Seal Row'), group, history);
+      expect(hidden.chips.slice(0, initial.chips.length)).toEqual(initial.chips);
+      expect(hidden.chips.at(-1)?.name).toBe('Seal Row');
+      expect(hidden.more).toBe(initial.more - 1);
+    }
   });
   it('B2: All list by score, rare ones you have not logged under Rarely used', () => {
     const { main, rare } = variationList(group, sessions);

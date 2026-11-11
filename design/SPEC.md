@@ -73,7 +73,7 @@ Settings.food { sex?, birthYear?, heightIn?, weightLb?, activity?, goal?, paceLb
   - **Hidden:** score ≤ 3 is left out of the Library and picker lists and of variation chips. It still shows when searched (dimmed, under Rarely used), whenever you've logged it or it's in a routine, in a group's All list, and with Show hidden. Derived, never stored.
   - **Order:** Library (8.1) and picker (2.5) open on Popular: You do (your 4 most-logged), then Most popular. A–Z is one tap away and remembered on the device. Search: matches you've logged first, then by score, then rarely used ones. Muscle chips filter; Cardio is the last one.
   - **Area:** Forearms / Lower back add a word to the meta line ("Arms · Forearms · dumbbell") and to search, never a chip.
-  - **Variation chips** (8.2, 4.1): this one, the ones you've logged (most sessions first, always a chip), then the most popular, up to 4. The rest sit behind "All N" (8.8) or "+N" while logging (4.36). Labels come from the whole group.
+  - **Variation chips** (8.2, 4.1): the ones you've logged (most sessions first, always a chip), then the most popular, up to 4. Selection does not reorder the chips, and only the selected variation is highlighted. If the selected variation is outside that list, append it. The rest sit behind "All N" (8.8) or "+N" while logging (4.36). Labels come from the whole group.
   - **Not built yet:** Farmer's Carry and its weight × time type (ROADMAP).
 
 ## 4. Core rules
@@ -137,10 +137,10 @@ A new screen or feature should pass all ten principles:
 Dates read `Thu, Oct 29`, or relative within a week ("Mon"). Units default to lbs, written "lb" after numbers.
 
 - **Design system.** Colors, type, sizes, radii, glyphs and every shared component are in [`DESIGN.md`](DESIGN.md) (the installed form of `proposals/design-system.html`), built in `src/components/ui/` and checked by `npm run lint:design`, which runs in `npm run build`. Where this section and `DESIGN.md` differ on looks, `DESIGN.md` wins; the behavior rules here still apply.
-- **Tokens.** Every color is a CSS variable in `src/index.css` (dark first; light swaps the neutrals). Two blues: accent `#007AFF` for text, lines, rings and marks; action `#0066D6` for every filled surface with white on it. Tip green (up, records, live), warning `#FF9500` (drops, backup due), danger `#FF453A` (delete, down).
+- **Tokens.** Every color is a CSS variable in `src/index.css` (dark first; light swaps the neutrals). One blue, `#007AFF`: accent for text, lines, rings and marks; action for every filled surface with white on it. Pressed actions use `#0054B0`. Tip green (up, records, live), warning `#FF9500` (drops, backup due), danger `#FF453A` (delete, down).
 - **Type.** System font, tabular numbers everywhere digits appear, twelve sizes from Hero 40 to Micro 10 (`text-hero` … `text-micro`), no arbitrary sizes.
 - **Layout.** Flat rows with hairline dividers (52 single, 60 two-line); no cards, no shadows. 16 px edges, 8 px grid, 44 px minimum tap target.
-- **Bars and overlays.** Cancel/Back on the left, Save/Done on the right. Sheets are for options; alerts only confirm data loss. Alerts look like iOS: centered, 270 wide, hairline-separated buttons.
+- **Bars and overlays.** Cancel/Back on the left, Save/Done on the right. Sheets are for options; their table-style option separators are inset 16 px on both sides, aligned with the row text, while the whole row stays pressable. Alerts only confirm data loss. Alerts look like iOS: centered, 270 wide, hairline-separated buttons.
 - **Gestures** are shortcuts only; everything they do is also reachable from a visible control.
 - **Logo.** The right half of a loaded bar, drawn like the plate pad at 5× scale: grey bar off the left edge, a collar, two 45s (the second centered) and a 10, all plates blue. Geometry lives in `src/lib/logo.ts`.
 - **Icons.** Only the tab bar uses the solid icons in `design/brand/tabs/`. Only + − × W D ✕ and — are typed; everything else (check, chevrons, arrows, trends, more, play, handle, the workout-options pencil (5.4), the orange warning triangle for "not enough data" (7.1)) is a drawn glyph from `src/components/icons.tsx`.
@@ -223,7 +223,7 @@ The rules, constants and worked examples are in `design/training-logic.html` (re
 - **Tips (§23).** At most one per workout, dismissed for good from its ✕.
 
 
-Changed-day indicators (PH3.10–PH3.11): one-off schedule overrides use the same gray dashed outline in the main calendar, routine editor calendar, and Home week strip. The main calendar includes a Changed legend; today keeps its blue outline.
+Changed-day indicators (PH3.10–PH3.11): one-off schedule overrides use the same gray dashed outline in the main calendar, routine editor calendar, and Home week strip. The main calendar legend vertically centers each marker with its label; a square calendar-icon button immediately left of Dates / Codes returns to the current month and selects today (PH3.2–PH3.3). The main calendar includes a Changed legend; today keeps its blue outline.
 
 Calendar day taps (PH3.15): first tap focuses a day; tapping the selected editable day again opens the change-day drawer. Past and unscheduled days stay read-only. The visible Change this day action remains available.
 

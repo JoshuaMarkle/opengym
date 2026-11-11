@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { CheckGlyph, ChevronLeft, ChevronRight } from '../../components/icons';
+import { CalendarIcon, CheckGlyph, ChevronLeft, ChevronRight } from '../../components/icons';
 import { AttentionNote, CalendarLegend, DayCell, DayCode, DayDots, LabelAction, Note, SectionLabel, StartPill, StatRow, TextButton, Weekday } from '../../components/ui';
 import { useActiveWorkout, useData } from '../../data/DataProvider';
 import { workoutLine, type HistoryWorkout } from '../../data/history';
@@ -145,13 +145,31 @@ export function PlanHistoryCalendar({ folder, month, onMonthChange }: { folder?:
       </div>
       <div className="flex min-h-11 items-center justify-between gap-1">
         <CalendarLegend items={MONTH_LEGEND} />
-        <CodesSwitch
-          codes={codes}
-          onChange={(v) => {
-            memory.codes = v;
-            setCodes(v);
-          }}
-        />
+        {/* PH3.2–PH3.3: 32 px square Today surface matches Dates / Codes, inside a 44 px tap target. */}
+        <div className="flex shrink-0 items-center -space-x-1">
+          <button
+            type="button"
+            aria-label="Go to today"
+            title="Go to today"
+            onClick={() => {
+              changeMonth(startOfMonth(now));
+              setSelected(today);
+              memory.day = today;
+            }}
+            className="flex h-11 w-11 items-center justify-center text-fg2 active:opacity-60"
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-surface">
+              <CalendarIcon size={15} />
+            </span>
+          </button>
+          <CodesSwitch
+            codes={codes}
+            onChange={(v) => {
+              memory.codes = v;
+              setCodes(v);
+            }}
+          />
+        </div>
       </div>
       {month <= startOfMonth(now) && (
         <StatRow

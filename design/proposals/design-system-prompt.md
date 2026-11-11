@@ -34,7 +34,7 @@ You're bringing OpenGym's UI in line with its new design system. Three files in 
 
 ## Rules that are easy to miss
 
-- **Two blues.** `accent` #007AFF is for text, lines, rings and marks. `action` #0066D6 is for every filled surface with white on it: buttons, discs, Check, toggle, NEXT badge, selected day and Finish.
+- **One blue.** `accent` #007AFF is for text, lines, rings and marks. `action` #007AFF is for every filled surface with white on it: buttons, discs, Check, toggle, NEXT badge, selected day and Finish.
 - **One filled button size** (44 / r10 / 15/700), plus `compact` (36) for Finish only.
 - **Discs come in two sizes only**: S 24 at the start of a row, L 34 when the disc is the button. Both sit in a 44 target.
 - **Bars come in two thicknesses**: 8 for a main bar, 4 under a label.

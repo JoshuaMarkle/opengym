@@ -10,7 +10,7 @@
   --og-bg:#000000; --og-raised:#101010; --og-surface:#161616; --og-surface-2:#1C1C1C; --og-key:#1E1E1E; --og-key-fn:#2A2A2A;
   --og-line:#222222; --og-line-strong:#38383B;
   --og-fg:#FFFFFF; --og-fg2:#A1A1AA; --og-fg3:#71717A; --og-disabled:#55555B;
-  --og-accent:#007AFF; --og-action:#0066D6; --og-action-pressed:#0054B0;
+  --og-accent:#007AFF; --og-action:#007AFF; --og-action-pressed:#0054B0;
   --og-cyan:#2DAFC3; --og-gold:#EBC22D; --og-tip:#32C66D; --og-warn:#FF9500; --og-danger:#FF453A; --og-danger-fill:#C9342B;
   --og-done:color-mix(in srgb,var(--og-accent) 14%,var(--og-bg));
   --og-edit:color-mix(in srgb,var(--og-accent) 12%,var(--og-bg));
@@ -261,9 +261,9 @@ table.spec td .old{color:var(--og-fg3);text-decoration:line-through}
 .scrim{background:var(--og-scrim);position:absolute;inset:0}
 .sheet{position:absolute;left:0;right:0;bottom:0;background:var(--og-raised);border-top:1px solid var(--og-line-strong);border-radius:18px 18px 0 0;padding:8px 16px 0}
 .grab{width:36px;height:5px;border-radius:999px;background:var(--og-line-strong);margin:0 auto}
-.opts{margin:12px -16px 0;border-top:1px solid var(--og-line)}
-.opt{display:flex;align-items:center;justify-content:space-between;min-height:52px;padding:0 16px;border-bottom:1px solid var(--og-line);font-size:17px}
-.opt:last-child{border-bottom:0}
+.opts{margin:12px -16px 0}
+.opt{position:relative;display:flex;align-items:center;justify-content:space-between;min-height:52px;padding:0 16px;border-top:1px solid transparent;font-size:17px}
+.opt::before{content:"";position:absolute;left:16px;right:16px;top:-1px;border-top:1px solid var(--og-line);pointer-events:none}
 .opt small{font-size:14px;color:var(--og-fg2)}
 .alert{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:270px;border-radius:14px;background:color-mix(in srgb,var(--og-surface-2) 92%,transparent);backdrop-filter:blur(24px);text-align:center;overflow:hidden}
 .alert .b{padding:20px 16px 18px}
@@ -366,7 +366,7 @@ table.spec td .old{color:var(--og-fg3);text-decoration:line-through}
 <div class="section" id="color">
   <span class="stag">1</span>
   <h2>Color</h2>
-  <p>The new palette replaces the current blue (<code>#2E8BFF</code>), green, orange, red and greys. Blue moves to Apple's system blue and splits in two: a bright blue for text, lines and marks, and a deeper blue for filled buttons so white labels stay readable. Contrast is against the black canvas (WCAG; 4.5 : 1 is the bar for small text).</p>
+  <p>The new palette replaces the current blue (<code>#2E8BFF</code>), green, orange, red and greys. Blue uses Apple's system blue, #007AFF, for both accent marks and filled actions, with a darker pressed state. Contrast is against the black canvas (WCAG; 4.5 : 1 is the bar for small text).</p>
 
   <div class="sub"><h3>Palette</h3></div>
   <div class="sw">
@@ -374,7 +374,7 @@ table.spec td .old{color:var(--og-fg3);text-decoration:line-through}
     <div class="chipc"><div class="c" style="background:#fff;color:#000">Aa · 21 : 1</div><div class="i"><b>Primary text</b><code>#FFFFFF</code> <code>--og-fg</code><p>Names, logged numbers, calorie totals.</p></div></div>
     <div class="chipc"><div class="c" style="background:#A1A1AA;color:#000">Aa · 8.2 : 1</div><div class="i"><b>Secondary text</b><code>#A1A1AA</code> <code>--og-fg2</code><p>Dates, units, essential supporting copy.</p><em>was #8E8E8E</em></div></div>
     <div class="chipc"><div class="c" style="background:#007AFF">5.2 : 1 on black</div><div class="i"><b>Blue</b><code>#007AFF</code> <code>--og-accent</code><p>Actions, selected states, brand plates, strength trends, and protein (no separate protein color).</p><em>was #2E8BFF</em></div></div>
-    <div class="chipc"><div class="c" style="background:#0066D6">White · 5.4 : 1</div><div class="i"><b>Filled primary action</b><code>#0066D6</code> <code>--og-action</code><p>Every filled blue surface: buttons, Start pill, play and done discs, ticked checkboxes, toggles, selected date. Pressed: <code>#0054B0</code>.</p><em>new</em></div></div>
+    <div class="chipc"><div class="c" style="background:#007AFF">White · 4.0 : 1</div><div class="i"><b>Filled primary action</b><code>#007AFF</code> <code>--og-action</code><p>Every filled blue surface: buttons, Start pill, play and done discs, ticked checkboxes, toggles, selected date. Pressed: <code>#0054B0</code>.</p><em>new</em></div></div>
     <div class="chipc"><div class="c" style="background:#32C66D;color:#000">9.4 : 1</div><div class="i"><b>Green</b><code>#32C66D</code> <code>--og-tip</code><p>Success, records, improvement, live indicator, "Next" targets.</p><em>was #2EE66B</em></div></div>
     <div class="chipc"><div class="c" style="background:#FF9500;color:#000">9.6 : 1</div><div class="i"><b>Orange</b><code>#FF9500</code> <code>--og-warn</code><p>Attention, missed days, drops, backup due, calorie overage.</p><em>was #FF8C1A</em></div></div>
     <div class="chipc"><div class="c" style="background:#FF453A">6.2 : 1</div><div class="i"><b>Red</b><code>#FF453A</code> <code>--og-danger</code><p>Delete, errors, downward workout comparison.</p><em>was #FF3B3B</em></div></div>
@@ -410,11 +410,11 @@ table.spec td .old{color:var(--og-fg3);text-decoration:line-through}
     <div>
       <div class="sub" style="margin-top:28px"><h3>How to use it</h3></div>
       <ul class="rules">
-        <li><b>Two blues.</b> Bright <code>#007AFF</code> for text, glyphs, outlines, focus rings and chart marks. Deep <code>#0066D6</code> for anything <i>filled</i>. White text never sits on the bright blue (4.0 : 1).</li>
+        <li><b>One blue.</b> Accent and action both use <code>#007AFF</code>: text, glyphs, outlines, focus rings, chart marks and filled controls. Filled controls use white labels (4.0 : 1); pressed actions use <code>#0054B0</code>.</li>
         <li><b>Text is white or grey.</b> White for what you logged and named; <code>fg2</code> for anything you need to read but isn't the point (dates, units, meta). <code>fg3</code> only for things that carry no information.</li>
         <li><b>Status colors are for status.</b> Green, orange and red never decorate. Each one comes with a word or a drawn symbol: the up arrow before +9%, "Missed", ✕ Delete.</li>
         <li><b>Macros are blue, cyan, gold.</b> Protein uses the primary blue itself, not a look-alike. <b>They never change with state.</b> Fat stays gold when over target; the "over" note is orange text next to it. Protein above its floor gets a ✓, not a color change.</li>
-        <li><b>Colored fills with text on them</b> (orange D badge, green or gold chips) use black text. Blue and red fills use white text on the deep variants.</li>
+        <li><b>Colored fills with text on them</b> (orange D badge, green or gold chips) use black text. Blue fills use white text on action; red fills use white text on danger-fill.</li>
         <li class="no"><b>No literals.</b> Every color is a <code>--og-*</code> variable. Today <code>#2e8bff</code> is typed in six files; see §16.</li>
       </ul>
     </div>
@@ -1591,7 +1591,7 @@ table.spec td .old{color:var(--og-fg3);text-decoration:line-through}
         <tr><td>Sizes</td><td class="n">fit · short (⅔ + 24) · tall (56 below safe top)</td></tr>
         <tr><td>Header</td><td class="n">title 19/24 · subtitle 13 fg2 directly under it (mt 2)</td></tr>
         <tr><td>Body</td><td class="n">px 16 · pb 16 + safe area · scrolls</td></tr>
-        <tr><td>Options</td><td class="n">full sheet width · hairline above the first and between · none after the last · 12 below the header</td></tr>
+        <tr><td>Options</td><td class="n">full sheet width · hairlines inset 16 px on both sides, aligned with row text · above the first and between · none after the last · 12 below the header</td></tr>
         <tr><td>Option</td><td class="n">min-h 52 · px 16 · 17/400 · detail 14 fg2 · whole row pressable</td></tr>
         <tr><td>Bottom</td><td class="n">an option list ends the sheet: no padding under it, only the safe area</td></tr>
         <tr><td>Close</td><td class="n">drag grabber 70 px, tap scrim, Esc</td></tr>
@@ -1760,7 +1760,7 @@ table.spec td .old{color:var(--og-fg3);text-decoration:line-through}
   <p>What the audit found that doesn't match this page, and what changes. Counts are from <code>src/</code> as of commit <code>ac7c8c0</code>. All of it is done: installed in the Phase 0–4 commits after <code>942762d</code> (see <code>design/DESIGN.md</code> and <code>proposals/design-system-plan.md</code>, which also lists what was left out).</p>
   <div class="audit">
     <div class="a"><i>C1</i><div><b>Blue is typed as a literal</b> in charts.tsx (5×), Ring.tsx, Home.tsx, TabLayout.tsx (resume bar), the <code>:focus-visible</code> rule and logo.ts.</div><div class="fix"><b>Done.</b> Use <code>var(--og-accent)</code> / <code>--color-accent</code>. Resume-bar fill becomes <code>bg-done</code>.</div></div>
-    <div class="a"><i>C2</i><div><b>One blue for text and fills.</b> White labels sit on the bright blue in Button, StartPill, PlayButton, DoneDisc, Check, Pill, the NEXT badge, Finish and selected calendar days.</div><div class="fix"><b>Done.</b> Add <code>--og-action</code> (#0066D6) and a <code>bg-action</code> utility; every filled blue uses it.</div></div>
+    <div class="a"><i>C2</i><div><b>Shared action token.</b> Button, StartPill, PlayButton, DoneDisc, Check, Pill, the NEXT badge, Finish and selected calendar days use the action token.</div><div class="fix"><b>Done.</b> Use <code>--og-action</code> (#007AFF, matching accent) and the <code>bg-action</code> utility for filled blue controls.</div></div>
     <div class="a"><i>C3</i><div><b>Swipe-reveal greys</b> are literals (#2e2e2e, #4a4a4a) in gestures.tsx; Summary's red tint is a literal mix.</div><div class="fix"><b>Done.</b> <code>--og-swipe</code>, <code>--og-swipe-armed</code>, <code>--og-danger-soft</code>, <code>--og-success-soft</code>.</div></div>
     <div class="a"><i>T1</i><div><b>28 font sizes</b>, six of them half pixels (9.5, 10.5, 11.5, 12.5, 13.5, 14.5 used 66 times).</div><div class="fix"><b>Done.</b> Map to the 12-step scale (§2 "Folds in"). Worth adding <code>text-title1</code>-style utilities in <code>@theme</code> so screens stop typing px.</div></div>
     <div class="a"><i>T2</i><div><b>Caps labels drift</b>: 10, 10.5, 11 and 12.5 px; tracking 0.04, 0.05, 0.06, 0.07em; Routines folder headers are white 80%.</div><div class="fix"><b>Done.</b> Everything is Caps 11/700/+0.06em/fg2 (the <code>.caps</code> class); folder headers too.</div></div>
@@ -1772,7 +1772,7 @@ table.spec td .old{color:var(--og-fg3);text-decoration:line-through}
     <div class="a"><i>B4</i><div><b>Two filled sizes</b>: <code>Button</code> defaults to 50 px / r13 / 17 px (Home, Plans, onboarding, summary, goals); <code>size="md"</code> is 44 px.</div><div class="fix"><b>Done.</b> One size: 44 / r10 / 15 px. Drop the <code>size</code> prop.</div></div>
     <div class="a"><i>G2</i><div><b>Typed symbols</b>: ✓ (27), → (36), ▲ ▼ (26), › ‹ (25), ••• and ▶ are typed in screens and labels.</div><div class="fix"><b>Done.</b> Only + − × W D ✕ — stay typed. Add MoreGlyph and TrendUp / TrendDown to icons.tsx; use the chevrons, Arrow and CheckGlyph for the rest.</div></div>
     <div class="a"><i>O1</i><div><b>Sheet subtitles</b> sit about 10 px under the title: the title row has a 32 px min-height, plus a 4 px margin. Only the workout-options sheet (5.4) passes <code>tight</code> and gets 2 px.</div><div class="fix"><b>Done.</b> Always the tight layout; remove the <code>tight</code> prop.</div></div>
-    <div class="a"><i>O2</i><div><b>Sheet options</b> stop at the 16 px padding, have no line above the first, and the list floats 16 px above the sheet's bottom.</div><div class="fix"><b>Done.</b> Full-width option list with a hairline on top; no bottom padding after it.</div></div>
+    <div class="a"><i>O2</i><div><b>Sheet options</b> stop at the 16 px padding, have no line above the first, and the list floats 16 px above the sheet's bottom.</div><div class="fix"><b>Done.</b> Full-width pressable rows with hairlines inset 16 px on both sides, including above the first; no bottom padding after the list.</div></div>
     <div class="a"><i>O3</i><div><b>Hold-menu ring</b> hugs the row at the top and bottom (0 px) but leaves 8 px at the sides, so the row looks high in it.</div><div class="fix"><b>Done.</b> 4 px above and below, 8 px at the sides, r14.</div></div>
     <div class="a"><i>S1</i><div><b>Segmented control</b>: 2 px padding, 40 px overall, r10 track / r8 thumb.</div><div class="fix"><b>Done.</b> 4 px padding, 44 px track, r14 track / r10 thumb.</div></div>
     <div class="a"><i>I1</i><div><b>Two text-field styles</b>: TextField (44, 1.5 px border, 16 px) and inline inputs in EditWorkout, WorkoutScreen and Goals (48, 2 px ring, 17 px).</div><div class="fix"><b>Done.</b> All use TextField sizing. Number inputs keep 16 px so iOS doesn't zoom.</div></div>

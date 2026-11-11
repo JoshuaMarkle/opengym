@@ -11,8 +11,8 @@ export function groupTitle(e: Exercise, n: number): string {
 }
 
 /**
- * Variation chips (B1 on the exercise screen, B3 while logging): this one,
- * then the ones you've logged (blue outline), then the most popular, up to 4.
+ * Variation chips (8.2 on the exercise screen, 4.1 while logging): logged
+ * variations, then the most popular, up to 4. Only the current one is highlighted.
  * The rest sit behind "All N" (B1) or a "+N" pinned at the end of the row (B3).
  * Labels come from the whole group, so a chip's name never changes when the
  * set of chips does.
@@ -38,9 +38,8 @@ export function VariationChipRow({
   const { chips, more } = useMemo(() => variationChips(current, members, sessions), [current, members, sessions]);
   const list = chips.map((v) => {
     const on = v.id === current.id;
-    const yours = !on && sessions(v.id) > 0;
     return (
-      <VariationChip key={v.id} state={on ? 'current' : yours ? 'history' : 'other'} onClick={() => onPick(v.id)}>
+      <VariationChip key={v.id} state={on ? 'current' : 'other'} onClick={() => onPick(v.id)}>
         {labels.get(v.id) ?? v.name}
         {on && wrap && <span className="font-normal text-fg2">· this</span>}
       </VariationChip>

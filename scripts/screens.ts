@@ -32,7 +32,7 @@ export const CATALOG: Section[] = [
     n: 0,
     title: 'Components',
     blurb: 'Dev only. Every shared component in src/components/ui/ with its variants, to compare with design/proposals/design-system.html.',
-    screens: [['0.1', 'Component gallery', '#/dev/ui. Tokens, then one group per design section (§5 headers to §12 calendars), each component in all its variants. Captured full length.']],
+    screens: [['0.1', 'Component gallery', '#/dev/ui. Accent and filled actions share #007AFF. Tokens, then one group per design section (§5 headers to §12 calendars), each component in all its variants. Captured full length.']],
   },
   {
     n: 1,
@@ -53,7 +53,7 @@ export const CATALOG: Section[] = [
     blurb: 'Routines in folders; a folder with a schedule is a plan. Usually done at home.',
     screens: [
       ['2.1', 'Routines', 'Routines grouped in folders. The active folder (what Home shows) is on top; archived folders sit collapsed at the bottom.'],
-      ['2.2', '"+" menu', 'New routine (into the active folder), new folder, or a blank workout.'],
+      ['2.2', '"+" menu', 'New routine (into the active folder), new folder, or a blank workout. Option separators are inset 16 px on both sides, aligned with the row text.'],
       ['2.3', 'Routine builder', 'Each exercise with its set rows. LBS "last" reuses last session\'s weight; REPS is a number, a range or empty. Drag ≡ to reorder; swipe a set to delete it.'],
       ['2.4', 'Keypad, reps', 'The logging keypad. On reps the bottom-left key is the range dash (6 – 8) and the decimal is off.'],
       ['2.5', 'Exercise picker', 'In this routine (untick to remove), Added (in the order ticked), then Popular: You do (your 4 most-logged), then Most popular. A–Z is one tap away. Muscle chips filter, Cardio last.'],
@@ -76,11 +76,12 @@ export const CATALOG: Section[] = [
       ['2.23', 'Calendar, dates', 'Brighter planned codes beneath dates on uncompleted days, without planned borders or completed fills, with tightly spaced dots per logged workout and orange missed outlines. Tap a day for its completed sessions or planned routine.'],
       ['2.24', 'Calendar, codes', 'Planned routine codes replace dates; rest days retain their dates and dots count logged workouts.'],
       ['PH3.1', 'Home, scheduled', 'Unfilled week-strip days with borderless rest days and a blue today outline, shared SVG completion checks, gray weekday-only week-strip labels, white routine-row date numbers except blue today, a blue Today label, a compact Start pill with its label aligned to the play glyph and extra space between them, and Blank workout at the bottom of the list.'],
-      ['PH3.2', 'Calendar, dates', 'Tabs run Calendar, Routines, History. Compact rows align all date numbers above brighter planned codes or workout dots. Planned days have no borders, completed days have no fill, and dots sit close beneath dates; orange outlines mark missed days; today has a white outline when unselected. One dot per logged workout.'],
-      ['PH3.3', 'Calendar, codes', 'Codes always mean the planned routine; rest days retain dates. Today keeps its white outline when unselected.'],
+      ['PH3.2', 'Calendar, dates', 'Tabs run Calendar, Routines, History. Compact rows align all date numbers above brighter planned codes or workout dots. Planned days have no borders, completed days have no fill, and dots sit close beneath dates; orange outlines mark missed days; today has a white outline when unselected. One dot per logged workout. Legend labels have a 1 px downward optical offset to align with their markers. A 32 px square button with a 15 px calendar icon and a 44 px tap target, matching the Dates / Codes track height, immediately left of Dates / Codes returns to the current month and selects today.'],
+      ['PH3.3', 'Calendar, codes', 'Codes always mean the planned routine; rest days retain dates. Today keeps its white outline when unselected. Legend labels have a 1 px downward optical offset to align with their markers. A 32 px square button with a 15 px calendar icon and a 44 px tap target, matching the Dates / Codes track height, immediately left of Dates / Codes returns to the current month and selects today.'],
       ['PH3.4', 'History', 'The third view tab: search completed workouts within the merged Calendar tab.'],
       ['PH3.5', 'Routines', 'The second view tab: reusable templates, code-only schedule strips, and library actions.'],
       ['PH3.6', 'Calendar, today', 'Today\'s planned workout uses the same compact blue Start pill as Home, including its play glyph, spacing, and label alignment.'],
+      ['4.37', 'Variation selected', 'Switching Bench to Incline keeps the variation buttons in place. Only Incline is highlighted; logged siblings stay neutral.'],
       ['4.36', 'Switch variation', 'From +N on the variation chips: every variation, most popular first, yours in blue, rarely used ones dimmed at the end. Tap to switch.'],
       ['4.35', 'Logging a missed workout', 'The header shows the chosen past date while the active timer runs normally.'],
       ['PH3.7', 'Missed day', 'Log a missed routine late, or keep it skipped.'],
@@ -114,7 +115,7 @@ export const CATALOG: Section[] = [
     title: 'During a workout',
     blurb: 'Logging sets. No tab bar; Prev / Next move between exercises.',
     screens: [
-      ['4.1', 'Logging', 'Previous = last time\'s set at the same position; D = you dropped after it. Variation chips appear when variations are linked: this one, yours, then the most popular, up to 4, with +N pinned at the end (4.36). On the first exercise the left button becomes All exercises. The grey keyboard button floating bottom-right opens the keypad on the next open set.'],
+      ['4.1', 'Logging', 'Previous = last time\'s set at the same position; D = you dropped after it. Variation chips appear when variations are linked: logged variations, then the most popular, up to 4; order stays fixed when switching and only the current variation is highlighted, with +N pinned at the end (4.36). On the first exercise the left button becomes All exercises. The grey keyboard button floating bottom-right opens the keypad on the next open set.'],
       ['4.2', 'Keypad', '123 | Plates on the left, lbs | reps and one blue ✓ on the right: it moves to the next box, and on the last box completes the set. No text cursor; the blue outline marks the box. ± steps by the weight step.'],
       ['4.3', 'Drop sets', '"+ Drop" adds a row under the last completed set, prefilled 25% lighter (Settings).'],
       ['4.4', 'Swipes', 'Swipe right → warm-up (moves to the top as W). Swipe left → delete with 5 s Undo.'],
@@ -210,7 +211,7 @@ export const CATALOG: Section[] = [
     screens: [
       ['8.1', 'Library', 'Popular by default: You do (your 4 most-logged), then the most popular. Rarely used ones are hidden until you search. A–Z is one tap away and remembered.'],
       ['8.7', 'Library, Arms', 'Forearm exercises are Arms tagged Forearms. The footer counts what\'s hidden and offers Show hidden.'],
-      ['8.2', 'Exercise screen', 'Stats, linked variations (this, yours, then the most popular; the rest behind All N), where it\'s used. Merge fixes duplicates.'],
+      ['8.2', 'Exercise screen', 'Stats, linked variations (logged, then popular, in stable order with only the current variation highlighted; the rest behind All N), where it\'s used. Merge fixes duplicates.'],
       ['8.8', 'All variations', 'Every variation in the group, most popular first, yours with sessions in blue, rarely used ones dimmed under Rarely used.'],
       ['8.3', 'New / edit exercise', 'Name, type (sets the logging columns), muscle, equipment.'],
       ['8.4', 'Link variations', 'Linked exercises become the variation chips in 4.1 and the switch in Progress.'],
@@ -224,6 +225,7 @@ export const CATALOG: Section[] = [
     blurb: 'Preferences, backups, import.',
     screens: [
       ['9.1', 'Settings', 'Rows open a picker. The Data header shows when you last backed up; no nagging.'],
+      ['9.12', 'Settings, storage check denied', 'A rejected browser storage-permission check keeps Settings usable, including access to backups.'],
       ['9.2', 'Setting picker', 'One pattern for units, theme, steps, bar weight, drop amount and 1RM formula.'],
       ['9.3', 'Backed up', 'Back up now makes one JSON file and opens the share sheet; the date updates.'],
       ['9.4', 'Restore', 'After picking a backup: both workout counts, and a chance to back up first.'],
@@ -348,7 +350,7 @@ scene('sample', 'PH3.1 PH3.2 PH3.3 PH3.4 PH3.5 PH3.6 PH3.7 PH3.8 PH3.9 4.35', as
     const today = document.querySelector('button[aria-current="date"]');
     return today?.getAttribute('aria-pressed') === 'false' && getComputedStyle(today).boxShadow.includes('rgb(255, 255, 255)');
   })()`))) throw new Error('Unselected today must have a white calendar outline');
-  // PH3.2: brighter planned codes, no planned borders or completed fills, and compact 44px rows with aligned date numbers above codes or dots.
+  // PH3.2: centered legend labels and square Go to today shortcut beside Dates / Codes; brighter planned codes, no planned borders or completed fills, and compact 44px rows with aligned date numbers above codes or dots.
   await shot('PH3.2');
   await p.click('Codes');
   if (!(await p.eval(`getComputedStyle(document.querySelector('button[aria-current="date"]')).boxShadow.includes('rgb(255, 255, 255)')`))) throw new Error('Today outline must remain visible with routine codes');
@@ -502,12 +504,10 @@ scene('sample', '2.16 2.17 2.18 2.19 3.4 2.15 2.14 2.20 2.21 2.23 2.24 3.5', asy
   await p.click('No schedule');
   await p.click('Weekly split');
   await shot('2.16');
+  // 2.16–2.19: schedule types now switch inline in the same editor.
   await p.click('Repeating cycle');
-  await p.click('Next');
   await shot('2.17');
-  await p.click({ text: 'Back', nth: 0 });
   await p.click('Weekly split');
-  await p.click('Next');
   const week = { Sun: 'Push', Mon: 'Pull', Tue: 'Legs', Wed: 'Push', Thu: 'Pull', Fri: 'Legs' };
   for (const [day, routine] of Object.entries(week)) {
     await p.click({ sel: 'button', text: day, start: true });
@@ -543,6 +543,24 @@ scene('sample', '2.16 2.17 2.18 2.19 3.4 2.15 2.14 2.20 2.21 2.23 2.24 3.5', asy
   await shot('2.23');
   await p.click('Codes');
   await shot('2.24');
+});
+
+// 4.37: exercise selection changes the highlight, never the chip positions.
+scene('sample', '4.37', async ({ p, go, shot }) => {
+  await go('/');
+  await p.click('Start Push', 1500);
+  const selector = '[role="radiogroup"][aria-label="Variation"] [role="radio"]';
+  const before = await p.eval<string[]>(`[...document.querySelectorAll('${selector}')].map(e => e.textContent)`);
+  await p.click({ sel: selector, text: 'Incline Bench' }, 1000);
+  const after = await p.eval<string[]>(`[...document.querySelectorAll('${selector}')].map(e => e.textContent)`);
+  if (JSON.stringify(before) !== JSON.stringify(after)) throw new Error('Variation buttons moved after selection');
+  if (!(await p.eval(`(() => {
+    const chips = [...document.querySelectorAll('${selector}')];
+    const selected = chips.filter(e => e.getAttribute('aria-checked') === 'true');
+    return selected.length === 1 && selected[0].textContent.includes('Incline Bench')
+      && chips.filter(e => e.classList.contains('border-accent')).length === 1;
+  })()`))) throw new Error('Only Incline should be highlighted');
+  await shot('4.37');
 });
 
 scene('sample', '4.1 4.36 4.2 4.15 4.16 4.17 4.18 4.3 4.5 4.4 4.6 4.8 4.9 4.10 4.12 4.13 4.19 4.20 4.21 4.22 4.11 4.14 4.7 5.4 3.2 3.3 5.1 5.2 5.3', async ({ p, go, shot, dismiss }) => {
@@ -748,6 +766,16 @@ scene('sample', '8.1 8.7 8.8 8.2 8.4 8.3 8.5 8.6', async ({ p, go, shot, dismiss
   await p.click('Add exercise');
   await p.click({ sel: 'button', text: 'Cardio', nth: 0 });
   await shot('8.6');
+});
+
+scene('sample', '9.12', async ({ p, go, shot }) => {
+  await p.eval(`Object.defineProperty(navigator.storage, 'persisted', { configurable: true, value: () => Promise.reject(new DOMException('Storage access denied', 'SecurityError')) })`);
+  await go('/settings');
+  await p.find('Back up now');
+  await shot('9.12');
+  await p.click('Home');
+  await p.click('Settings');
+  await p.find('Back up now');
 });
 
 scene('sample', '9.1 9.2 9.6 9.5 9.3 9.4', async ({ p, go, shot, scratch }) => {

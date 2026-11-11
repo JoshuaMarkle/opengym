@@ -653,7 +653,7 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
     </div>
   );
 
-  // B3: this, yours, then the most popular (4 chips); "+N" opens the rest as a switcher (B4).
+  // 4.1: stable variation order, only the current chip highlighted; "+N" opens the rest as a switcher (B4).
   const variationChips = cur && ex && variations.length > 1 && (
     <VariationChipRow
       current={ex}

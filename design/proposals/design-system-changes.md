@@ -35,7 +35,7 @@ Then update `CLAUDE.md`:
 | --- | --- | --- |
 | T1 | `--og-fg2` #8E8E8E, `--og-fg3` #555555, `--og-line` #1F1F1F, `--og-line-strong` #2C2C2C | #A1A1AA, #71717A, #222222, #38383B (§1) |
 | T2 | accent #2E8BFF (typed as a literal 5 times inside `@theme`: accent, done, effort, effort-glow, accent-soft), tip #2EE66B, warn #FF8C1A, danger #FF3B3B | add `--og-accent` #007AFF, `--og-warn` #FF9500, `--og-danger` #FF453A and tip #32C66D, and build every mix from the variable |
-| T3 | Filled controls use the same blue as text | add `--og-action` #0066D6, `--og-action-pressed` #0054B0 and `--og-danger-fill` #C9342B; every filled button, disc, Check, toggle, NEXT badge, Finish and selected day uses `bg-action` |
+| T3 | Filled controls need a shared action token | use `--og-action` #007AFF (same as accent), `--og-action-pressed` #0054B0 and `--og-danger-fill` #C9342B; every filled button, disc, Check, toggle, NEXT badge, Finish and selected day uses `bg-action` |
 | T4 | no nutrition colors | add `--og-cyan` #2DAFC3 and `--og-gold` #EBC22D (protein uses accent) |
 | T5 | `--og-input-edit` #0B1A2E literal | `--og-edit` and `--og-done` as color-mix of accent and bg (12% / 14%), plus `--og-accent-soft`, `--og-success-soft`, `--og-danger-soft` and `--og-effort` |
 | T6 | `--og-chart-dot` #4A4A4A, `--og-bar` #3A3A3A | #66666F and #52525B |

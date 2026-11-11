@@ -111,8 +111,8 @@ export function Sheet({
 
 /**
  * design §14 Sheet option: min-h 52, 17/400, detail Callout fg2, whole row pressable. Runs the
- * sheet's full width with a hairline above it, so a list has one above the first, one between
- * each, and none after the last.
+ * sheet's full width; hairlines inset 16 px on both sides align with the text (2.2, 2.10).
+ * A list has one above the first, one between each, and none after the last.
  */
 export function SheetOption({
   children,
@@ -134,7 +134,7 @@ export function SheetOption({
       disabled={disabled}
       onClick={onClick}
       className={cx(
-        '-mx-4 flex min-h-13 w-[calc(100%+2rem)] items-center justify-between gap-3 border-t border-line px-4 text-left text-body-lg active:opacity-60 disabled:opacity-40',
+        'relative -mx-4 flex min-h-13 w-[calc(100%+2rem)] items-center justify-between gap-3 border-t border-transparent px-4 text-left text-body-lg before:pointer-events-none before:absolute before:inset-x-4 before:-top-px before:border-t before:border-line active:opacity-60 disabled:opacity-40',
         tone === 'danger' && 'text-danger',
         tone === 'accent' && 'font-semibold text-accent',
       )}

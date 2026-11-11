@@ -15,7 +15,7 @@ Proposed design reference based on the current app and the selected nutrition pa
 | Green | `#32C66D` | Success, records, improvement, live indicator |
 | Orange | `#FF9500` | Attention, missed days, drops, backup due, calorie overage |
 | Red | `#FF453A` | Delete, errors, downward workout comparison |
-| Filled primary action | `#0066D6` | White button text on a deeper version of the anchor blue |
+| Filled primary action | `#007AFF` | White button text on the same blue as accent |
 | Filled destructive action | `#C9342B` | White button text on a deeper version of the danger red |
 
 Protein, carbs and fat retain their category colors in every nutrition view. Category color is independent of state: a fat chart stays gold when over target, while the over-target note uses orange and explicit text. Protein above its floor gets a checkmark, not a warning. Calories stay white within target and turn orange above the existing tolerance.
@@ -37,10 +37,10 @@ The JSON data embedded in the visual reference is the source for this package. R
 
 | Area | Consistent treatment |
 | --- | --- |
-| Onboarding and installation | Black canvas, white titles, secondary instructions, deeper blue primary buttons |
+| Onboarding and installation | Black canvas, white titles, secondary instructions, accent blue primary buttons |
 | Home | Blue Start / Resume, neutral upcoming rows, green live indicator, orange missed or backup notes |
 | Plans and routine builder | Blue actions and superset brackets, neutral schedule structure, orange warning and drop glyphs |
-| Calendar | Blue workout dots; white today outline; orange missed outline; dashed neutral changed-day outline; selected date uses deeper blue with white text |
+| Calendar | Blue workout dots; white today outline; orange missed outline; dashed neutral changed-day outline; selected date uses accent blue with white text |
 | Active workout | White logged values, blue focus and suggestions, 14% blue completed-row fill; W neutral and D orange |
 | Keypad and plate pad | Charcoal keys, white digits, brighter function keys, blue completion key and selected plates; gray shaft and unloaded details |
 | Effort badges | Blue active ring, 45% blue completed fill, existing badge-only shadow and focus glow |
@@ -68,9 +68,9 @@ The JSON data embedded in the visual reference is the source for this package. R
 
 ## Contrast and state rules
 
-- `#007AFF` on black: approximately 5.23:1. White on that blue: approximately 4.02:1, so it is not the default fill for normal-size white button labels.
-- White on `#0066D6`: approximately 5.42:1. White on the destructive fill is also above 4.5:1.
-- All tested primary, secondary, status and macro text pairs meet 4.5:1. Tested essential control boundaries meet 3:1. Exact calculated pairs are in `contrast.json`.
+- `#007AFF` on black: approximately 5.23:1. This blue is also the default filled action color.
+- White on `#007AFF`: approximately 4.02:1, below the 4.5:1 threshold for small text. White on the destructive fill remains above 4.5:1.
+- Tested primary canvas text, secondary, status and macro text pairs meet 4.5:1; white primary button labels are the exception above. Tested essential control boundaries meet 3:1. Exact calculated pairs are in `contrast.json`.
 - Tertiary and disabled text do not carry essential information. The regular hairline is a separator, not an accessible control boundary.
 - Keyboard focus is a 2px blue outline with 2px offset. Filled primary actions use a white focus outline so the ring remains distinguishable.
 - Primary hover uses `--og-action-hover`; pressed uses `--og-action-pressed`. Avoid lowering text opacity in a way that makes enabled actions unreadable.

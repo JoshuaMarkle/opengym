@@ -30,7 +30,7 @@ Every color is a `--og-*` variable, exposed to Tailwind as `bg-*` / `text-*` / `
 | `fg3` | #71717A | Chevrons, placeholders, unchecked rings, hints with no information |
 | `disabled` | #55555B | Unavailable controls (or 40% opacity on the control) |
 | `accent` | #007AFF | Blue for **text, lines, rings, marks**, chart lines, focus |
-| `action` | #0066D6 | Blue for **every filled surface with white on it**: buttons, discs, Check, toggle, NEXT badge, selected day, Finish, Start pill, field switch, keypad confirm |
+| `action` | #007AFF | Blue for **every filled surface with white on it**: buttons, discs, Check, toggle, NEXT badge, selected day, Finish, Start pill, field switch, keypad confirm |
 | `action-pressed` | #0054B0 | Pressed filled blue |
 | `tip` | #32C66D | Success, records, improvement, live, "Next" targets |
 | `warn` | #FF9500 | Attention, missed, drops, backup due, over target |
@@ -45,7 +45,7 @@ Every color is a `--og-*` variable, exposed to Tailwind as `bg-*` / `text-*` / `
 | `chart-grid` · `chart-dot` · `bar` | #1C1C1C · #66666F · #52525B | Chart gridlines, past points, past bars |
 | `swipe` / `swipe-armed` | #2E2E2E / #4A4A4A | Swipe-reveal panel behind a row |
 
-- **Two blues.** White text never sits on `accent`; filled blue is always `bg-action`.
+- **One blue.** Accent and action both use `#007AFF`; filled blue surfaces use `bg-action`, with a darker pressed state.
 - Colored fills with text on them (orange D, green / orange answer discs) use black text.
 - Light theme swaps the neutrals only; meaning colors keep their role.
 
@@ -237,7 +237,7 @@ Import from `src/components/ui` (the folder's `index.ts`). Each component's comm
 | `DayCell` | Month-grid cell: h44 r10, Callout 14/600 number, 12 px marks row | `number`, `marks`, `selected`, `today`, `live`, `missed`, `changed`, `tone` |
 | `DayDots` / `DayCode` | Marks under a DayCell number: workout dots, or a routine code | `count`, `selected` / `selected` |
 | `ChangedOutline` | The 1 px dashed fg2 outline of a changed day | `round` |
-| `CalendarLegend` | Micro 10 legend with swatches | `items: LegendItem[]` |
+| `CalendarLegend` | Micro 10 legend with swatches, markers and labels vertically centered | `items: LegendItem[]` |
 | `RingStrip` | Food's week: Caps letters over Ring S (36/3) per day, filled toward the day's calories (fg2, white for today on a line-strong track); orange with a 4 px dot under it past 3% over; the selected day's letter is white; future days empty with an fg3 number | `days: RingDay[]`, `onPick` |
 
 `PlanStrip`, `PlanGrid`, `CodesSwitch` and `MONTH_LEGEND` live in `screens/plans/PlanParts.tsx` and are built from these.
@@ -252,7 +252,7 @@ Dock: kp fill, line-strong top, px 8 pt 6 pb 8 + safe area. Toolbar min-h 44, ga
 
 ### §14 Popups (`src/components/overlays.tsx`)
 
-`Sheet` (raised, r18 top, title Title 3 + Footnote subtitle mt 2, options full width with a hairline above the first and none after the last) · `SheetOption` (min-h 52, 17/400, detail Callout fg2) · `Alert` (270, r14, only before losing data) · `HoldMenu` (ring 4 above and below, 8 at the sides, r14; items 46) · Toast (48, r14) · `FullScreen`. One overlay at a time; every overlay closes with Esc and a visible control.
+`Sheet` (raised, r18 top, title Title 3 + Footnote subtitle mt 2, options full width with hairlines inset 16 px on both sides, aligned with the row text; one above the first, between rows, and none after the last) · `SheetOption` (min-h 52, 17/400, detail Callout fg2) · `Alert` (270, r14, only before losing data) · `HoldMenu` (ring 4 above and below, 8 at the sides, r14; items 46) · Toast (48, r14) · `FullScreen`. One overlay at a time; every overlay closes with Esc and a visible control.
 
 ### §15 Charts (`src/components/charts.tsx`)
 
@@ -276,3 +276,5 @@ Don't:
 - Grey text for logged numbers, white for meta.
 - Alerts for information, toasts for errors, a hold menu as the only way in.
 - **Selected things are filled or outlined, never both.** Filled: filter chips, segmented, toggles, discs, checkboxes, the field switch. Outlined (blue border + soft blue tint): variation chips, choice tiles, the held row, the cell being edited.
+
+Calendar month controls (PH3.2–PH3.3): a 32 × 32 square calendar-icon surface inside a 44 × 44 tap target immediately left of Dates / Codes returns to the current month and selects today. Match the Dates / Codes track height: surface background, 15 px fg2 calendar glyph, and r10 corners. Legend labels use a 1 px downward optical offset to align the visible text with their markers.
