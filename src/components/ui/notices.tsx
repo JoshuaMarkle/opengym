@@ -117,7 +117,7 @@ export function AttentionNote({ lead, children, actions, className = '' }: { lea
 
 /** design §11 / §15 Live dot: 7 px green, pulsing. The resume bar and Home's live block share it. */
 export function LiveDot({ className = '' }: { className?: string }) {
-  return <i aria-hidden className={cx('anim-pulse block h-1.75 w-1.75 flex-none rounded-full bg-tip', className)} />;
+  return <i aria-hidden data-volatile className={cx('anim-pulse block h-1.75 w-1.75 flex-none rounded-full bg-tip', className)} />;
 }
 
 /**
@@ -132,7 +132,9 @@ export function LiveStatus({ title, timer, where, detail, steps, onResume }: { t
           <LiveDot />
           In progress
         </span>
-        <span className="text-callout font-bold">{timer}</span>
+        <span className="text-callout font-bold" data-volatile>
+          {timer}
+        </span>
       </div>
       <b className="mt-0.5 block truncate text-title2">{title}</b>
       <div className="mt-0.5 truncate text-callout">

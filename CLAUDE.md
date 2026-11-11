@@ -7,13 +7,14 @@ Offline-first lifting log PWA (React + TypeScript + Vite + Dexie + Tailwind). No
 - `design/DESIGN.md`: tokens, type scale, sizes, glyphs and the component catalog. Component comments cite the design doc as `design §9`; `#/dev/ui` (screen 0.1, dev only) shows every component.
 - `design/storyboard.html` + `design/screens/<id>.png`: every screen, captured from the app. Comments cite screen IDs like `4.1`.
 - Food work: SPEC §14, then `design/proposals/nutrition-plan.md` (behavior, and §9 for what the build chose) and `design/proposals/nutrition.html` (board IDs like C1, D4).
-- Training work (suggestions, trends, goals): `design/training-logic.html`. Comments cite it as `§9` or `training-logic §9`; it wins over `design/proposals/progressive-overload.html`.
+- Training work (suggestions, trends, goals): `design/training-logic.html`. Comments cite it as `§9` or `training-logic §9`.
 - `design/ROADMAP.md`: known bugs, friction points and what to build next.
 
 ## Commands
 - `npm run dev`: dev server at http://localhost:5173 with sample history in a separate test database. `npm run dev:real` uses the real one.
 - `npm test`: Vitest (`src/**/*.test.ts`). `npm run typecheck`: `tsc -b` (app and scripts). `npm run lint:design`: checks `src/` against DESIGN.md (`-- --files` for a count per file). `npm run build`: typecheck + design lint + PWA build into `dist/`.
-- `npm run screens [-- 4 2.1]`: re-screenshot screens into `design/` (needs Chromium/Chrome). Run after UI changes.
+- `npm run screens [-- 4 2.1]`: re-screenshot screens into `design/` (needs Chromium/Chrome). Run after UI changes. Each capture is diffed against the committed PNG: unchanged files aren't rewritten, and changed ones get before / after / diff in `.screens-report/index.html`. Open it and confirm every change is intended. `npm run screens:check` does the same without writing and exits 1 on any difference (visual regression check).
+- Anything that changes on its own (clocks, pulsing dots, sizes that load late) gets `data-volatile`, so screens ignores those pixels.
 - `npm run brand`: regenerate logo SVGs, PWA icons and the brand board from `src/lib/logo.ts` and `src/index.css`.
 - `npm run foods`: rebuild `public/foods/usda-<release>.json` from USDA FoodData Central CSVs (short names in `scripts/food-names.json`). Rarely needed; bump `USDA_RELEASE` in `src/data/foodDb.ts` with it.
 

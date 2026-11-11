@@ -272,7 +272,7 @@ One commit per phase. `npm run typecheck`, `npm test`, `npm run lint:design` and
 ### Phase 0: docs and gaps
 
 - SPEC §1, §3, §5 edits from §1 of this doc; ROADMAP "Not doing" edit. SPEC §14 is written at the end (Phase 10) from what shipped.
-- Draw what the board is missing, in the v5 style, before their phases. These can be one board, `design/proposals/nutrition-gaps.html`:
+- Draw what the board is missing, in the v5 style, before their phases. These can be one board, `design/proposals/nutrition-gaps.html` (removed once built; see git history):
   - Quick add (D2), New / edit food with "More nutrients" (D3), the Food empty state, the inspector in edit mode, the meal sheet.
   - The day nutrients screen, a nutrient's top-foods list, the nutrient targets editor, the missing-data mark, and "Fill in missing nutrients".
 - Tab icon `design/brand/tabs/food.svg` and `FoodIcon` in `icons.tsx`.

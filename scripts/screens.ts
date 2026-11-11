@@ -6,19 +6,27 @@
  * database (onboarding and empty states). The clock is frozen at Thu Nov 5 2026,
  * 5:30 pm and the user agent is iPhone Safari, so runs are repeatable.
  *
+ * Each capture waits until two frames in a row match, then is compared pixel by pixel with
+ * the committed PNG. Unchanged screens are left alone (no git churn); changed ones are written
+ * and shown before / after / diff in .screens-report/index.html, along with failed scenes.
+ *
  *   npm run screens              all scenes
  *   npm run screens -- 4 2.1     only scenes that capture IDs starting with "4" or "2.1"
+ *   npm run screens:check        compare only, write nothing to design/; exits 1 on any difference
+ *   npm run screens -- --force   rewrite every captured PNG even if unchanged
  *
  * Needs Chromium or Chrome (scripts/chrome.ts).
  */
 import { spawn, type ChildProcess } from 'node:child_process';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Browser, Page, sleep } from './chrome.ts';
+import { decodePng, diffImages, encodePng, type Rect } from './png.ts';
 
 const root = new URL('..', import.meta.url).pathname;
 const OUT = join(root, 'design/screens');
+const REPORT = join(root, '.screens-report');
 const NOW = new Date(2026, 10, 5, 17, 30);
 const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
 
@@ -31,7 +39,7 @@ export const CATALOG: Section[] = [
   {
     n: 0,
     title: 'Components',
-    blurb: 'Dev only. Every shared component in src/components/ui/ with its variants, to compare with design/proposals/design-system.html.',
+    blurb: 'Dev only. Every shared component in src/components/ui/ with its variants, to compare with design/DESIGN.md.',
     screens: [['0.1', 'Component gallery', '#/dev/ui. Accent and filled actions share #007AFF. Tokens, then one group per design section (§5 headers to §12 calendars), each component in all its variants. Captured full length.']],
   },
   {
@@ -652,6 +660,7 @@ scene('sample', '4.1 4.36 4.2 4.15 4.16 4.17 4.18 4.3 4.5 4.4 4.6 4.8 4.9 4.10 4
   await shot('4.7');
   await p.click('Set 1 reps');
   await p.click({ sel: '[role=group] button', text: '8' });
+  await p.click('Done with this box'); // effort is on, so an rir box follows reps
   await p.click('Done: complete');
   await p.click('Close keypad');
 
@@ -976,8 +985,8 @@ scene('sample', '7.13 7.16 7.18 7.17 7.19 7.12 7.14 3.6 7.15', async ({ p, go, s
   await shot('7.17');
   await p.click('Cancel');
   // A goal set 10 weeks ago at a pace the lift didn't keep.
-  await p.eval(addGoal({ exerciseId: 'ex-lat-pulldown', weight: 230, reps: 5, by: NOW.getTime() + 56 * 864e5, startE1rm: 180, startedAt: NOW.getTime() - 70 * 864e5, startRate: 3.5 }));
-  await p.eval(addGoal({ exerciseId: 'ex-leg-curl', weight: 200, reps: 8, startE1rm: 190, startedAt: NOW.getTime() - 30 * 864e5, startRate: 1.5 }));
+  await p.eval(addGoal({ exerciseId: 'ex-lat-pulldown', weight: 230, reps: 5, by: NOW.getTime() + 56 * 864e5, startE1rm: 180, startedAt: NOW.getTime() - 70 * 864e5, startRate: 3.5, createdAt: NOW.getTime() - 2000 }));
+  await p.eval(addGoal({ exerciseId: 'ex-leg-curl', weight: 200, reps: 8, startE1rm: 190, startedAt: NOW.getTime() - 30 * 864e5, startRate: 1.5, createdAt: NOW.getTime() - 1000 }));
   await go('/progress');
   await p.click('Goals');
   await p.click({ sel: 'button', text: 'Lat Pulldown', start: true });
@@ -1203,12 +1212,21 @@ const STRONG_CSV = `Date,Workout Name,Duration,Exercise Name,Set Order,Weight,Re
 
 // ───────────────────────────── runner
 
+/** Vite's output is kept; if the server dies mid-run, the next scene fails with its last lines. */
+const serverLog: Record<number, string> = {};
+const serverDied: Record<number, string> = {};
 function startServer(port: number, testMode: boolean): ChildProcess {
-  return spawn(process.execPath, [join(root, 'node_modules/vite/bin/vite.js'), '--port', String(port), '--strictPort'], {
+  const proc = spawn(process.execPath, [join(root, 'node_modules/vite/bin/vite.js'), '--port', String(port), '--strictPort'], {
     cwd: root,
     env: { ...process.env, VITE_TEST_MODE: testMode ? 'true' : 'false' },
-    stdio: 'ignore',
+    stdio: ['ignore', 'pipe', 'pipe'],
   });
+  serverLog[port] = '';
+  const keep = (d: Buffer) => (serverLog[port] = (serverLog[port] + d).slice(-4000));
+  proc.stdout!.on('data', keep);
+  proc.stderr!.on('data', keep);
+  proc.on('exit', (code, signal) => (serverDied[port] = `dev server on ${port} exited (${code ?? signal})\n${serverLog[port].trim().split('\n').slice(-15).join('\n')}`));
+  return proc;
 }
 
 async function waitFor(url: string) {
@@ -1260,79 +1278,199 @@ function writeCameraFrame(path: string, code = '5012345678901') {
   writeFileSync(path, Buffer.concat([Buffer.from(`YUV4MPEG2 W${W} H${H} F30:1 Ip A1:1 C420jpeg\nFRAME\n`), y, u, v]));
 }
 
+// ───────────────────────────── capture and compare
+
+type Result = { id: string; status: 'same' | 'changed' | 'new'; ratio?: number; unstable?: boolean };
+type Failure = { scene: string; error: string; missed: string[]; shot?: string };
+
+/**
+ * Wait until the screen stops moving: fonts loaded, CSS/Web animations done, then two
+ * captures in a row with identical pixels. Returns the last capture and the regions of
+ * elements marked `data-volatile` (running clocks, sizes that load late), which are never compared.
+ */
+async function settle(p: Page): Promise<{ png: Buffer; unstable: boolean; ignore: Rect[] }> {
+  const volatile = () =>
+    p.eval<Rect[]>(`[...document.querySelectorAll('[data-volatile]')].map((e) => { const r = e.getBoundingClientRect(), k = devicePixelRatio; return { x: r.left * k - 2, y: r.top * k - 2, w: r.width * k + 4, h: r.height * k + 4 }; })`);
+  await p.eval(`(async () => {
+    await document.fonts.ready;
+    const until = Date.now() + 1500;
+    while (Date.now() < until && document.getAnimations().some((a) => a.playState === 'running' && a.effect?.getComputedTiming().iterations !== Infinity)) await new Promise((r) => setTimeout(r, 50));
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  })()`);
+  let png = await p.capture();
+  let img = decodePng(png);
+  for (let i = 0; i < 12; i++) {
+    await sleep(120);
+    const next = await p.capture();
+    const nextImg = decodePng(next);
+    const ignore = await volatile();
+    const same = diffImages(img, nextImg, 0, ignore).changed === 0;
+    png = next;
+    img = nextImg;
+    if (same) return { png, unstable: false, ignore };
+  }
+  return { png, unstable: true, ignore: await volatile() };
+}
+
+/** Compare a capture with design/screens/<id>.png; write it (unless checking) and the report images. */
+function record(id: string, png: Buffer, unstable: boolean, ignore: Rect[], opts: { check: boolean; force: boolean }): Result {
+  const path = join(OUT, `${id}.png`);
+  const write = () => !opts.check && writeFileSync(path, png);
+  if (!existsSync(path)) {
+    write();
+    writeFileSync(join(REPORT, `${id}.after.png`), png);
+    return { id, status: 'new', unstable };
+  }
+  const old = readFileSync(path);
+  const d = diffImages(decodePng(old), decodePng(png), 8, ignore);
+  if (d.changed === 0) {
+    if (opts.force) write();
+    return { id, status: 'same', unstable };
+  }
+  writeFileSync(join(REPORT, `${id}.before.png`), old);
+  writeFileSync(join(REPORT, `${id}.after.png`), png);
+  writeFileSync(join(REPORT, `${id}.diff.png`), encodePng(d.image));
+  write();
+  return { id, status: 'changed', ratio: d.ratio, unstable };
+}
+
 async function main() {
-  const filters = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  const opts = { check: args.includes('--check'), force: args.includes('--force') };
+  const filters = args.filter((a) => !a.startsWith('--'));
   const wanted = (id: string) => !filters.length || filters.some((f) => id === f || id.startsWith(f.endsWith('.') ? f : `${f}.`) || id.startsWith(f + '.'));
   const scenes = SCENES.filter((s) => s.ids.some(wanted));
   mkdirSync(OUT, { recursive: true });
+  rmSync(REPORT, { recursive: true, force: true });
+  mkdirSync(REPORT, { recursive: true });
   const scratch = mkdtempSync(join(tmpdir(), 'og-screens-'));
   const camera = join(scratch, 'camera.y4m');
   writeCameraFrame(camera);
   const ports = { sample: 5180, empty: 5181 };
   const servers = [startServer(ports.sample, true), startServer(ports.empty, false)];
-  let failed = 0;
+  for (const sig of ['SIGINT', 'SIGTERM'] as const)
+    process.on(sig, () => {
+      servers.forEach((s) => s.kill());
+      process.exit(130);
+    });
+  const results: Result[] = [];
+  const failures: Failure[] = [];
+  const started = Date.now();
   try {
     await Promise.all(Object.values(ports).map((port) => waitFor(`http://localhost:${port}/`)));
     for (const s of scenes) {
       const b = await Browser.launch({ camera });
+      const shotIds: string[] = [];
+      let p: Page | undefined;
       try {
-        const p = await b.newPage();
-        await p.viewport(390, 844, 2);
-        await p.send('Emulation.setUserAgentOverride', { userAgent: IPHONE, platform: 'iPhone' });
-        await p.fixClock(s.clock ?? NOW);
+        p = await b.newPage();
+        const page = p;
+        await page.viewport(390, 844, 2);
+        await page.send('Emulation.setUserAgentOverride', { userAgent: IPHONE, platform: 'iPhone' });
+        await page.fixClock(s.clock ?? NOW);
+        // A blinking caret is the one thing that differs run to run in a focused field.
+        await page.beforeLoad(`addEventListener('DOMContentLoaded', () => document.head.append(Object.assign(document.createElement('style'), { textContent: '*{caret-color:transparent!important}' })))`);
         const base = `http://localhost:${ports[s.server]}/`;
-        await p.goto(base);
-        await p.find({ sel: 'nav, h1' }, 20000); // seeded and rendered
+        if (serverDied[ports[s.server]]) throw new Error(serverDied[ports[s.server]]);
+        await page.goto(base);
+        await page.find({ sel: '#root nav, #root h1' }, 20000); // seeded and rendered (not Chrome's error page)
         // Captures show the default effort mode (RIR) unless a scene changes it.
-        if (s.server === 'sample') await p.eval(`__og.db.settings.update('settings', { effort: 'rir' })`);
+        if (s.server === 'sample') await page.eval(`__og.db.settings.update('settings', { effort: 'rir' })`);
+        const take = async (id: string) => {
+          const { png, unstable, ignore } = await settle(page);
+          const r = record(id, png, unstable, ignore, opts);
+          results.push(r);
+          shotIds.push(id);
+          const note = r.status === 'changed' ? `changed ${(r.ratio! * 100).toFixed(2)}%` : r.status;
+          console.log(`  ${id.padEnd(7)} ${note}${unstable ? ' (never settled)' : ''}`);
+        };
         const ctx: Ctx = {
-          p,
+          p: page,
           scratch,
           go: async (route) => {
-            await p.eval(`location.hash = ${JSON.stringify('#' + route)}`);
+            await page.eval(`location.hash = ${JSON.stringify('#' + route)}`);
             await sleep(700);
           },
           dismiss: async () => {
-            await p.tap(195, 30);
+            await page.tap(195, 30);
             await sleep(450);
           },
           scrollTo: async (text) => {
-            await p.find(text);
-            await p.eval(`[...document.querySelectorAll('[aria-label], button')].reverse().find((e) => (e.getAttribute('aria-label') || e.textContent.trim()) === ${JSON.stringify(text)})?.scrollIntoView({ block: 'start' })`);
+            await page.find(text);
+            await page.eval(`[...document.querySelectorAll('[aria-label], button')].reverse().find((e) => (e.getAttribute('aria-label') || e.textContent.trim()) === ${JSON.stringify(text)})?.scrollIntoView({ block: 'start' })`);
             await sleep(400);
           },
-          shot: async (id) => {
-            await sleep(450); // let transitions settle
-            await p.screenshot(join(OUT, `${id}.png`));
-            console.log(`  ${id}`);
-          },
+          shot: take,
           shotTall: async (id) => {
-            await sleep(450);
-            const h = await p.eval<number>(`(() => { const s = document.querySelector('.scroll-y'); return s ? s.scrollHeight + s.getBoundingClientRect().top : 844; })()`);
-            await p.viewport(390, Math.ceil(h), 2);
-            await sleep(450);
-            await p.screenshot(join(OUT, `${id}.png`));
-            await p.viewport(390, 844, 2);
-            console.log(`  ${id}`);
+            const h = await page.eval<number>(`(() => { const s = document.querySelector('.scroll-y'); return s ? s.scrollHeight + s.getBoundingClientRect().top : 844; })()`);
+            await page.viewport(390, Math.ceil(h), 2);
+            await take(id);
+            await page.viewport(390, 844, 2);
           },
         };
         console.log(`scene ${s.ids.join(' ')}`);
         await s.run(ctx);
       } catch (e) {
-        failed++;
-        console.error(`  FAILED: ${(e as Error).message}`);
+        const error = (e as Error).message;
+        const f: Failure = { scene: s.ids.join(' '), error, missed: s.ids.filter((id) => !shotIds.includes(id)) };
+        try {
+          if (p) {
+            f.shot = `FAILED-${s.ids[0]}.png`;
+            writeFileSync(join(REPORT, f.shot), await p.capture());
+          }
+        } catch {
+          /* the page is gone */
+        }
+        failures.push(f);
+        console.error(`  FAILED: ${error}\n  not captured: ${f.missed.join(' ')}`);
       } finally {
         await b.close();
       }
     }
   } finally {
-    servers.forEach((s) => s.kill());
+    servers.forEach((s) => s.removeAllListeners('exit').kill());
   }
-  writeStoryboard();
-  if (failed) {
-    console.error(`${failed} scene(s) failed`);
-    process.exit(1);
-  }
+
+  // Catalog and scenes should name the same IDs.
+  const catalogIds = new Set(CATALOG.flatMap((s) => s.screens.map(([id]) => id)));
+  const sceneIds = new Set(SCENES.flatMap((s) => s.ids));
+  const warnings = [
+    ...[...sceneIds].filter((id) => !catalogIds.has(id)).map((id) => `${id} is captured but has no catalog entry`),
+    ...[...catalogIds].filter((id) => !sceneIds.has(id)).map((id) => `${id} is in the catalog but no scene captures it`),
+  ];
+  // A scene captures in order; IDs it lists but never shot mean the scene and its list disagree.
+  for (const id of new Set(scenes.flatMap((s) => s.ids))) if (!results.some((r) => r.id === id) && !failures.some((f) => f.missed.includes(id))) warnings.push(`${id} is listed by a scene that never shot it`);
+
+  if (!opts.check) writeStoryboard();
+  writeReport(results, failures, warnings, opts.check);
+  const count = (st: Result['status']) => results.filter((r) => r.status === st).length;
+  const unstable = results.filter((r) => r.unstable).map((r) => r.id);
+  console.log(`\n${results.length} captured in ${Math.round((Date.now() - started) / 1000)} s: ${count('same')} unchanged, ${count('changed')} changed, ${count('new')} new, ${failures.length} scene(s) failed`);
+  if (unstable.length) console.log(`never settled (animating?): ${unstable.join(' ')}`);
+  warnings.forEach((w) => console.warn(`warning: ${w}`));
+  if (count('changed') + count('new') + failures.length) console.log(`report: ${join(REPORT, 'index.html')}`);
+  if (failures.length || (opts.check && count('changed') + count('new'))) process.exit(1);
+}
+
+function writeReport(results: Result[], failures: Failure[], warnings: string[], check: boolean) {
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const titles = new Map(CATALOG.flatMap((s) => s.screens.map(([id, title]) => [id, title] as const)));
+  const img = (src: string, label: string) => `<figure><img src="${src}" loading="lazy"><figcaption>${label}</figcaption></figure>`;
+  const changed = results.filter((r) => r.status === 'changed').sort((a, b) => b.ratio! - a.ratio!);
+  const added = results.filter((r) => r.status === 'new');
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Screens report</title><style>
+*{box-sizing:border-box;margin:0}body{background:#000;color:#fff;font:15px/1.45 -apple-system,'Helvetica Neue',Arial,sans-serif;padding:32px;max-width:1400px;margin:auto}
+h1{font-size:28px}h2{font-size:20px;margin:40px 0 12px}p,li{color:#a1a1aa}.row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:12px 0 32px}
+.key{color:#71717a;font-size:13px}h3{font-size:16px}h3 em{color:#007aff;font-style:normal;margin-right:6px}h3 small{color:#ff9f0a;margin-left:8px}figure img{width:100%;border:1px solid #222;border-radius:12px;display:block}figcaption{color:#71717a;font-size:13px;margin-top:4px}pre{color:#ff453a;white-space:pre-wrap}
+</style></head><body>
+<h1>Screens report</h1><p>${new Date().toLocaleString()} · ${results.length} captured · ${changed.length} changed · ${added.length} new · ${failures.length} failed${check ? ' · check mode: design/ untouched' : ''}</p><p class="key">Diff: red = changed, blue = ignored (data-volatile: clocks, late sizes), gray = same.</p>
+${warnings.length ? `<h2>Warnings</h2><ul>${warnings.map((w) => `<li>${esc(w)}</li>`).join('')}</ul>` : ''}
+${failures.length ? `<h2>Failed scenes</h2>${failures.map((f) => `<h3>${esc(f.scene)}</h3><pre>${esc(f.error)}</pre><p>Not captured: ${f.missed.join(' ')}</p>${f.shot ? `<div class="row">${img(f.shot, 'screen when it failed')}</div>` : ''}`).join('')}` : ''}
+${changed.length ? `<h2>Changed</h2>${changed.map((r) => `<h3><em>${r.id}</em>${esc(titles.get(r.id) ?? '')} · ${(r.ratio! * 100).toFixed(2)}% of pixels${r.unstable ? '<small>never settled</small>' : ''}</h3><div class="row">${img(`${r.id}.before.png`, 'before (committed)')}${img(`${r.id}.after.png`, 'after')}${img(`${r.id}.diff.png`, 'diff')}</div>`).join('')}` : ''}
+${added.length ? `<h2>New</h2><div class="row">${added.map((r) => img(`${r.id}.after.png`, `${r.id} ${esc(titles.get(r.id) ?? '')}`)).join('')}</div>` : ''}
+</body></html>
+`;
+  writeFileSync(join(REPORT, 'index.html'), html);
 }
 
 // ───────────────────────────── storyboard

@@ -25,3 +25,13 @@ npm-debug.log*
 # python (design/training-logic-reference.py)
 __pycache__/
 .cache/
+
+# npm run screens report (before / after / diff)
+.screens-report/
+
+# local scratch: exports, restores, one-off scripts (may hold personal data)
+output/
+
+# full-page screenshots of the design HTML docs (regenerate locally)
+design/proposals/*.png
+design/training-logic.png

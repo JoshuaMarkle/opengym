@@ -15,7 +15,8 @@
     "brand": "node scripts/brand.ts",
     "screens": "node scripts/screens.ts",
     "lint:design": "node scripts/lint-design.ts",
-    "foods": "node scripts/foods.ts"
+    "foods": "node scripts/foods.ts",
+    "screens:check": "node scripts/screens.ts --check"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -1,5 +1,5 @@
 import { db, TABLE_NAMES, type TableName } from '../db/db';
-import { ensureSeeded } from '../db/seed';
+import { ensureSeeded, seedExerciseRecords } from '../db/seed';
 import type { Exercise, ExerciseType, Folder, Food, FoodEntry, MealId, PlanSchedule, Routine, RoutineExercise, RoutineSet, Settings, Workout, WorkoutExercise, WorkoutSet } from '../db/types';
 import { isoDate } from '../lib/dates';
 import { uuid } from '../lib/id';
@@ -50,11 +50,33 @@ export async function dataCounts() {
   return counts();
 }
 
+/** Fields the app keeps in step with the seed on every launch, plus timestamps: not your edits. */
+const SEED_MANAGED = new Set(['createdAt', 'updatedAt', 'popularity', 'area']);
+
+const yourFields = (e: object) =>
+  JSON.stringify(
+    Object.entries(e)
+      .filter(([k, v]) => !SEED_MANAGED.has(k) && v !== undefined)
+      .sort(([a], [b]) => (a < b ? -1 : 1)),
+  );
+
+/**
+ * Built-in exercises you never touched are left out of a backup: restore puts any missing
+ * built-in back from the library (ensureSeeded). Anything you changed (archived, deleted,
+ * renamed, regrouped, bar weight, plate pad…) stays, so it comes back as you left it.
+ */
+export function stockBuiltIns(exercises: Exercise[]): Set<string> {
+  const seeds = new Map(seedExerciseRecords(0).map((e) => [e.id, yourFields(e)]));
+  return new Set(exercises.filter((e) => !e.isCustom && seeds.get(e.id) === yourFields(e)).map((e) => e.id));
+}
+
 /** Everything, as one JSON document (SPEC §4 Backup). */
 export async function buildBackup(): Promise<BackupFile> {
   return db.transaction('r', db.allTables, async () => {
     const tables = {} as Record<TableName, unknown[]>;
     for (const name of TABLE_NAMES) tables[name] = name === 'foods' ? (await db.foods.toArray()).filter(keepInBackup) : await db.table(name).toArray();
+    const stock = stockBuiltIns(tables.exercises as Exercise[]);
+    tables.exercises = (tables.exercises as Exercise[]).filter((e) => !stock.has(e.id));
     return {
       app: 'opengym',
       schemaVersion: SCHEMA_VERSION,
@@ -171,7 +193,8 @@ export async function importRoutinesFromBackup(backup: BackupFile): Promise<numb
   const routines = (backup.tables.routines as Routine[]).filter((r) => !r.deletedAt);
   const res = backup.tables.routineExercises as RoutineExercise[];
   const rsets = backup.tables.routineSets as RoutineSet[];
-  const bExercises = new Map((backup.tables.exercises as Exercise[]).map((e) => [e.id, e]));
+  // Built-ins you never changed aren't in the file; the library has them.
+  const bExercises = new Map([...seedExerciseRecords(), ...(backup.tables.exercises as Exercise[])].map((e) => [e.id, e]));
   return db.transaction('rw', [db.folders, db.routines, db.routineExercises, db.routineSets, db.exercises], async () => {
     const t = Date.now();
     const existingFolders = (await db.folders.toArray()).filter((f) => !f.deletedAt);

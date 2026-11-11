@@ -64,7 +64,9 @@ function ResumeBar() {
       <span className="flex min-w-0 items-center gap-2">
         <LiveDot />
         <b className="truncate text-body">{active.workout.name}</b>
-        <span className="flex-none text-footnote text-fg2">{fmtClock(now - active.workout.startedAt)} · in progress</span>
+        <span className="flex-none text-footnote text-fg2">
+          <span data-volatile>{fmtClock(now - active.workout.startedAt)}</span> · in progress
+        </span>
       </span>
       <em className="flex flex-none items-center gap-1 text-body font-bold text-accent not-italic">
         Resume

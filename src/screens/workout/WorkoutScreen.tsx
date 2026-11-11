@@ -1339,7 +1339,11 @@ function untickedMessage(labels: string[]): string {
 
 function Clock({ since }: { since: number }) {
   const now = useNow(1000);
-  return <span className="tabular-nums">{fmtClock(Math.max(0, now - since))}</span>;
+  return (
+    <span className="tabular-nums" data-volatile>
+      {fmtClock(Math.max(0, now - since))}
+    </span>
+  );
 }
 
 // ───────────────────────────── 5.4 workout options

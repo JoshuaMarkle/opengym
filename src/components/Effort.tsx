@@ -9,8 +9,7 @@ import { cx, Disc } from './ui';
 export type BadgeTone = 'logged' | 'active' | 'target' | 'auto' | 'add';
 
 /**
- * The effort badge on the lower right corner of a reps box (A2–A4), V2B in
- * design/proposals/rir-badge-variations-v2.html: a round badge, black (the page
+ * The effort badge on the lower right corner of a reps box (SPEC §12): a round badge, black (the page
  * colour) with two rings, a thin state ring and a cut-out ring in the colour under
  * it, floating on a soft shadow. `logged`: a saved rating, grey ring; on a done set
  * a faded blue fill in a full blue ring · `active`: the one being picked, blue ring

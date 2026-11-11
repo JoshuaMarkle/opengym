@@ -1,6 +1,6 @@
 # OpenGym design system
 
-The short, text version of `design/proposals/design-system.html` ("the design doc"). Read this before building UI. The HTML is the visual reference for people; section numbers (§1–§17) are the same in both, and code comments cite them as `design §9 Disc`. Where SPEC §8 and this file disagree about colors, type, sizes or glyphs, this file wins; SPEC's behaviour rules still apply.
+The design system ("the design doc"). Read this before building UI. Code comments cite its sections (§1–§17) as `design §9 Disc`; the gallery (screen 0.1) is the visual reference. Where SPEC §8 and this file disagree about colors, type, sizes or glyphs, this file wins; SPEC's behaviour rules still apply.
 
 Checked by `npm run lint:design` (runs in `npm run build`). The gallery at `#/dev/ui` (dev only, screen 0.1) renders every component below with its variants.
 

@@ -85,7 +85,11 @@ export function Settings() {
       <SectionLabel>Data · last backup {fmtAgo(settings.lastBackupAt)}</SectionLabel>
       <button type="button" disabled={busy} onClick={() => void backup()} className="flex min-h-[52px] w-full items-center justify-between gap-3 border-b border-line text-left text-input disabled:opacity-50">
         <span className="font-semibold text-accent">Back up now</span>
-        {size && <span className="text-fg2 tabular-nums">{size}</span>}
+        {size && (
+          <span className="text-fg2 tabular-nums" data-volatile>
+            {size}
+          </span>
+        )}
       </button>
       <Item label="Restore from backup" onClick={restore.pick} />
       <Item label="Import from Strong / Hevy" to="/settings/import" />

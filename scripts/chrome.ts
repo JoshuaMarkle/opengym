@@ -62,10 +62,20 @@ export class Browser {
     return b;
   }
 
-  send(method: string, params: object = {}, sessionId?: string): Promise<any> {
+  /** Every command times out (default 30 s), so a stuck page fails its scene instead of hanging the run. */
+  send(method: string, params: object = {}, sessionId?: string, timeout = 30000): Promise<any> {
     const id = this.nextId++;
     this.ws.send(JSON.stringify({ id, method, params, sessionId }));
-    return new Promise((resolve, reject) => this.pending.set(id, { resolve, reject }));
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.pending.delete(id);
+        reject(new Error(`${method} got no answer in ${timeout / 1000} s`));
+      }, timeout);
+      this.pending.set(id, {
+        resolve: (v: unknown) => (clearTimeout(timer), resolve(v)),
+        reject: (e: Error) => (clearTimeout(timer), reject(e)),
+      });
+    });
   }
 
   on(fn: (m: any) => void) {
@@ -100,6 +110,11 @@ export class Page {
     this.browser = browser;
     this.sessionId = sessionId;
     browser.on((m) => {
+      // A JS alert/confirm blocks the page and every command after it: dismiss it and say so.
+      if (m.sessionId === sessionId && m.method === 'Page.javascriptDialogOpening') {
+        console.error(`  dialog dismissed: ${m.params.type} "${m.params.message}"`);
+        void this.send('Page.handleJavaScriptDialog', { accept: false }).catch(() => {});
+      }
       if (m.sessionId === sessionId && m.method === 'Runtime.exceptionThrown') console.error('  page error:', m.params.exceptionDetails?.exception?.description ?? m.params.exceptionDetails?.text);
     });
   }
@@ -123,7 +138,7 @@ export class Page {
       });
     });
     await this.send('Page.navigate', { url });
-    await loaded;
+    await Promise.race([loaded, sleep(30000).then(() => Promise.reject(new Error(`${url} didn't load in 30 s`)))]);
   }
 
   /** Run an expression (or an async function body via `(async () => …)()`) and return its JSON value. */
@@ -133,9 +148,14 @@ export class Page {
     return r.result.value as T;
   }
 
-  async screenshot(path: string) {
+  /** The viewport as PNG bytes. */
+  async capture(): Promise<Buffer> {
     const { data } = await this.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
-    writeFileSync(path, Buffer.from(data, 'base64'));
+    return Buffer.from(data, 'base64');
+  }
+
+  async screenshot(path: string) {
+    writeFileSync(path, await this.capture());
   }
 
   private mouse(type: string, x: number, y: number, buttons = 1) {

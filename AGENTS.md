@@ -5,7 +5,7 @@ Offline-first lifting log PWA (React + TypeScript + Vite + Dexie + Tailwind). No
 ## Read first
 - `design/SPEC.md`: rules, data model, design principles. Code comments cite it as `SPEC §4`.
 - `design/storyboard.html` + `design/screens/<id>.png`: every screen, captured from the app. Comments cite screen IDs like `4.1`.
-- Training work (suggestions, trends, goals): `design/training-logic.html`. Comments cite it as `§9` or `training-logic §9`; it wins over `design/proposals/progressive-overload.html`.
+- Training work (suggestions, trends, goals): `design/training-logic.html`. Comments cite it as `§9` or `training-logic §9`.
 - `design/ROADMAP.md`: known bugs, friction points and what to build next.
 
 ## Commands

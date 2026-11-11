@@ -124,7 +124,7 @@ import {
 
 /**
  * 0.1 Component gallery (dev only, `#/dev/ui`): every shared component with its variants,
- * so the real thing can be compared with design/proposals/design-system.html.
+ * so the real thing can be compared with design/DESIGN.md.
  */
 export default function Gallery() {
   const navigate = useNavigate();

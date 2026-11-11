@@ -1,7 +1,7 @@
 /**
  * The OpenGym logo: the right half of a loaded barbell, drawn like the plate pad
  * (PlatePad.tsx) at 5× scale on a 1024 grid. A grey bar runs off the left edge,
- * then a collar, two 45s (the second centered) and a 10, all plates blue.
+ * then a collar and three equally thick blue plates, the last shorter.
  *
  * Single source for the in-app <LogoMark> and `npm run brand`, which writes the
  * SVGs in design/brand/logos and the icons in public/.
@@ -17,7 +17,7 @@ export const LOGO_RECTS: LogoRect[] = [
   { x: 272, y: 427, w: 7 * S, h: 34 * S, r: 10, part: 'bar' }, // collar
   plate(322, 24 * S, 124 * S), // 45
   plate(452, 24 * S, 124 * S), // 45, centered
-  plate(582, 13 * S, 82 * S), // 10
+  plate(582, 24 * S, 82 * S), // shorter plate, same thickness as the other two
 ];
 
 export const LOGO_COLORS = {

@@ -1,9 +1,10 @@
 import 'fake-indexeddb/auto';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { db } from '../db/db';
-import type { Food, FoodEntry, FoodTarget, SavedMeal } from '../db/types';
+import { ensureSeeded } from '../db/seed';
+import type { Exercise, Food, FoodEntry, FoodTarget, SavedMeal } from '../db/types';
 import { indexWords } from '../lib/nutrition';
-import { buildBackup, exportFoodCsv, readBackup, restoreBackup, SCHEMA_VERSION } from './backup';
+import { buildBackup, exportFoodCsv, importRoutinesFromBackup, readBackup, restoreBackup, SCHEMA_VERSION } from './backup';
 import { updateFoodSettings } from './food';
 import { getSettings } from './settings';
 
@@ -93,5 +94,42 @@ describe('backup schemaVersion 4: food', () => {
     expect(lines).toHaveLength(3);
     expect(lines[1].startsWith('2026-11-04,Snacks,Quick add,,Quick add,,300,')).toBe(true);
     expect(lines[2].startsWith('2026-11-05,Lunch,Whey shake,,30 g,30,120,')).toBe(true);
+  });
+});
+
+describe('backup: built-in exercises', () => {
+  it('leaves out built-ins you never changed and restores them from the library', async () => {
+    await ensureSeeded();
+    const library = await db.exercises.count();
+    const mine: Exercise = { ...stamp, id: 'my-ex', name: 'Forearm Pushdown', type: 'weight', muscle: 'arms', equipment: 'cable', isCustom: true, archived: false };
+    await db.exercises.put(mine);
+    await db.exercises.update('ex-bench-press', { barLb: 35 });
+    await db.exercises.update('ex-leg-press', { archived: true });
+    await db.exercises.update('ex-hip-thrust', { deletedAt: t });
+    // Timestamps and seed-managed fields alone don't count as a change.
+    await db.exercises.update('ex-leg-curl', { updatedAt: t + 1, popularity: 1 });
+
+    const b = await buildBackup();
+    const ids = (b.tables.exercises as Exercise[]).map((e) => e.id).sort();
+    expect(ids).toEqual(['ex-bench-press', 'ex-hip-thrust', 'ex-leg-press', 'my-ex']);
+
+    await restoreBackup(await readBackup(new File([JSON.stringify(b)], 'b.json')));
+    expect(await db.exercises.count()).toBe(library + 1);
+    expect((await db.exercises.get('ex-bench-press'))?.barLb).toBe(35);
+    expect((await db.exercises.get('ex-leg-press'))?.archived).toBe(true);
+    expect((await db.exercises.get('ex-hip-thrust'))?.deletedAt).toBe(t);
+    expect((await db.exercises.get('ex-leg-curl'))?.name).toBe('Leg Curl');
+    expect(await db.exercises.get('my-ex')).toMatchObject({ name: 'Forearm Pushdown' });
+  });
+
+  it('a routine using an unchanged built-in still imports from a trimmed backup', async () => {
+    await ensureSeeded();
+    await db.routines.put({ ...stamp, id: 'r1', name: 'Pull', order: 0 });
+    await db.routineExercises.put({ ...stamp, id: 're1', routineId: 'r1', exerciseId: 'ex-lat-pulldown', order: 0 });
+    const b = await buildBackup();
+    expect((b.tables.exercises as Exercise[]).some((e) => e.id === 'ex-lat-pulldown')).toBe(false);
+    await db.exercises.delete('ex-lat-pulldown');
+    expect(await importRoutinesFromBackup(b)).toBe(1);
+    expect(await db.routineExercises.where('exerciseId').equals('ex-lat-pulldown').count()).toBe(2);
   });
 });

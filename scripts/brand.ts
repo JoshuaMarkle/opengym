@@ -74,7 +74,7 @@ td i{display:inline-block;width:18px;height:18px;border-radius:4px;vertical-alig
   <div><img src="logos/opengym-icon-dark.svg" width="16"><div class="cap">16</div></div>
   <div style="margin-left:24px"><img src="logos/opengym-wordmark-dark.svg" width="320"><div class="cap">Wordmark</div></div>
 </div>
-<p style="margin-top:16px;max-width:820px">The right half of a loaded bar, drawn exactly like the plate pad at 5× scale: grey bar running off the left edge, a collar, two 45s (the second centered) and a 10. Plates are always accent blue. Icons are full-bleed squares; iOS and Android round them.</p>
+<p style="margin-top:16px;max-width:820px">The right half of a loaded bar, based on the plate pad at 5× scale: grey bar running off the left edge, a collar and three equally thick plates, the last shorter. Plates are always accent blue. Icons are full-bleed squares; iOS and Android round them.</p>
 <div class="cols">
 <div><h2>Neutrals</h2><table><tr><th>Token</th><th>Dark</th><th>Light</th></tr>
 ${dark.map(([k, v]) => `<tr><td>--og-${k}</td><td>${swatch(v)}${v}</td><td>${swatch(light.get(k) ?? '')}${light.get(k) ?? ''}</td></tr>`).join('')}
