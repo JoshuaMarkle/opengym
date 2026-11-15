@@ -157,8 +157,7 @@ export function AddFood() {
           }
         />
       }
-    >
-      <div className="mt-4">
+      footer={<div className="border-t border-line bg-bg px-4 pb-safe">      <div className="mt-4">
         <SearchField
           value={query}
           onChange={setQuery}
@@ -180,7 +179,7 @@ export function AddFood() {
           <ShortcutTile icon={<BoltGlyph size={20} />} onClick={() => navigate(`/food/quick?day=${day}&meal=${meal}`)}>
             Quick add
           </ShortcutTile>
-          <ShortcutTile icon={<StackGlyph size={20} />} onClick={() => setTab('meals')}>
+          <ShortcutTile icon={<StackGlyph size={20} />} onClick={() => { setTab('meals'); setParams((p) => (p.set('tab', 'meals'), p), { replace: true, state: location.state }); }}>
             Meals
           </ShortcutTile>
           <ShortcutTile icon={<PencilGlyph size={20} />} onClick={() => navigate(`/food/new?day=${day}&meal=${meal}`)}>
@@ -189,6 +188,8 @@ export function AddFood() {
         </div>
       )}
 
+</div>}
+    >
       {!q && (
         <Chips
           className="mt-3"
@@ -318,7 +319,7 @@ function MealsTab({ day, meal, batches, onTakeBack }: { day: string; meal: MealI
         />
       )}
       <Row chevron onClick={() => navigate(`/food/copy-day?day=${day}`)}>
-        <span className="flex-1 text-body-lg">All of a past day</span>
+        <span className="flex-1 text-body-lg">Choose a past day or meal</span>
       </Row>
     </>
   );

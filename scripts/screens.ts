@@ -112,7 +112,7 @@ export const CATALOG: Section[] = [
       ['3.1', 'Home', 'This week as a strip (blue = trained, ring = today); with a scheduled plan, the plan\'s week instead (3.4). Then the active folder, longest-ago first: ▶ starts a routine, tapping the name opens it. Once Food is set up, today\'s calories and macros sit under the routines with + Log food.'],
       ['3.2', 'Home, workout running', 'An unfinished workout leads Home: timer, where you were, Resume.'],
       ['3.3', 'Resume bar', 'On every other tab while a workout runs, one tap back to your sets.'],
-      ['3.4', 'Home, scheduled', 'With a scheduled active folder, Home follows the plan: a blue Today label and compact Start pill, upcoming workouts without rest rows, and Blank workout at the bottom.'],
+      ['3.4', 'Home, scheduled', 'With a scheduled active folder, Home follows the plan: a centered blue Today label and date, matching rest row and compact Start pill, upcoming workouts without rest rows, and Blank workout at the bottom.'],
       ['3.5', 'Missed a day', 'A quiet note the day after a missed workout: do it today or skip it. Never shown for "Wait for me" cycles.'],
       ['3.7', 'Home, rest today', 'Rest today always has its own row, even beside a missed-workout note; future rest rows are omitted.'],
       ['3.6', 'Home: Lately', 'Shared SVG check for completed goals. At most one goal line and one trend line, only when something changed, each shown on one day. Priority: goal done, goal behind, a focus lift turning Climbing or Slipping. Milestones never show here.'],
@@ -263,16 +263,16 @@ export const CATALOG: Section[] = [
       ['10.10', 'Targets', 'Calories (type a number, or Recalculate), the L ring, grams per macro, then the diets. Lifter: protein 1 g per lb, fat 27%, rest carbs.'],
       ['10.11', 'Targets: another diet', 'Picking a diet applies from today; past days keep the target they had. The active diet moves to the top.'],
       ['10.12', 'Targets: custom', '+ adds 2% to a macro and takes 1% from each of the others; no macro goes under 5%.'],
-      ['10.14', 'Add food', 'The meal is the title (tap to switch). Search with the barcode, four shortcuts, then Usually at dinner (3+ times in 30 days) and Recent. + logs your last amount at once and turns into a check; the check takes it back off.'],
+      ['10.14', 'Add food', 'The meal is the title (tap to switch). Bottom-docked search with barcode and four shortcuts; filter chips above Usually at dinner (3+ times in 30 days) and Recent. + logs your last amount at once and turns into a check; the check takes it back off.'],
       ['10.15', 'Searching', 'Your foods and foods you log first, then the built-in USDA database (about 13,000 foods, offline), short names first. Open Food Facts results follow under Online when there are fewer than 8.'],
-      ['10.16', 'Amount', 'Tapping a row opens the amount with the keypad up: g · serv · oz, ± 10 g / ¼ / 0.5 oz, and ½. The ring follows every key; ✓ Log logs it and goes back with the row checked.'],
+      ['10.16', 'Amount', 'Tapping a row opens the amount with the keypad up: serv · cup · g · oz, ± 10 g / ¼ / 0.5 oz, and ½. The ring follows every key; ✓ Log logs it and goes back with the row checked.'],
       ['10.17', 'A logged food', 'Tap a food on the day page: the same screen with Save, Star and •••. Change the amount or move it to another meal. Every nutrient shows % of your own target; missing values are —.'],
       ['10.18', 'Meal sheet', 'The four meals. Fixed: they can\'t be renamed or reordered.'],
       ['10.19', 'New food', 'A nutrition label as rows: name, brand, the serving, then calories and macros per serving as the label prints them. More nutrients holds the rest. Stored per 100 g; a quiet note shows when calories are far from 4·P + 4·C + 9·F.'],
       ['10.20', 'Quick add', 'Calories plus optional protein, carbs and fat, logged straight into the meal. It never joins your foods.'],
       ['10.21', 'Saved meal', 'Built like the routine builder: the name, the ring, the foods with a delete disc, amount and drag handle, and Add food.'],
       ['10.22', 'Add food: Meals', '+ logs a whole saved meal into this meal, one entry per food, and turns into a check that takes it back off. Copy a day sits underneath.'],
-      ['10.23', 'Copy a day', 'The last two weeks of logged days. + copies a whole day into the same meals, with one Undo.'],
+      ['10.23', 'Copy a day', 'The last two weeks of logged days. + copies a whole day; meal badges open an editable saved-meal draft.'],
       ['10.24', 'Meal options', 'The ••• on an open meal (and long-press on its row): Save as meal, Copy to today, Clear meal.'],
       ['10.25', 'Day nutrients', 'Every tracked nutrient for the day against your target: amount / target, a 4 px bar and the %. Macros in their colors; the rest neutral, orange only past a limit or upper limit, with "over". A floor reached gets a check.'],
       ['10.26', 'A nutrient\'s top foods', 'Where the day\'s sodium came from: the foods that gave the most, with their share.'],
@@ -282,6 +282,8 @@ export const CATALOG: Section[] = [
       ['10.30', 'Scan result', 'Your own food for a barcode wins, then Open Food Facts. Nothing is logged until Log; the amount box opens the full amount screen. Wrong food? opens New food filled in from the scan, with the barcode.'],
       ['10.31', 'Settings: Food', 'Targets, and where foods come from. Look up foods online turns Open Food Facts search and barcode lookups on or off; the built-in USDA foods always work offline.'],
       ['10.32', 'Week', 'Average per day, days on target (90–103%) and days protein was hit, counting only past days with food. Stacked macro bars against the dashed target, an orange dot over days that went over; averages against target; then the seven days. Tap a bar or a day to open it.'],
+      ['10.33', 'Select foods', 'Select or hold foods, then make an editable saved meal; handles reorder within the meal.'],
+      ['10.34', 'Normalized cups', 'Cup amounts use the measured density and normalize multi-cup servings to one cup.'],
       ['10.13', 'Nutrient targets', 'Every micronutrient from the US Dietary Reference Intakes for your sex and age. Limits say so; type your own number and Reset brings the DRI back.'],
     ],
   },
@@ -1496,5 +1498,26 @@ ${s.screens.map(([id, title, cap]) => `<figure id="${id}"><img src="screens/${id
 `;
   writeFileSync(join(root, 'design/storyboard.html'), html);
 }
+
+scene('sample', '10.33 10.34', async ({ p, go, shot }) => {
+  await go('/food');
+  await foodReady(p);
+  await p.click('Lunch');
+  await p.click('Select foods');
+  await p.click('Chicken breast, grilled');
+  await p.click('White rice, cooked');
+  await shot('10.33');
+  await p.click('Make meal');
+  if (!await p.eval<boolean>(`document.body.innerText.includes('Chicken breast, grilled')`)) throw new Error('Selected food missing from meal draft');
+  await p.eval(`(async () => { await __og.db.foods.put({ id: 'cup-fixture', name: 'Measured cereal', source: 'custom', basis: 'g', per100: { kcal: 370, p: 8, c: 80, f: 2 }, servings: [{ label: '1.333 cups', grams: 40 }], createdAt: Date.now(), updatedAt: Date.now() }); })()`);
+  await go('/food/item/cup-fixture?day=2026-11-05&meal=breakfast');
+  await p.click({ sel: 'button', text: 'cup', start: true });
+  for (let i = 0; i < 5; i++) await p.click('Backspace');
+  await padKeys(p, '1.5');
+  await shot('10.34');
+  await p.click('Log this food');
+  const grams = await p.eval<number>(`(async () => (await __og.db.foodEntries.where('foodId').equals('cup-fixture').first())?.grams)()`);
+  if (!Number.isFinite(grams) || Math.abs(grams - 1.5 * 40 / 1.333) > 0.01) throw new Error('Cup entry did not normalize the serving');
+});
 
 await main();

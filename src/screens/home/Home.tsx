@@ -216,7 +216,7 @@ function ScheduledList({ folder, view, runningId }: { folder: Folder; view: Plan
       <SectionLabel action={<LabelAction chevron onClick={() => navigate('/calendar')}>Calendar</LabelAction>}>{`${folder.name} · This week`}</SectionLabel>
       {items.map((it) =>
         it.kind === 'rest' ? (
-          <HomeRestRow key={it.days[0].key} label={restLabel(it.days)} isToday={it.days[0].key === today} onHold={() => setSheetDay(it.days[0])} />
+          <HomeRestRow key={it.days[0].key} label={restLabel(it.days)} date={new Date(it.days[0].ts).getDate()} isToday={it.days[0].key === today} onHold={() => setSheetDay(it.days[0])} />
         ) : (
           <HomeDayRow
             key={it.day.key}
@@ -274,7 +274,7 @@ function HomeDayRow({
   return (
     <div className="flex min-h-15 items-center gap-3 border-b border-line">
       <button type="button" {...hold} onClick={onOpen} className="no-select flex min-w-0 flex-1 items-center gap-3 py-2 text-left active:opacity-70">
-        <span className={cx('w-[52px] flex-none text-center', day.key === today ? 'text-accent' : 'text-fg2')}>
+        <span className={cx('w-15 flex-none text-center', day.key === today ? 'text-accent' : 'text-fg2')}>
           <small className="block text-caps">{dayLabel(day, today, false)}</small>
           {/* PH3.1: routine dates stay bright, with today in blue. */}
           <b className={cx('text-title3', day.key === today ? 'text-accent' : 'text-fg')}>{new Date(day.ts).getDate()}</b>
@@ -295,12 +295,12 @@ function HomeDayRow({
   );
 }
 
-function HomeRestRow({ label, isToday, onHold }: { label: string; isToday: boolean; onHold: () => void }) {
+function HomeRestRow({ label, date, isToday, onHold }: { label: string; date: number; isToday: boolean; onHold: () => void }) {
   const hold = useLongPress(onHold);
   return (
-    <div {...hold} className="no-select flex min-h-11 items-center gap-3 border-b border-line text-footnote text-fg2">
+    <div {...hold} className="no-select flex min-h-15 items-center gap-3 border-b border-line text-footnote text-fg2">
       {isToday ? (
-        <span className="flex-1 text-accent">Rest today</span>
+        <><span className="w-15 flex-none text-center text-accent"><small className="block text-caps">Today</small><b className="text-title3">{date}</b></span><span className="flex-1 text-input font-semibold text-fg">Rest</span></>
       ) : (
         <>
           <span className="min-w-[52px] flex-none whitespace-nowrap">{label}</span>

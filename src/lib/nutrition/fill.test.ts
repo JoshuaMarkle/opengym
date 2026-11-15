@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { closestFoods, fillMissing, needsFill, similarity } from './fill';
+import { closestFoods, fillFromSimilar, fillMissing, needsFill, similarity } from './fill';
 
 describe('fill in missing nutrients (nutrition-plan §3.14)', () => {
   it('finds similar USDA names', () => {
@@ -21,7 +21,7 @@ describe('fill in missing nutrients (nutrition-plan §3.14)', () => {
 
   it('offers filling for packaged and custom foods missing most micronutrients', () => {
     expect(needsFill({ source: 'off', per100: { kcal: 1 } })).toBe(true);
-    expect(needsFill({ source: 'usda', per100: { kcal: 1 } })).toBe(false);
+    expect(needsFill({ source: 'usda', per100: { kcal: 1 } })).toBe(true);
   });
 
   it('weighs rare words over common ones, and full matches over partial ones', () => {
@@ -31,4 +31,14 @@ describe('fill in missing nutrients (nutrition-plan §3.14)', () => {
     const b = closestFoods('Chicken burrito bowl', [{ name: 'Burrito bowl, NFS' }, { name: 'Burrito bowl, chicken' }, { name: 'Chicken, roasted' }]);
     expect(b[0].name).toBe('Burrito bowl, chicken');
   });
+});
+
+it('fills remaining gaps from similar foods without replacing labels or using unrelated foods', () => {
+ const r = fillFromSimilar({ per100: { calcium: 0, kcal: 90 } }, { name: 'Greek yogurt', per100: { b12: 1 } }, [
+  { name: 'Greek yogurt, plain', per100: { calcium: 200, potassium: 140 } },
+  { name: 'Beef liver', per100: { iron: 20 } },
+ ]);
+ expect(r.per100).toEqual({ calcium: 0, kcal: 90, b12: 1, potassium: 140 });
+ expect(r.estimated).toEqual(expect.arrayContaining(['b12', 'potassium']));
+ expect(r.per100.iron).toBeUndefined();
 });

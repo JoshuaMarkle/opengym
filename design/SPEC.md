@@ -243,3 +243,9 @@ Logging what you eat against your own targets: calories, protein, carbs, fat and
 - **Week (10.32).** Mon–Sun or Sun–Sat per Week starts on. Average per day, days on target (90–103%) and days protein was hit count only past days with food. Stacked macro bars against the dashed target, averages against target, and the seven days.
 - **Home (3.1).** Once Food is set up, today's calories and macros sit under the routines with "+ Log food".
 
+
+### Food logging refinements (November 2026)
+
+Add food keeps filter tabs above results and search/shortcuts docked below. Cup entry is available when a measured cup portion supplies a conversion; fractional and multi-cup portions normalize to one cup, without guessing density. Units are ordered serving, cup, grams, ounces.
+
+Food day rows support selection by hold or Select foods, then Make meal opens an editable draft. Drag handles support touch and keyboard ordering within a meal. Empty future meal folders stay collapsed. Past-day copying also offers meal badges to create an editable saved meal. Missing nutrient filling tries similar foods for gaps left by the chosen source, keeps label values, marks estimates, and leaves unavailable values unknown. Logged snapshots remain unchanged.

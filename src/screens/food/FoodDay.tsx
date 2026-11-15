@@ -1,11 +1,12 @@
+import { SortableRows, SortableRow } from '../../components/SortableRows';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useLongPress, SwipeRow } from '../../components/gestures';
-import { ChevronLeft, ChevronRight, PlusGlyph } from '../../components/icons';
+import { CheckGlyph, ChevronLeft, ChevronRight, PlusGlyph } from '../../components/icons';
 import { HoldMenu, useToast, type MenuItem } from '../../components/overlays';
 import { BarButton, Button, EmptyState, FolderChevron, FolderLabel, FolderMenuButton, LargeHeader, MacroBars, Note, RingStrip, Row, Screen, TargetSummary, TextButton, cx, type RingDay } from '../../components/ui';
 import { useSettings } from '../../data/DataProvider';
-import { copyEntries, deleteEntries, removeBatch, restoreEntries, saveTarget, updateFoodSettings } from '../../data/food';
+import { copyEntries, reorderFoodEntries, deleteEntries, removeBatch, restoreEntries, saveTarget, updateFoodSettings } from '../../data/food';
 import { ensureFoodDb, useFoodDb } from '../../data/foodDb';
 import { targetsOn, useDayEntries, useFoodSettings, useRangeEntries, useTargetVersions } from '../../data/useFood';
 import type { FoodEntry, MealId } from '../../db/types';
@@ -55,6 +56,7 @@ export function FoodDay() {
 function DayPage() {
   const { day: param } = useParams();
   const navigate = useNavigate();
+  const [selected, setSelected] = useState<string[]>([]);
   const toast = useToast();
   const settings = useSettings();
   const fs = useFoodSettings();
@@ -166,6 +168,7 @@ function DayPage() {
         />
       }
     >
+      {!menu && <button type="button" data-dock-side aria-label="Add food" onClick={() => add(nowMeal)} className="fixed bottom-24 left-4 z-10 flex h-12 w-12 items-center justify-center rounded-md bg-action text-white"><PlusGlyph size={20} /></button>}
       <SwipeDays onSwipe={(dir) => goDay(shiftDay(day, dir))}>
         <RingStrip days={strip} onPick={goDay} className="mt-3" />
       </SwipeDays>
@@ -179,11 +182,15 @@ function DayPage() {
       <DayTotals totals={sum.totals} targets={targets} onOpen={() => navigate(`/food/nutrients/${day}`)} />
 
       <div className="mt-3">
+        <TextButton onClick={() => setSelected(selected.length ? [] : ['select'])}>{selected.length ? 'Cancel selection' : 'Select foods'}</TextButton>
+        {selected.some((id) => id !== 'select') && <TextButton onClick={() => navigate(`/food/meal/new?entries=${selected.filter((id) => id !== 'select').join(',')}`)}>Make meal</TextButton>}
         {MEALS.map(({ id }) => (
           <MealFolder
             key={id}
             meal={id}
             rows={byMeal.get(id) ?? []}
+            selected={selected}
+            onSelect={(entry) => setSelected((cur) => cur.includes(entry) ? cur.filter((x) => x !== entry) : [...cur, entry])}
             open={fold.open.includes(id)}
             onToggle={() => setFold((f) => toggleFold(f, id))}
             onAdd={() => add(id)}
@@ -260,7 +267,7 @@ function SwipeDays({ children, onSwipe }: { children: React.ReactNode; onSwipe: 
  * A meal folder (design §6 folder row): h52, chevron, Caps label (white when open) with its count,
  * the kcal total on the right ("—" when empty). Open: the foods as dense rows indented 24, then
  * "+ Add" with a ••• for Save as meal · Copy to today · Clear meal (the long-press menu's visible
- * way in). An empty meal always shows "+ Add".
+ * way in). Closed meals keep their Add row hidden until opened.
  */
 function MealFolder({
   meal,
@@ -270,8 +277,10 @@ function MealFolder({
   onAdd,
   onMenu,
   onOpenEntry,
-  onDelete,
+  onDelete, selected, onSelect,
 }: {
+  selected: string[];
+  onSelect: (id: string) => void;
   meal: MealId;
   rows: FoodEntry[];
   open: boolean;
@@ -299,19 +308,20 @@ function MealFolder({
           )}
         </span>
       </button>
+      <SortableRows ids={rows.map((e) => e.id)} onMove={async (from, to) => { const reordered = [...rows]; reordered.splice(to, 0, reordered.splice(from, 1)[0]); await reorderFoodEntries(reordered.map((e) => e.id)); }}>
       {open &&
         rows.map((e) => (
-          <SwipeRow key={e.id} rounded={false} left={{ label: 'Delete', onTrigger: () => onDelete(e) }}>
-            <button type="button" onClick={() => onOpenEntry(e)} className="flex min-h-13 w-full items-center gap-3 border-b border-line py-2 pl-6 text-left active:bg-surface/60">
+          <SortableRow key={e.id} id={e.id} label={e.name}><SwipeRow onLongPress={() => onSelect(e.id)} rounded={false} left={{ label: 'Delete', onTrigger: () => onDelete(e) }}>
+            <button type="button" aria-pressed={selected.length ? selected.includes(e.id) : undefined} onClick={() => selected.length ? onSelect(e.id) : onOpenEntry(e)} className="flex min-h-13 w-full items-center gap-3 border-b border-line py-2 pl-6 text-left active:bg-surface/60">
               <span className="min-w-0 flex-1">
-                <b className="block truncate text-body font-semibold">{e.name}</b>
+                <b className="block truncate text-body font-semibold">{selected.includes(e.id) && <CheckGlyph size={14} className="inline text-accent" />}{e.name}</b>
                 <span className="block truncate text-caption text-fg2">{entryDetail(e)}</span>
               </span>
               <b className="flex-none text-body font-semibold">{fmtInt(e.totals.kcal ?? 0)}</b>
             </button>
-          </SwipeRow>
-        ))}
-      {(open || !rows.length) && (
+          </SwipeRow></SortableRow>
+        ))}</SortableRows>
+      {open && (
         <div ref={addRef} className="flex h-11 items-center border-b border-line pl-6">
           <button type="button" onClick={onAdd} className="flex h-11 flex-1 items-center gap-1.5 text-body font-semibold text-accent active:opacity-60">
             <PlusGlyph size={12} />

@@ -55,6 +55,8 @@ export function amountLabel(grams: number, unit: AmountUnit | undefined, basis: 
 
 /** A count of a serving: 1 × "1 cup" → "1 cup", 1.5 × "1 cup" → "1.5 cup", 2 × "2 tbsp" → "2 × 2 tbsp". */
 export function servingText(n: number, label: string): string {
+  const cup = cupGrams([{ label, grams: 1 }]);
+  if (cup) return `${roundAmount(n / cup, 'serv')} cup`;
   const count = String(roundAmount(n, 'serv'));
   if (Math.abs(n - 1) < 0.005) return label;
   const one = /^1\s+(.*)$/.exec(label.trim());
@@ -81,4 +83,15 @@ export function pickServing(servings: FoodServing[], kcalPer100?: number): numbe
     if (i >= 0) return i;
   }
   return 0;
+}
+
+/** Grams per cup from a measured household portion; never assume water density. */
+export function cupGrams(servings: FoodServing[]): number | undefined {
+  for (const s of servings) {
+    const match = /^([\d.]+)(?:\s+(\d+)\/(\d+))?\s+cups?\b/i.exec(s.label);
+    const fraction = /^(\d+)\/(\d+)\s+cups?\b/i.exec(s.label);
+    const n = fraction ? Number(fraction[1]) / Number(fraction[2]) : match ? Number(match[1]) + (match[2] ? Number(match[2]) / Number(match[3]) : 0) : 0;
+    if (n > 0 && s.grams > 0) return s.grams / n;
+  }
+  return undefined;
 }

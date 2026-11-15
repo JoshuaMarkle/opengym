@@ -4,7 +4,7 @@
 import { db } from '../db/db';
 import type { AmountUnit, Food, FoodEntry, FoodSettings, FoodTarget, MealId, SavedMeal, SavedMealItem } from '../db/types';
 import { uuid } from '../lib/id';
-import { closestFoods, fillMissing, foodDayKey, indexWords, leadWord, logCounts, rankFoods, totalsFor, words, type Nutrients } from '../lib/nutrition';
+import { closestFoods, fillFromSimilar, foodDayKey, indexWords, leadWord, logCounts, rankFoods, totalsFor, words, type Nutrients } from '../lib/nutrition';
 import { getSettings, updateSettings } from './settings';
 
 export const DEFAULT_FOOD_SETTINGS: FoodSettings = { online: true, setUp: false };
@@ -75,7 +75,7 @@ export async function copyFood(id: string): Promise<string | undefined> {
 export async function fillFood(id: string, fromId: string): Promise<number> {
   const [f, from] = await Promise.all([db.foods.get(id), db.foods.get(fromId)]);
   if (!f || !from) return 0;
-  const r = fillMissing(f, from);
+  const r = fillFromSimilar(f, from, await fillCandidates(from));
   await db.foods.update(id, { per100: r.per100, estimated: r.estimated, filledFrom: fromId, mine: true, updatedAt: Date.now() });
   return r.filled.length;
 }
@@ -320,4 +320,12 @@ export async function searchLocal(query: string, limit = 60): Promise<Food[]> {
 export async function starFood(food: Food, favorite: boolean): Promise<void> {
   if (!(await db.foods.get(food.id))) await saveFood({ ...food, favorite, mine: true });
   else await setFavorite(food.id, favorite);
+}
+
+/** Persist a meal's reordered entries atomically (10.33). Nutrient snapshots stay untouched. */
+export async function reorderFoodEntries(ids: string[]): Promise<void> {
+  await db.transaction('rw', db.foodEntries, async () => {
+    const updatedAt = Date.now();
+    for (const [order, id] of ids.entries()) await db.foodEntries.update(id, { order, updatedAt });
+  });
 }

@@ -63,7 +63,7 @@ export function FillNutrients() {
       }
     >
       <DetailTitle title={food.name} meta={`Missing ${lacking} vitamins and minerals`} className="mt-5" />
-      <Note className="mt-3">Pick the built-in food most like it. Only what's missing is copied, scaled per 100 g; the label's own numbers stay. Borrowed values show with "~".</Note>
+      <Note className="mt-3">Pick the built-in food most like it. Similar foods also supply remaining gaps. Unavailable values stay unknown. Only what's missing is copied, scaled per 100 g; the label's own numbers stay. Borrowed values show with "~".</Note>
       <div className="mt-4">
         <SearchField value={query} onChange={setQuery} placeholder="Search built-in foods" />
       </div>

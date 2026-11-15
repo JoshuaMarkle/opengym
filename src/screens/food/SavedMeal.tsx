@@ -25,11 +25,12 @@ export function SavedMealScreen() {
   const [params] = useSearchParams();
   const day = params.get('day');
   const meal = params.get('meal') as MealId | null;
+  const entryIds = params.get('entries');
   const loaded = useLiveQuery(async () => {
     if (id && id !== 'new') return { meal: (await db.savedMeals.get(id)) ?? null, items: [] as SavedMealItem[] };
-    const rows = day && meal ? await db.foodEntries.where('[day+meal]').equals([day, meal]).toArray() : [];
+    const rows = entryIds ? (await db.foodEntries.bulkGet(entryIds.split(','))).filter((e) => e != null) : day && meal ? await db.foodEntries.where('[day+meal]').equals([day, meal]).toArray() : [];
     return { meal: null, items: itemsFromEntries(rows) };
-  }, [id, day, meal]);
+  }, [id, day, meal, entryIds]);
   if (!loaded) return null;
   const name = loaded.meal?.name ?? (meal ? `My ${MEAL_LABEL[meal].toLowerCase()}` : '');
   return <Editor key={id ?? 'new'} saved={loaded.meal ?? undefined} initialName={name} initialItems={loaded.meal?.items ?? loaded.items} />;

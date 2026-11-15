@@ -1,6 +1,7 @@
-import { useState, type ReactNode } from 'react';
+import { SortableRows, SortableRow } from '../../components/SortableRows';
+import { useState } from 'react';
 import { SwipeRow } from '../../components/gestures';
-import { ChevronRight, TrendDown, TrendUp } from '../../components/icons';
+import { ChevronRight } from '../../components/icons';
 import { Alert, useToast } from '../../components/overlays';
 import { AddButton, BarButton, Button, CountRing, cx, DeleteDisc, Tag } from '../../components/ui';
 import { type ActiveExercise, useData } from '../../data/DataProvider';
@@ -88,19 +89,9 @@ export function AllExercises({
           Close
         </BarButton>
       </div>
-      <div className="mt-1.5">
-        {blocks.map((block, bi) => {
-          const moves = (key: string) => (
-            <span className="flex flex-none gap-1">
-              <MoveButton label="Move up" disabled={bi === 0} onClick={() => void moveWorkoutExercise(key, -1)}>
-                <TrendUp size={9} />
-              </MoveButton>
-              <MoveButton label="Move down" disabled={bi === blocks.length - 1} onClick={() => void moveWorkoutExercise(key, 1)}>
-                <TrendDown size={9} />
-              </MoveButton>
-            </span>
-          );
-          const row = (e: ActiveExercise, inGroup: boolean) => {
+      <div className="mt-1.5"><SortableRows ids={blocks.map((b) => b.items[0].key)} onMove={async (from, to) => { const key = blocks[from].items[0].key; for (let i = 0; i < Math.abs(to - from); i++) await moveWorkoutExercise(key, to > from ? 1 : -1); }}>
+        {blocks.map((block) => {
+          const row = (e: ActiveExercise) => {
             const done = e.sets.filter((s) => s.completed).length;
             const isCur = e.we.id === currentId;
             const tag = tags.get(e.we.id);
@@ -125,9 +116,8 @@ export function AllExercises({
             if (editing)
               return (
                 <div key={e.we.id} className="flex min-h-[60px] items-center gap-3 border-b border-line">
-                  <DeleteDisc label={`Remove ${e.exercise.name}`} onClick={() => void remove(e)} />
                   {body}
-                  {!inGroup && moves(e.we.id)}
+                  <DeleteDisc label={`Remove ${e.exercise.name}`} onClick={() => void remove(e)} />
                 </div>
               );
             return (
@@ -146,17 +136,17 @@ export function AllExercises({
               </SwipeRow>
             );
           };
-          if (!block.letter) return row(block.items[0].e, false);
+          if (!block.letter) return editing ? <SortableRow key={block.items[0].key} id={block.items[0].key} label={block.items[0].e.exercise.name}>{row(block.items[0].e)}</SortableRow> : row(block.items[0].e);
           return (
-            <div key={`ss-${block.items[0].key}`} className="mt-2 border-l-2 border-accent pl-3">
+            <SortableRow key={block.items[0].key} id={block.items[0].key} enabled={editing} label={`Superset ${block.letter}`}><div className="mt-2 border-l-2 border-accent pl-3">
               <div className="flex min-h-9 items-center justify-between gap-2">
                 <span className="text-caps text-accent">Superset {block.letter}</span>
-                {editing && moves(block.items[0].key)}
+
               </div>
-              {block.items.map((it) => row(it.e, true))}
-            </div>
+              {block.items.map((it) => row(it.e))}
+            </div></SortableRow>
           );
-        })}
+        })}</SortableRows>
       </div>
       {!exercises.length && <p className="py-8 text-center text-callout text-fg2">No exercises yet.</p>}
       <div className="mt-4 grid grid-cols-[1fr_100px] gap-2">
@@ -187,14 +177,5 @@ export function AllExercises({
         ]}
       />
     </div>
-  );
-}
-
-/** Drawn like a stepper button (design §10): 36 × 32 / r8 / surface-2, in a 44-tall target. */
-function MoveButton({ children, label, disabled, onClick }: { children: ReactNode; label: string; disabled: boolean; onClick: () => void }) {
-  return (
-    <button type="button" aria-label={label} disabled={disabled} onClick={onClick} className="flex h-11 w-9 items-center justify-center disabled:opacity-30">
-      <span className="flex h-8 w-9 items-center justify-center rounded-sm bg-surface-2 text-fg">{children}</span>
-    </button>
   );
 }

@@ -6,7 +6,7 @@ import { BarButton, Note, Screen, SectionLabel, TopBar } from '../../components/
 import { copyEntries, removeBatch } from '../../data/food';
 import { db } from '../../db/db';
 import type { FoodEntry } from '../../db/types';
-import { foodDayKey, fmtInt, shiftDay, sumEntries } from '../../lib/nutrition';
+import { MEALS, foodDayKey, fmtInt, shiftDay, sumEntries } from '../../lib/nutrition';
 import { fmtFoodDay } from './FoodDay';
 import { FoodRow } from './parts';
 
@@ -48,8 +48,7 @@ export function CopyDay() {
       {days?.map(([d, rows]) => {
         const batch = added.get(d);
         return (
-          <FoodRow
-            key={d}
+          <div key={d}><FoodRow
             title={d === shiftDay(day, -1) ? `Yesterday · ${fmtFoodDay(d)}` : fmtFoodDay(d)}
             detail={`${rows.length} ${rows.length === 1 ? 'food' : 'foods'}`}
             totals={sumEntries(rows).totals}
@@ -73,7 +72,7 @@ export function CopyDay() {
                 },
               });
             }}
-          />
+          /><div className="flex gap-2">{MEALS.filter((m) => rows.some((r) => r.meal === m.id && r.foodId)).map((m) => <BarButton key={m.id} onClick={() => navigate(`/food/meal/new?day=${d}&meal=${m.id}`)}>{m.label}</BarButton>)}</div></div>
         );
       })}
       {days && !days.length && <Note className="mt-3">Nothing logged in the last two weeks.</Note>}

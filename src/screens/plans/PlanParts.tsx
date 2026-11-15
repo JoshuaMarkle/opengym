@@ -86,7 +86,7 @@ function StripCell({ day, mark, isToday, live, onTap, onHold }: { day: PlanDay; 
     <>
       <Weekday today={isToday}>{weekdayLetter(date.getDay())}</Weekday>
       <DayDisc className="mt-1.5" state={dayState(day)} today={isToday} live={live} changed={day.changed}>
-        <MarkContent mark={mark} />
+        {mark.glyph === 'check' ? date.getDate() : <MarkContent mark={mark} />}
       </DayDisc>
     </>
   );

@@ -11,7 +11,7 @@ import { db } from '../../db/db';
 import type { AmountUnit, Food, FoodEntry, FoodServing, MealId } from '../../db/types';
 import { useGiveUp } from '../../hooks/useGiveUp';
 import { formatNumber } from '../../lib/units';
-import { fmtInt, fromGrams, MEAL_LABEL, needsFill, roundAmount, scaleNutrients, servingText, STEP, toGrams, totalsFor, unitLabel, type Nutrients } from '../../lib/nutrition';
+import { cupGrams, fmtInt, fromGrams, MEAL_LABEL, needsFill, roundAmount, scaleNutrients, servingText, STEP, toGrams, totalsFor, unitLabel, type Nutrients } from '../../lib/nutrition';
 import { useAddTarget } from './AddFood';
 import { MealSheet, NutrientTable, sourceLabel } from './parts';
 
@@ -194,7 +194,11 @@ function FoodView({
   const basis = food.basis;
   const grams = amount ? gramsOf(amount, basis, servings) : 0;
   const totals = amount ? totalsFor(per100, grams) : per100;
-  const units: AmountUnit[] = servings.length ? ['g', 'serv', 'oz'] : ['g', 'oz'];
+  const cup = cupGrams(servings);
+  const cupIndex = servings.findIndex((s) => cupGrams([s]) != null);
+  const [cups, setCups] = useState(() => amount?.unit === 'serv' && cupGrams([servings[amount.serving]].filter(Boolean)) != null);
+  const [cupText, setCupText] = useState(() => cup ? formatNumber(grams / cup, 2) : '');
+  const units = servings.length ? ['serv', ...(cup ? ['cup'] : []), 'g', 'oz'] : ['g', 'oz'];
 
   const pad = useNumberPad(
     amount
@@ -207,14 +211,19 @@ function FoodView({
               ) : (
                 'Amount'
               ),
-            value: amount.text,
-            onChange: (text) => setAmount({ ...amount, text }),
-            step: STEP[amount.unit],
-            stepLabel: amount.unit === 'serv' ? '¼' : `${STEP[amount.unit]} ${unitLabel(amount.unit, basis)}`,
-            half: amount.unit === 'serv',
-            tabs: units.map((u) => ({ id: u, label: unitLabel(u, basis) })),
-            tab: amount.unit,
+            value: cups ? cupText : amount.text,
+            onChange: (text) => {
+              if (cups && cup) { setCupText(text); setAmount({ ...amount, unit: 'serv', serving: cupIndex, text: String(Number(text) * cup / servings[cupIndex].grams) }); }
+              else setAmount({ ...amount, text });
+            },
+            step: cups ? 0.25 : STEP[amount.unit],
+            stepLabel: cups ? '¼ cup' : amount.unit === 'serv' ? '¼' : `${STEP[amount.unit]} ${unitLabel(amount.unit, basis)}`,
+            half: cups || amount.unit === 'serv',
+            tabs: units.map((u) => ({ id: u, label: u === 'cup' ? 'cup' : unitLabel(u as AmountUnit, basis) })),
+            tab: cups ? 'cup' : amount.unit,
             onTab: (u) => {
+              setCups(u === 'cup');
+              if (u === 'cup' && cup) { setCupText(formatNumber(grams / cup, 2)); return; }
               const unit = u as AmountUnit;
               const g = gramsOf(amount, basis, servings);
               const v = fromGrams(g, unit, basis, servings[amount.serving]?.grams);
@@ -305,8 +314,8 @@ function FoodView({
             <FieldLabel className="mt-0">Amount</FieldLabel>
             <ValueButton
               label="Amount"
-              value={amount.text}
-              unit={amount.unit === 'serv' ? servingUnit(servings[amount.serving]) : unitLabel(amount.unit, basis)}
+              value={cups ? cupText : amount.text}
+              unit={cups ? 'cup' : amount.unit === 'serv' ? servingUnit(servings[amount.serving]) : unitLabel(amount.unit, basis)}
               on={pad.active === 'amount'}
               onClick={() => pad.open('amount')}
             />
@@ -324,7 +333,7 @@ function FoodView({
       {amount?.unit === 'serv' && servings[amount.serving] && <p className="mt-2 text-caption text-fg2">{`${servingText(Number(amount.text) || 0, servings[amount.serving].label)} · ${fmtInt(grams)} ${basis === 'ml' ? 'ml' : 'g'}`}</p>}
 
       {saved && needsFill(food) && (
-        <AttentionNote lead="Missing most vitamins and minerals." className="mt-5" actions={<TextButton small onClick={() => navigate(`/food/fill/${food.id}`)}>Fill in missing nutrients</TextButton>}>
+        <AttentionNote lead="Some nutrients are missing." className="mt-5" actions={<TextButton small onClick={() => navigate(`/food/fill/${food.id}`)}>Fill in missing nutrients</TextButton>}>
           Borrow them from a similar built-in food. They're marked ~.
         </AttentionNote>
       )}
@@ -352,6 +361,7 @@ function FoodView({
             key={s.label}
             detail={`${formatNumber(s.grams, 1)} ${basis === 'ml' ? 'ml' : 'g'}`}
             onClick={() => {
+              setCups(false);
               if (amount) setAmount({ ...amount, unit: 'serv', serving: i, text: '1' });
               setServingSheet(false);
             }}

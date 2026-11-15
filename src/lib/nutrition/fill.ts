@@ -10,9 +10,9 @@ export function missingMicros(per100: Nutrients): NutrientId[] {
   return MICROS.filter((id) => per100[id] == null);
 }
 
-/** Offer "Fill in missing nutrients" when a non-USDA food lacks most micronutrients. */
+/** Keep filling available while any micronutrient remains unknown. */
 export function needsFill(food: { source: string; per100: Nutrients }): boolean {
-  return food.source !== 'usda' && missingMicros(food.per100).length > MICROS.length / 2;
+  return missingMicros(food.per100).length > 0;
 }
 
 /** Words that say little about what a food is. */
@@ -76,4 +76,14 @@ export function fillMissing(food: { per100: Nutrients; estimated?: NutrientId[] 
     filled.push(id);
   }
   return { per100, estimated: [...new Set([...(food.estimated ?? []), ...filled])], filled };
+}
+
+/** Fill residual gaps only from close name matches; preserve each existing estimate and label. */
+export function fillFromSimilar(food: { per100: Nutrients; estimated?: NutrientId[] }, chosen: { name: string; per100: Nutrients }, candidates: { name: string; per100: Nutrients }[]) {
+  let result = fillMissing(food, chosen);
+  for (const candidate of closestFoods(chosen.name, candidates).filter((c) => similarity(chosen.name, c.name) >= 0.8)) {
+    const next = fillMissing(result, candidate);
+    result = { ...next, filled: [...result.filled, ...next.filled] };
+  }
+  return result;
 }
