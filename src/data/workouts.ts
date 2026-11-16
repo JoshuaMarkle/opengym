@@ -350,15 +350,15 @@ export async function addWorkingSet(weId: string): Promise<string> {
   });
 }
 
-/** "+ Drop": a drop under the last completed set, prefilled lighter (SPEC §4). */
-export async function addDropSet(weId: string, type: ExerciseType): Promise<string | undefined> {
+/** "+ Drop": a drop under the selected set, else the last completed set, prefilled lighter (SPEC §4). */
+export async function addDropSet(weId: string, type: ExerciseType, anchorId?: string): Promise<string | undefined> {
   const we = await db.workoutExercises.get(weId);
   if (!we) return undefined;
   const settings = await getSettings();
   const last = await lastSessionSets(we.exerciseId, we.workoutId);
   return db.transaction('rw', db.workoutSets, async () => {
     const sets = await setsOf(weId);
-    const plan = planDrop(sets, last, type, settings.dropPercent, stepLb(settings));
+    const plan = planDrop(sets, last, type, settings.dropPercent, stepLb(settings), anchorId);
     if (!plan) return undefined;
     const rec: WorkoutSet = {
       ...stamp(),

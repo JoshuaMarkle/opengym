@@ -138,6 +138,10 @@ export function AddFood() {
   };
 
   const anyAdded = added.length > 0;
+  const pickTab = (t: Tab) => {
+    setTab(t);
+    setParams((p) => (p.set('tab', t), p), { replace: true, state: location.state });
+  };
   const loading = foodDb.status === 'loading';
 
   return (
@@ -157,48 +161,47 @@ export function AddFood() {
           }
         />
       }
-      footer={<div className="border-t border-line bg-bg px-4 pb-safe">      <div className="mt-4">
-        <SearchField
-          value={query}
-          onChange={setQuery}
-          placeholder="Search foods"
-          trailing={
-            <button type="button" aria-label="Scan a barcode" onClick={() => navigate(`/food/scan?day=${day}&meal=${meal}`)} className="-mr-2 flex h-10 w-10 items-center justify-center text-accent">
-              <BarcodeGlyph size={20} />
-            </button>
-          }
-        />
-      </div>
-      {loading && <Note className="mt-2">Getting the food database ready{foodDb.total ? ` · ${Math.round((foodDb.done / foodDb.total) * 100)}%` : ''}. Your own foods work already.</Note>}
-
-      {!q && (
-        <div className="mt-3 grid grid-cols-4 gap-2">
-          <ShortcutTile icon={<BarcodeGlyph size={20} />} onClick={() => navigate(`/food/scan?day=${day}&meal=${meal}`)}>
-            Scan
-          </ShortcutTile>
-          <ShortcutTile icon={<BoltGlyph size={20} />} onClick={() => navigate(`/food/quick?day=${day}&meal=${meal}`)}>
-            Quick add
-          </ShortcutTile>
-          <ShortcutTile icon={<StackGlyph size={20} />} onClick={() => { setTab('meals'); setParams((p) => (p.set('tab', 'meals'), p), { replace: true, state: location.state }); }}>
-            Meals
-          </ShortcutTile>
-          <ShortcutTile icon={<PencilGlyph size={20} />} onClick={() => navigate(`/food/new?day=${day}&meal=${meal}`)}>
-            New food
-          </ShortcutTile>
+      // 10.14: search and the shortcuts dock at the bottom, in thumb reach; results scroll above.
+      footer={
+        <div className="border-t border-line bg-bg px-4 pb-safe">
+          <div className="py-3">
+            <SearchField
+              value={query}
+              onChange={setQuery}
+              placeholder="Search foods"
+              trailing={
+                <button type="button" aria-label="Scan a barcode" onClick={() => navigate(`/food/scan?day=${day}&meal=${meal}`)} className="-mr-2 flex h-10 w-10 items-center justify-center text-accent">
+                  <BarcodeGlyph size={20} />
+                </button>
+              }
+            />
+            {loading && <Note className="mt-2">Getting the food database ready{foodDb.total ? ` · ${Math.round((foodDb.done / foodDb.total) * 100)}%` : ''}. Your own foods work already.</Note>}
+            {!q && (
+              <div className="mt-3 grid grid-cols-4 gap-2">
+                <ShortcutTile icon={<BarcodeGlyph size={20} />} onClick={() => navigate(`/food/scan?day=${day}&meal=${meal}`)}>
+                  Scan
+                </ShortcutTile>
+                <ShortcutTile icon={<BoltGlyph size={20} />} onClick={() => navigate(`/food/quick?day=${day}&meal=${meal}`)}>
+                  Quick add
+                </ShortcutTile>
+                <ShortcutTile icon={<StackGlyph size={20} />} onClick={() => pickTab('meals')}>
+                  Meals
+                </ShortcutTile>
+                <ShortcutTile icon={<PencilGlyph size={20} />} onClick={() => navigate(`/food/new?day=${day}&meal=${meal}`)}>
+                  New food
+                </ShortcutTile>
+              </div>
+            )}
+          </div>
         </div>
-      )}
-
-</div>}
+      }
     >
       {!q && (
         <Chips
           className="mt-3"
           options={TABS}
           value={tab}
-          onChange={(t) => {
-            setTab(t);
-            setParams((p) => (p.set('tab', t), p), { replace: true, state: location.state });
-          }}
+          onChange={pickTab}
         />
       )}
 

@@ -27,7 +27,26 @@ export function InlineMacros({ n, className = '' }: { n: Nutrients; className?: 
  * in Caption, and an L disc at the end: grey with a blue + to log in one tap, action blue with a
  * check once logged (tap it to take it back off).
  */
-export function FoodRow({ title, detail, totals, added, onOpen, onDisc, discLabel }: { title: ReactNode; detail?: string; totals: Nutrients; added: boolean; onOpen?: () => void; onDisc: () => void; discLabel: string }) {
+export function FoodRow({
+  title,
+  detail,
+  totals,
+  added,
+  onOpen,
+  onDisc,
+  discLabel,
+  children,
+}: {
+  title: ReactNode;
+  detail?: string;
+  totals: Nutrients;
+  added: boolean;
+  onOpen?: () => void;
+  onDisc: () => void;
+  discLabel: string;
+  /** An extra line under the text, e.g. Copy a day's meal links (10.23). */
+  children?: ReactNode;
+}) {
   const text = (
     <span className="min-w-0 flex-1">
       <b className="block truncate text-body font-semibold">{title}</b>
@@ -39,13 +58,16 @@ export function FoodRow({ title, detail, totals, added, onOpen, onDisc, discLabe
   );
   return (
     <div className="flex min-h-13 items-center gap-3 border-b border-line py-2">
-      {onOpen ? (
-        <button type="button" onClick={onOpen} className="flex min-w-0 flex-1 items-center text-left active:opacity-60">
-          {text}
-        </button>
-      ) : (
-        text
-      )}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {onOpen ? (
+          <button type="button" onClick={onOpen} className="flex min-w-0 items-center text-left active:opacity-60">
+            {text}
+          </button>
+        ) : (
+          text
+        )}
+        {children}
+      </div>
       <Disc size="l" tone={added ? 'action' : 'grey'} faceClassName={added ? '' : 'text-accent'} onClick={onDisc} label={discLabel} className="-mr-1.5">
         {added ? <CheckGlyph size={14} /> : <PlusGlyph size={14} />}
       </Disc>

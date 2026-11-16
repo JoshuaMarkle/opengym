@@ -76,7 +76,7 @@ export function DetailTitle({ title, meta, right, className = '' }: { title: Rea
 
 /**
  * design §5D Workout bar (4.1): back to All exercises, name 17/700 over a Footnote meta line,
- * the pencil (5.4) and the compact Finish. A past date shows as "Logging Nov 4" in orange 600.
+ * the pencil (5.4) and the compact Finish (a grey Next while sets are left). A past date shows as "Logging Nov 4" in orange 600.
  */
 export function WorkoutBar({
   name,
@@ -86,6 +86,7 @@ export function WorkoutBar({
   onBack,
   onOptions,
   onFinish,
+  onNext,
   finishing,
 }: {
   name: ReactNode;
@@ -95,6 +96,8 @@ export function WorkoutBar({
   onBack: () => void;
   onOptions: () => void;
   onFinish: () => void;
+  /** Set while sets are left: the button reads Next (grey) and moves on instead of finishing. */
+  onNext?: () => void;
   finishing?: boolean;
 }) {
   return (
@@ -114,9 +117,15 @@ export function WorkoutBar({
       <button type="button" aria-label="Workout options" onClick={onOptions} className="flex h-11 w-11 flex-none items-center justify-center text-accent active:opacity-60">
         <PencilGlyph size={18} />
       </button>
-      <Button size="compact" onClick={onFinish} disabled={finishing}>
-        Finish
-      </Button>
+      {onNext ? (
+        <Button size="compact" kind="secondary" onClick={onNext}>
+          Next
+        </Button>
+      ) : (
+        <Button size="compact" onClick={onFinish} disabled={finishing}>
+          Finish
+        </Button>
+      )}
     </header>
   );
 }

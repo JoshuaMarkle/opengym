@@ -1,12 +1,12 @@
-import { SortableRows, SortableRow } from '../../components/SortableRows';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
+import { SortableRow, SortableRows } from '../../components/SortableRows';
 import { useLongPress, SwipeRow } from '../../components/gestures';
-import { CheckGlyph, ChevronLeft, ChevronRight, PlusGlyph } from '../../components/icons';
+import { ChevronLeft, ChevronRight, PlusGlyph } from '../../components/icons';
 import { HoldMenu, useToast, type MenuItem } from '../../components/overlays';
-import { BarButton, Button, EmptyState, FolderChevron, FolderLabel, FolderMenuButton, LargeHeader, MacroBars, Note, RingStrip, Row, Screen, TargetSummary, TextButton, cx, type RingDay } from '../../components/ui';
+import { BarButton, Button, Check, EmptyState, FolderChevron, FolderLabel, FolderMenuButton, LargeHeader, MacroBars, Note, RingStrip, Row, Screen, TargetSummary, TextButton, cx, type RingDay } from '../../components/ui';
 import { useSettings } from '../../data/DataProvider';
-import { copyEntries, reorderFoodEntries, deleteEntries, removeBatch, restoreEntries, saveTarget, updateFoodSettings } from '../../data/food';
+import { copyEntries, deleteEntries, removeBatch, reorderFoodEntries, restoreEntries, saveTarget, updateFoodSettings } from '../../data/food';
 import { ensureFoodDb, useFoodDb } from '../../data/foodDb';
 import { targetsOn, useDayEntries, useFoodSettings, useRangeEntries, useTargetVersions } from '../../data/useFood';
 import type { FoodEntry, MealId } from '../../db/types';
@@ -56,7 +56,6 @@ export function FoodDay() {
 function DayPage() {
   const { day: param } = useParams();
   const navigate = useNavigate();
-  const [selected, setSelected] = useState<string[]>([]);
   const toast = useToast();
   const settings = useSettings();
   const fs = useFoodSettings();
@@ -122,6 +121,16 @@ function DayPage() {
 
   const [menu, setMenu] = useState<{ meal: MealId; rect: DOMRect } | null>(null);
 
+  // 10.33 Select foods: hold a food (or ••• → Select foods) to pick foods for a new saved meal.
+  // While selecting, rows show a check and a drag handle to reorder within the meal.
+  const [selected, setSelected] = useState<string[] | null>(null);
+  const [selDay, setSelDay] = useState(day);
+  if (selDay !== day) {
+    setSelDay(day);
+    setSelected(null);
+  }
+  const toggleSelected = (id: string) => setSelected((cur) => (cur?.includes(id) ? cur.filter((x) => x !== id) : [...(cur ?? []), id]));
+
   const removeWithUndo = async (rows: FoodEntry[], message: string) => {
     const gone = await deleteEntries(rows.map((r) => r.id));
     toast({ message, actionLabel: 'Undo', onAction: () => void restoreEntries(gone) });
@@ -129,7 +138,10 @@ function DayPage() {
 
   const menuItems = (meal: MealId): MenuItem[] => {
     const rows = byMeal.get(meal) ?? [];
-    const items: MenuItem[] = [{ label: 'Save as meal', onClick: () => navigate(`/food/meal/new?day=${day}&meal=${meal}`) }];
+    const items: MenuItem[] = [
+      { label: 'Save as meal', onClick: () => navigate(`/food/meal/new?day=${day}&meal=${meal}`) },
+      { label: 'Select foods', onClick: () => setSelected([]) },
+    ];
     if (!isToday)
       items.push({
         label: 'Copy to today',
@@ -167,8 +179,32 @@ function DayPage() {
           }
         />
       }
+      footer={
+        selected ? (
+          <div className="flex items-center gap-4 border-t border-line bg-bg px-4 py-2">
+            <TextButton tone="muted" onClick={() => setSelected(null)}>
+              Cancel
+            </TextButton>
+            <Button disabled={!selected.length} onClick={() => navigate(`/food/meal/new?entries=${selected.join(',')}`)}>
+              {selected.length ? `Make meal · ${selected.length}` : 'Select foods'}
+            </Button>
+          </div>
+        ) : (
+          // The floating add (design §9 Fab, in action blue): adds to the meal of the moment.
+          <div className="relative">
+            <button
+              type="button"
+              data-dock-side
+              aria-label={`Add food to ${MEAL_LABEL[nowMeal]}`}
+              onClick={() => add(nowMeal)}
+              className="absolute right-4 bottom-full z-20 mb-3 flex h-12 w-12 items-center justify-center rounded-md bg-action text-white ring-2 ring-bg active:bg-action-pressed"
+            >
+              <PlusGlyph size={20} />
+            </button>
+          </div>
+        )
+      }
     >
-      {!menu && <button type="button" data-dock-side aria-label="Add food" onClick={() => add(nowMeal)} className="fixed bottom-24 left-4 z-10 flex h-12 w-12 items-center justify-center rounded-md bg-action text-white"><PlusGlyph size={20} /></button>}
       <SwipeDays onSwipe={(dir) => goDay(shiftDay(day, dir))}>
         <RingStrip days={strip} onPick={goDay} className="mt-3" />
       </SwipeDays>
@@ -182,15 +218,13 @@ function DayPage() {
       <DayTotals totals={sum.totals} targets={targets} onOpen={() => navigate(`/food/nutrients/${day}`)} />
 
       <div className="mt-3">
-        <TextButton onClick={() => setSelected(selected.length ? [] : ['select'])}>{selected.length ? 'Cancel selection' : 'Select foods'}</TextButton>
-        {selected.some((id) => id !== 'select') && <TextButton onClick={() => navigate(`/food/meal/new?entries=${selected.filter((id) => id !== 'select').join(',')}`)}>Make meal</TextButton>}
         {MEALS.map(({ id }) => (
           <MealFolder
             key={id}
             meal={id}
             rows={byMeal.get(id) ?? []}
             selected={selected}
-            onSelect={(entry) => setSelected((cur) => cur.includes(entry) ? cur.filter((x) => x !== entry) : [...cur, entry])}
+            onSelect={toggleSelected}
             open={fold.open.includes(id)}
             onToggle={() => setFold((f) => toggleFold(f, id))}
             onAdd={() => add(id)}
@@ -211,6 +245,9 @@ function DayPage() {
         <span className="flex-1 text-body-lg">Targets</span>
         <span className="text-callout text-fg2">{targets.kcal ? `${fmtInt(targets.kcal)} kcal` : 'Just log'}</span>
       </Row>
+
+      {/* Room to scroll the last rows out from under the floating add. */}
+      <div className="h-20" />
 
       <HoldMenu open={!!menu} anchor={menu?.rect} items={menu ? menuItems(menu.meal) : []} onClose={() => setMenu(null)} />
     </Screen>
@@ -267,7 +304,8 @@ function SwipeDays({ children, onSwipe }: { children: React.ReactNode; onSwipe: 
  * A meal folder (design §6 folder row): h52, chevron, Caps label (white when open) with its count,
  * the kcal total on the right ("—" when empty). Open: the foods as dense rows indented 24, then
  * "+ Add" with a ••• for Save as meal · Copy to today · Clear meal (the long-press menu's visible
- * way in). Closed meals keep their Add row hidden until opened.
+ * way in). Closed meals keep their Add row hidden until opened. While selecting (10.33) each food
+ * shows a check and a drag handle, and a tap picks it instead of opening it.
  */
 function MealFolder({
   meal,
@@ -277,10 +315,10 @@ function MealFolder({
   onAdd,
   onMenu,
   onOpenEntry,
-  onDelete, selected, onSelect,
+  onDelete,
+  selected,
+  onSelect,
 }: {
-  selected: string[];
-  onSelect: (id: string) => void;
   meal: MealId;
   rows: FoodEntry[];
   open: boolean;
@@ -289,10 +327,18 @@ function MealFolder({
   onMenu: (rect: DOMRect) => void;
   onOpenEntry: (e: FoodEntry) => void;
   onDelete: (e: FoodEntry) => void;
+  /** The picked entry ids while selecting; null otherwise. */
+  selected: string[] | null;
+  onSelect: (id: string) => void;
 }) {
   const kcal = rows.reduce((s, r) => s + (r.totals.kcal ?? 0), 0);
   const hold = useLongPress((rect) => onMenu(rect), rows.length > 0);
   const addRef = useRef<HTMLDivElement>(null);
+  const reorder = (from: number, to: number) => {
+    const ids = rows.map((e) => e.id);
+    ids.splice(to, 0, ...ids.splice(from, 1));
+    return reorderFoodEntries(ids);
+  };
   return (
     <section aria-label={MEAL_LABEL[meal]}>
       <button type="button" onClick={onToggle} aria-expanded={open} {...hold} className="flex h-13 w-full items-center gap-2 border-b border-line text-left active:bg-surface/60">
@@ -308,19 +354,34 @@ function MealFolder({
           )}
         </span>
       </button>
-      <SortableRows ids={rows.map((e) => e.id)} onMove={async (from, to) => { const reordered = [...rows]; reordered.splice(to, 0, reordered.splice(from, 1)[0]); await reorderFoodEntries(reordered.map((e) => e.id)); }}>
-      {open &&
-        rows.map((e) => (
-          <SortableRow key={e.id} id={e.id} label={e.name}><SwipeRow onLongPress={() => onSelect(e.id)} rounded={false} left={{ label: 'Delete', onTrigger: () => onDelete(e) }}>
-            <button type="button" aria-pressed={selected.length ? selected.includes(e.id) : undefined} onClick={() => selected.length ? onSelect(e.id) : onOpenEntry(e)} className="flex min-h-13 w-full items-center gap-3 border-b border-line py-2 pl-6 text-left active:bg-surface/60">
-              <span className="min-w-0 flex-1">
-                <b className="block truncate text-body font-semibold">{selected.includes(e.id) && <CheckGlyph size={14} className="inline text-accent" />}{e.name}</b>
-                <span className="block truncate text-caption text-fg2">{entryDetail(e)}</span>
-              </span>
-              <b className="flex-none text-body font-semibold">{fmtInt(e.totals.kcal ?? 0)}</b>
-            </button>
-          </SwipeRow></SortableRow>
-        ))}</SortableRows>
+      {open && (
+        <SortableRows ids={rows.map((e) => e.id)} onMove={(from, to) => void reorder(from, to)}>
+          {rows.map((e) => (
+            <SortableRow key={e.id} id={e.id} label={e.name} enabled={!!selected}>
+              {(handle) => (
+                <SwipeRow rounded={false} onLongPress={() => onSelect(e.id)} left={selected ? undefined : { label: 'Delete', onTrigger: () => onDelete(e) }}>
+                  <div className="flex min-h-13 items-center border-b border-line">
+                    <button
+                      type="button"
+                      aria-pressed={selected ? selected.includes(e.id) : undefined}
+                      onClick={() => (selected ? onSelect(e.id) : onOpenEntry(e))}
+                      className="flex min-w-0 flex-1 items-center gap-3 self-stretch py-2 pl-6 text-left active:bg-surface/60"
+                    >
+                      {selected && <Check on={selected.includes(e.id)} />}
+                      <span className="min-w-0 flex-1">
+                        <b className="block truncate text-body font-semibold">{e.name}</b>
+                        <span className="block truncate text-caption text-fg2">{entryDetail(e)}</span>
+                      </span>
+                      <b className="flex-none text-body font-semibold">{fmtInt(e.totals.kcal ?? 0)}</b>
+                    </button>
+                    {handle && <span className="ml-1 flex-none">{handle}</span>}
+                  </div>
+                </SwipeRow>
+              )}
+            </SortableRow>
+          ))}
+        </SortableRows>
+      )}
       {open && (
         <div ref={addRef} className="flex h-11 items-center border-b border-line pl-6">
           <button type="button" onClick={onAdd} className="flex h-11 flex-1 items-center gap-1.5 text-body font-semibold text-accent active:opacity-60">

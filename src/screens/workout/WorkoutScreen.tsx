@@ -504,10 +504,13 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
   };
 
   const addDrop = async (m: ActiveExercise) => {
+    // The set being edited is the selected one; the drop goes under it.
+    const selected = activeEdit && m.sets.some((s) => s.id === activeEdit.setId) ? activeEdit.setId : undefined;
     setEditing(null);
     focus(m);
-    const id = await addDropSet(m.we.id, m.exercise.type);
+    const id = await addDropSet(m.we.id, m.exercise.type, selected);
     if (!id) toast({ message: 'Tick a set first. A drop goes under the last completed set.', duration: 3000 });
+    else scrollToSet(id);
   };
 
   const addSet = async (m: ActiveExercise) => {
@@ -628,6 +631,8 @@ function Workout({ data, finishingRef }: { data: ActiveWorkoutData; finishingRef
       onBack={() => (showAll ? setShowAll(false) : openAll())}
       onOptions={() => setOverlay('options')}
       onFinish={() => void startFinish()}
+      // Until every set is ticked the button moves on (grey Next); the exercise list keeps Finish.
+      onNext={!everyDone && !showAll && nextNav ? nextNav.go : undefined}
       finishing={busy}
     />
   );

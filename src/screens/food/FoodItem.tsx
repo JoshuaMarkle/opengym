@@ -194,11 +194,13 @@ function FoodView({
   const basis = food.basis;
   const grams = amount ? gramsOf(amount, basis, servings) : 0;
   const totals = amount ? totalsFor(per100, grams) : per100;
+  // 10.34 Cups: only when a measured cup portion gives the density. Typed cups are stored as that
+  // portion's count, so a "1.333 cups" serving still logs 1.5 cup as 1.5 cup.
   const cup = cupGrams(servings);
   const cupIndex = servings.findIndex((s) => cupGrams([s]) != null);
-  const [cups, setCups] = useState(() => amount?.unit === 'serv' && cupGrams([servings[amount.serving]].filter(Boolean)) != null);
-  const [cupText, setCupText] = useState(() => cup ? formatNumber(grams / cup, 2) : '');
-  const units = servings.length ? ['serv', ...(cup ? ['cup'] : []), 'g', 'oz'] : ['g', 'oz'];
+  const [cups, setCups] = useState(() => amount?.unit === 'serv' && amount.serving === cupIndex && cupIndex >= 0);
+  const [cupText, setCupText] = useState(() => (cup ? formatNumber(grams / cup, 2) : ''));
+  const units: (AmountUnit | 'cup')[] = servings.length ? ['serv', ...(cup ? (['cup'] as const) : []), 'g', 'oz'] : ['g', 'oz'];
 
   const pad = useNumberPad(
     amount
@@ -206,24 +208,28 @@ function FoodView({
           {
             id: 'amount',
             label:
-              amount.unit === 'serv' && servings.length > 1 ? (
+              !cups && amount.unit === 'serv' && servings.length > 1 ? (
                 <BarChip label={servings[amount.serving]?.label ?? 'Serving'} onPress={() => setServingSheet(true)} ariaLabel="Serving size" />
               ) : (
                 'Amount'
               ),
             value: cups ? cupText : amount.text,
             onChange: (text) => {
-              if (cups && cup) { setCupText(text); setAmount({ ...amount, unit: 'serv', serving: cupIndex, text: String(Number(text) * cup / servings[cupIndex].grams) }); }
-              else setAmount({ ...amount, text });
+              if (!cups || !cup) return setAmount({ ...amount, text });
+              setCupText(text);
+              setAmount({ ...amount, unit: 'serv', serving: cupIndex, text: String(((Number(text) || 0) * cup) / servings[cupIndex].grams) });
             },
             step: cups ? 0.25 : STEP[amount.unit],
             stepLabel: cups ? '¼ cup' : amount.unit === 'serv' ? '¼' : `${STEP[amount.unit]} ${unitLabel(amount.unit, basis)}`,
             half: cups || amount.unit === 'serv',
-            tabs: units.map((u) => ({ id: u, label: u === 'cup' ? 'cup' : unitLabel(u as AmountUnit, basis) })),
+            tabs: units.map((u) => ({ id: u, label: u === 'cup' ? 'cup' : unitLabel(u, basis) })),
             tab: cups ? 'cup' : amount.unit,
             onTab: (u) => {
               setCups(u === 'cup');
-              if (u === 'cup' && cup) { setCupText(formatNumber(grams / cup, 2)); return; }
+              if (u === 'cup' && cup) {
+                setCupText(formatNumber(grams / cup, 2));
+                return;
+              }
               const unit = u as AmountUnit;
               const g = gramsOf(amount, basis, servings);
               const v = fromGrams(g, unit, basis, servings[amount.serving]?.grams);

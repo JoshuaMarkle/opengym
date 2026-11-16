@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cupGrams, amountLabel, fromGrams, pickServing, servingText, toGrams, totalsFor, unitLabel } from './amounts';
+import { amountLabel, cupGrams, fromGrams, pickServing, servingText, toGrams, totalsFor, unitLabel } from './amounts';
 
 describe('amounts (nutrition-plan §3.5)', () => {
   it('converts units to grams and back', () => {
@@ -42,13 +42,15 @@ describe('pickServing', () => {
   });
 });
 
-it('normalizes measured cups without guessing density', () => {
- expect(cupGrams([{ label: '1.333 cups', grams: 266.6 }])).toBeCloseTo(200);
- expect(cupGrams([{ label: '1/2 cup', grams: 100 }])).toBe(200);
- expect(cupGrams([{ label: '1 1/2 cups', grams: 300 }])).toBe(200);
- expect(cupGrams([{ label: '1 bar', grams: 60 }])).toBeUndefined();
-});
+describe('cupGrams (10.34)', () => {
+  it('normalizes measured cups without guessing density', () => {
+    expect(cupGrams([{ label: '1.333 cups', grams: 266.6 }])).toBeCloseTo(200);
+    expect(cupGrams([{ label: '1/2 cup', grams: 100 }])).toBe(200);
+    expect(cupGrams([{ label: '1 1/2 cups', grams: 300 }])).toBe(200);
+    expect(cupGrams([{ label: '1 bar', grams: 60 }])).toBeUndefined();
+  });
 
-it('labels normalized cups instead of multiplying portion labels', () => {
- expect(servingText(1.5 / 1.333, '1.333 cups')).toBe('1.5 cup');
+  it('labels normalized cups instead of multiplying portion labels', () => {
+    expect(servingText(1.5 / 1.333, '1.333 cups')).toBe('1.5 cup');
+  });
 });

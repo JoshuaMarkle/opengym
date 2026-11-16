@@ -300,7 +300,14 @@ function HomeRestRow({ label, date, isToday, onHold }: { label: string; date: nu
   return (
     <div {...hold} className="no-select flex min-h-15 items-center gap-3 border-b border-line text-footnote text-fg2">
       {isToday ? (
-        <><span className="w-15 flex-none text-center text-accent"><small className="block text-caps">Today</small><b className="text-title3">{date}</b></span><span className="flex-1 text-input font-semibold text-fg">Rest</span></>
+        // Today's rest lines up with the day rows: Today over the date, then "Rest".
+        <>
+          <span className="w-15 flex-none text-center text-accent">
+            <small className="block text-caps">Today</small>
+            <b className="text-title3">{date}</b>
+          </span>
+          <span className="flex-1 text-input font-semibold text-fg">Rest</span>
+        </>
       ) : (
         <>
           <span className="min-w-[52px] flex-none whitespace-nowrap">{label}</span>

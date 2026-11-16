@@ -33,12 +33,14 @@ describe('fill in missing nutrients (nutrition-plan §3.14)', () => {
   });
 });
 
-it('fills remaining gaps from similar foods without replacing labels or using unrelated foods', () => {
- const r = fillFromSimilar({ per100: { calcium: 0, kcal: 90 } }, { name: 'Greek yogurt', per100: { b12: 1 } }, [
-  { name: 'Greek yogurt, plain', per100: { calcium: 200, potassium: 140 } },
-  { name: 'Beef liver', per100: { iron: 20 } },
- ]);
- expect(r.per100).toEqual({ calcium: 0, kcal: 90, b12: 1, potassium: 140 });
- expect(r.estimated).toEqual(expect.arrayContaining(['b12', 'potassium']));
- expect(r.per100.iron).toBeUndefined();
+describe('fillFromSimilar', () => {
+  it('fills remaining gaps from similar foods without replacing labels or using unrelated foods', () => {
+    const r = fillFromSimilar({ per100: { calcium: 0, kcal: 90 } }, { name: 'Greek yogurt', per100: { b12: 1 } }, [
+      { name: 'Greek yogurt, plain', per100: { calcium: 200, potassium: 140 } },
+      { name: 'Beef liver', per100: { iron: 20 } },
+    ]);
+    expect(r.per100).toEqual({ calcium: 0, kcal: 90, b12: 1, potassium: 140 });
+    expect(r.estimated).toEqual(expect.arrayContaining(['b12', 'potassium']));
+    expect(r.per100.iron).toBeUndefined();
+  });
 });

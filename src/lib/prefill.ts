@@ -100,9 +100,10 @@ export interface DropPlan {
 }
 
 /**
- * "+ Drop" adds a drop under the last completed set (chaining after any drops
- * already there), prefilled lighter. Falls back to the last working set when
- * nothing is completed yet.
+ * "+ Drop" adds a drop under the selected set (`anchorId`, the one being
+ * edited) or else the last completed set, chaining after any drops already
+ * there, prefilled lighter. Falls back to the last working set when nothing is
+ * completed yet.
  */
 export function planDrop(
   current: LoggedSet[],
@@ -110,10 +111,12 @@ export function planDrop(
   type: ExerciseType,
   dropPercent: number,
   stepLb: number,
+  anchorId?: string,
 ): DropPlan | null {
   const ordered = orderSets(current);
   if (!ordered.length) return null;
-  let anchor = [...ordered].reverse().find((s) => s.completed);
+  let anchor = anchorId ? ordered.find((s) => s.id === anchorId) : undefined;
+  if (!anchor) anchor = [...ordered].reverse().find((s) => s.completed);
   if (!anchor) anchor = [...ordered].reverse().find((s) => s.kind === 'working') ?? [...ordered].reverse().find((s) => s.kind !== 'drop');
   if (!anchor) return null;
   const parentId = anchor.kind === 'drop' && anchor.parentSetId ? anchor.parentSetId : anchor.id;

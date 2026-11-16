@@ -131,7 +131,7 @@ Import from `src/components/ui` (the folder's `index.ts`). Each component's comm
 | `BarButton` | Top-bar text button, 44 tall, 17 | `kind: 'plain' \| 'bold' \| 'muted'` |
 | `BackButton` | ChevronLeft 17 + label | `label`, `onClick` |
 | `DetailTitle` | Title 1 under a top bar + Callout meta | `title`, `meta`, `right` |
-| `WorkoutBar` | Live-workout header: back, name, Footnote meta, orange past date, pencil, Finish (compact) | `name`, `meta`, `pastDate`, `backLabel`, `onBack`, `onOptions`, `onFinish`, `finishing` |
+| `WorkoutBar` | Live-workout header: back, name, Footnote meta, orange past date, pencil, Finish (compact; grey Next while sets are left) | `name`, `meta`, `pastDate`, `backLabel`, `onBack`, `onOptions`, `onFinish`, `onNext`, `finishing` |
 | `SectionLabel` | Caps label, optional action, hairline. Every list starts with one | `action`, `tone: 'warn' \| 'accent'`, `line` |
 | `LabelAction` | Blue 13/600 action with ChevronRight 10 for a SectionLabel | `onClick`, `chevron`, `tone` |
 | `FieldLabel` | Caps label above an input (no hairline) | — |
@@ -179,7 +179,7 @@ Import from `src/components/ui` (the folder's `index.ts`). Each component's comm
 
 | Component | Use | Props |
 | --- | --- | --- |
-| `Button` | The one filled size: 44 / r10 / 15/700. `compact` 36 / r10 / 15/600 is Finish only | `kind: 'primary' \| 'secondary' \| 'danger' \| 'ghost' \| 'white'`, `size?: 'compact'` |
+| `Button` | The one filled size: 44 / r10 / 15/700. `compact` 36 / r10 / 15/600 is Finish / Next only | `kind: 'primary' \| 'secondary' \| 'danger' \| 'ghost' \| 'white'`, `size?: 'compact'` |
 | `Disc` | Round one-tap answer. S 24 (glyph 12) at a row start, L 34 (glyph 14) as the button. Always in a 44 target; without `onClick` it's a mark | `size: 's' \| 'l'`, `tone: 'action' \| 'grey' \| 'success' \| 'warn' \| 'danger'`, `onClick`, `label`, `disabled` |
 | `DiscFace` | The drawn circle alone, for a disc inside a bigger button or a list mark | `size`, `tone` |
 | `PlayButton` / `DoneDisc` | Disc L with PlayGlyph / CheckGlyph | `primary`, `onClick`, `label` |

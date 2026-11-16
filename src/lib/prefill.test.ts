@@ -85,6 +85,18 @@ describe('drops', () => {
     expect(plan).toMatchObject({ parentSetId: 'b', afterSetId: 'd1', weight: 105 });
   });
 
+  it('goes under the selected set instead of the last completed one', () => {
+    const a = s('working', 185, 8, { id: 'a', order: 1 });
+    const b = s('working', 185, 6, { id: 'b', order: 2 });
+    const c = s('working', 185, undefined, { id: 'c', order: 3, completed: false });
+    expect(planDrop([a, b, c], undefined, 'weight', 25, 5, 'a')).toMatchObject({ parentSetId: 'a', afterSetId: 'a', weight: 140 });
+    expect(planDrop([a, b, c], undefined, 'weight', 25, 5, 'c')).toMatchObject({ parentSetId: 'c', afterSetId: 'c' });
+
+    const d1 = s('drop', 140, 9, { id: 'd1', order: 1.5, parentSetId: 'a' });
+    expect(planDrop([a, d1, b, c], undefined, 'weight', 25, 5, 'd1')).toMatchObject({ parentSetId: 'a', afterSetId: 'd1', weight: 105 });
+    expect(planDrop([a, b, c], undefined, 'weight', 25, 5, 'gone')).toMatchObject({ parentSetId: 'b' });
+  });
+
   it("prefills reps from the drop that followed the same set last time", () => {
     const a = s('working', 185, 8, { id: 'a', order: 1 });
     const lastA = s('working', 185, 6, { id: 'la', order: 1 });

@@ -123,7 +123,7 @@ export const CATALOG: Section[] = [
     title: 'During a workout',
     blurb: 'Logging sets. No tab bar; Prev / Next move between exercises.',
     screens: [
-      ['4.1', 'Logging', 'Previous = last time\'s set at the same position; D = you dropped after it. Variation chips appear when variations are linked: logged variations, then the most popular, up to 4; order stays fixed when switching and only the current variation is highlighted, with +N pinned at the end (4.36). On the first exercise the left button becomes All exercises. The grey keyboard button floating bottom-right opens the keypad on the next open set.'],
+      ['4.1', 'Logging', 'Previous = last time\'s set at the same position; D = you dropped after it. Variation chips appear when variations are linked: logged variations, then the most popular, up to 4; order stays fixed when switching and only the current variation is highlighted, with +N pinned at the end (4.36). On the first exercise the left button becomes All exercises. Until every set is ticked the header button is a grey Next (same as the bottom Next); it turns into the blue Finish when all is done, on the last exercise, and in All exercises. The grey keyboard button floating bottom-right opens the keypad on the next open set.'],
       ['4.2', 'Keypad', '123 | Plates on the left, lbs | reps and one blue ✓ on the right: it moves to the next box, and on the last box completes the set. No text cursor; the blue outline marks the box. ± steps by the weight step.'],
       ['4.3', 'Drop sets', '"+ Drop" adds a row under the last completed set, prefilled 25% lighter (Settings).'],
       ['4.4', 'Swipes', 'Swipe right → warm-up (moves to the top as W). Swipe left → delete with 5 s Undo.'],
@@ -135,7 +135,7 @@ export const CATALOG: Section[] = [
       ['4.10', 'Look-back: History', 'Every past session of this lift, newest first, drops in orange.'],
       ['4.11', 'Last exercise', 'No next exercise, so the right button becomes All exercises. Ticked segments add the Σ row.'],
       ['4.12', 'All exercises', 'Replaces everything under the header; Finish stays. Progress rings, supersets as one bracket, tap to jump.'],
-      ['4.13', 'All exercises, edit', '− and ▲▼. Removing one with logged sets asks first. Finish asks whether to save changes to the routine.'],
+      ['4.13', 'All exercises, edit', '− and drag handles (a superset moves as one). Removing one with logged sets asks first. Finish asks whether to save changes to the routine.'],
       ['4.14', 'Add mid-workout', 'The builder\'s picker; the first section is "In this workout".'],
       ['4.15', 'Keypad, last box', 'On the last box of a set the same ✓ completes the set and jumps to the next one.'],
       ['4.16', 'Plate pad', 'Tap a plate to add it to each side; tap one on the bar to take it off. Same height as the number keypad.'],
@@ -272,8 +272,8 @@ export const CATALOG: Section[] = [
       ['10.20', 'Quick add', 'Calories plus optional protein, carbs and fat, logged straight into the meal. It never joins your foods.'],
       ['10.21', 'Saved meal', 'Built like the routine builder: the name, the ring, the foods with a delete disc, amount and drag handle, and Add food.'],
       ['10.22', 'Add food: Meals', '+ logs a whole saved meal into this meal, one entry per food, and turns into a check that takes it back off. Copy a day sits underneath.'],
-      ['10.23', 'Copy a day', 'The last two weeks of logged days. + copies a whole day; meal badges open an editable saved-meal draft.'],
-      ['10.24', 'Meal options', 'The ••• on an open meal (and long-press on its row): Save as meal, Copy to today, Clear meal.'],
+      ['10.23', 'Copy a day', 'The last two weeks of logged days. + copies a whole day into the same meals, with one Undo; Save as meal › Breakfast… opens that meal as an editable saved-meal draft.'],
+      ['10.24', 'Meal options', 'The ••• on an open meal (and long-press on its row): Save as meal, Select foods, Copy to today, Clear meal.'],
       ['10.25', 'Day nutrients', 'Every tracked nutrient for the day against your target: amount / target, a 4 px bar and the %. Macros in their colors; the rest neutral, orange only past a limit or upper limit, with "over". A floor reached gets a check.'],
       ['10.26', 'A nutrient\'s top foods', 'Where the day\'s sodium came from: the foods that gave the most, with their share.'],
       ['10.27', 'Missing data', 'A food with no value for a nutrient adds nothing, and is listed under Missing from. Totals are never guessed.'],
@@ -282,7 +282,7 @@ export const CATALOG: Section[] = [
       ['10.30', 'Scan result', 'Your own food for a barcode wins, then Open Food Facts. Nothing is logged until Log; the amount box opens the full amount screen. Wrong food? opens New food filled in from the scan, with the barcode.'],
       ['10.31', 'Settings: Food', 'Targets, and where foods come from. Look up foods online turns Open Food Facts search and barcode lookups on or off; the built-in USDA foods always work offline.'],
       ['10.32', 'Week', 'Average per day, days on target (90–103%) and days protein was hit, counting only past days with food. Stacked macro bars against the dashed target, an orange dot over days that went over; averages against target; then the seven days. Tap a bar or a day to open it.'],
-      ['10.33', 'Select foods', 'Select or hold foods, then make an editable saved meal; handles reorder within the meal.'],
+      ['10.33', 'Select foods', 'Hold a food or ••• → Select foods. Tap foods to tick them; handles reorder within the meal. Make meal opens an editable saved-meal draft. The floating blue + (bottom right) adds to the meal of the moment.'],
       ['10.34', 'Normalized cups', 'Cup amounts use the measured density and normalize multi-cup servings to one cup.'],
       ['10.13', 'Nutrient targets', 'Every micronutrient from the US Dietary Reference Intakes for your sex and age. Limits say so; type your own number and Reset brings the DRI back.'],
     ],
@@ -1503,12 +1503,13 @@ scene('sample', '10.33 10.34', async ({ p, go, shot }) => {
   await go('/food');
   await foodReady(p);
   await p.click('Lunch');
+  await p.click('Lunch options');
   await p.click('Select foods');
   await p.click('Chicken breast, grilled');
   await p.click('White rice, cooked');
   await shot('10.33');
-  await p.click('Make meal');
-  if (!await p.eval<boolean>(`document.body.innerText.includes('Chicken breast, grilled')`)) throw new Error('Selected food missing from meal draft');
+  await p.click({ sel: 'button', text: 'Make meal', start: true });
+  if (!(await p.eval<boolean>(`document.body.innerText.includes('Chicken breast, grilled')`))) throw new Error('Selected food missing from meal draft');
   await p.eval(`(async () => { await __og.db.foods.put({ id: 'cup-fixture', name: 'Measured cereal', source: 'custom', basis: 'g', per100: { kcal: 370, p: 8, c: 80, f: 2 }, servings: [{ label: '1.333 cups', grams: 40 }], createdAt: Date.now(), updatedAt: Date.now() }); })()`);
   await go('/food/item/cup-fixture?day=2026-11-05&meal=breakfast');
   await p.click({ sel: 'button', text: 'cup', start: true });

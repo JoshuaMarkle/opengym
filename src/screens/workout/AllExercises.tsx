@@ -1,5 +1,5 @@
-import { SortableRows, SortableRow } from '../../components/SortableRows';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
+import { SortableRow, SortableRows } from '../../components/SortableRows';
 import { SwipeRow } from '../../components/gestures';
 import { ChevronRight } from '../../components/icons';
 import { Alert, useToast } from '../../components/overlays';
@@ -71,6 +71,12 @@ export function AllExercises({
     if (removed) toast({ message: `${e.exercise.name} removed`, actionLabel: 'Undo', onAction: () => void restoreWorkoutExercise(removed) });
   };
 
+  /** Dragging a block from one position to another, one step at a time (moves skip whole supersets). */
+  const move = async (from: number, to: number) => {
+    const key = blocks[from].items[0].key;
+    for (let i = 0; i < Math.abs(to - from); i++) await moveWorkoutExercise(key, to > from ? 1 : -1);
+  };
+
   const close = () => {
     setEditing(false);
     onClose();
@@ -89,64 +95,78 @@ export function AllExercises({
           Close
         </BarButton>
       </div>
-      <div className="mt-1.5"><SortableRows ids={blocks.map((b) => b.items[0].key)} onMove={async (from, to) => { const key = blocks[from].items[0].key; for (let i = 0; i < Math.abs(to - from); i++) await moveWorkoutExercise(key, to > from ? 1 : -1); }}>
-        {blocks.map((block) => {
-          const row = (e: ActiveExercise) => {
-            const done = e.sets.filter((s) => s.completed).length;
-            const isCur = e.we.id === currentId;
-            const tag = tags.get(e.we.id);
-            const body = (
-              <>
-                {tag ? (
-                  <span className="flex w-[30px] flex-none justify-center">
-                    <TagPill tag={tag} on={isCur} done={e.sets.length > 0 && done === e.sets.length} />
+      <div className="mt-1.5">
+        <SortableRows ids={blocks.map((b) => b.items[0].key)} onMove={(from, to) => void move(from, to)}>
+          {blocks.map((block) => {
+            const row = (e: ActiveExercise, handle: ReactNode) => {
+              const done = e.sets.filter((s) => s.completed).length;
+              const isCur = e.we.id === currentId;
+              const tag = tags.get(e.we.id);
+              const body = (
+                <>
+                  {tag ? (
+                    <span className="flex w-[30px] flex-none justify-center">
+                      <TagPill tag={tag} on={isCur} done={e.sets.length > 0 && done === e.sets.length} />
+                    </span>
+                  ) : (
+                    <CountRing done={done} total={e.sets.length} />
+                  )}
+                  <span className="min-w-0 flex-1">
+                    <b className={cx('block truncate text-input font-semibold', isCur && 'text-accent')}>
+                      {e.exercise.name}
+                      {TYPE_TAG[e.exercise.type] && <Tag>{TYPE_TAG[e.exercise.type]}</Tag>}
+                    </b>
+                    <span className="block truncate text-footnote text-fg2">{sub(e)}</span>
                   </span>
-                ) : (
-                  <CountRing done={done} total={e.sets.length} />
-                )}
-                <span className="min-w-0 flex-1">
-                  <b className={cx('block truncate text-input font-semibold', isCur && 'text-accent')}>
-                    {e.exercise.name}
-                    {TYPE_TAG[e.exercise.type] && <Tag>{TYPE_TAG[e.exercise.type]}</Tag>}
-                  </b>
-                  <span className="block truncate text-footnote text-fg2">{sub(e)}</span>
-                </span>
-              </>
-            );
-            if (editing)
-              return (
-                <div key={e.we.id} className="flex min-h-[60px] items-center gap-3 border-b border-line">
-                  {body}
-                  <DeleteDisc label={`Remove ${e.exercise.name}`} onClick={() => void remove(e)} />
-                </div>
+                </>
               );
+              if (editing)
+                return (
+                  <div key={e.we.id} className="flex min-h-[60px] items-center gap-3 border-b border-line">
+                    <DeleteDisc label={`Remove ${e.exercise.name}`} onClick={() => void remove(e)} />
+                    {body}
+                    {handle}
+                  </div>
+                );
+              return (
+                <SwipeRow key={e.we.id} rounded={false} left={{ label: 'Remove', onTrigger: () => void remove(e) }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onJump(e.we.id);
+                      close();
+                    }}
+                    className="flex min-h-[60px] w-full items-center gap-3 border-b border-line text-left active:bg-surface/60"
+                  >
+                    {body}
+                    <ChevronRight size={13} className="flex-none text-fg3" />
+                  </button>
+                </SwipeRow>
+              );
+            };
+            const first = block.items[0];
+            if (!block.letter)
+              return (
+                <SortableRow key={first.key} id={first.key} enabled={editing} label={first.e.exercise.name}>
+                  {(handle) => row(first.e, handle)}
+                </SortableRow>
+              );
+            // A superset moves as one block; its handle sits on the label line.
             return (
-              <SwipeRow key={e.we.id} rounded={false} left={{ label: 'Remove', onTrigger: () => void remove(e) }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onJump(e.we.id);
-                    close();
-                  }}
-                  className="flex min-h-[60px] w-full items-center gap-3 border-b border-line text-left active:bg-surface/60"
-                >
-                  {body}
-                  <ChevronRight size={13} className="flex-none text-fg3" />
-                </button>
-              </SwipeRow>
+              <SortableRow key={first.key} id={first.key} enabled={editing} label={`Superset ${block.letter}`}>
+                {(handle) => (
+                  <div className="mt-2 border-l-2 border-accent pl-3">
+                    <div className="flex min-h-9 items-center justify-between gap-2">
+                      <span className="text-caps text-accent">Superset {block.letter}</span>
+                      {handle}
+                    </div>
+                    {block.items.map((it) => row(it.e, null))}
+                  </div>
+                )}
+              </SortableRow>
             );
-          };
-          if (!block.letter) return editing ? <SortableRow key={block.items[0].key} id={block.items[0].key} label={block.items[0].e.exercise.name}>{row(block.items[0].e)}</SortableRow> : row(block.items[0].e);
-          return (
-            <SortableRow key={block.items[0].key} id={block.items[0].key} enabled={editing} label={`Superset ${block.letter}`}><div className="mt-2 border-l-2 border-accent pl-3">
-              <div className="flex min-h-9 items-center justify-between gap-2">
-                <span className="text-caps text-accent">Superset {block.letter}</span>
-
-              </div>
-              {block.items.map((it) => row(it.e))}
-            </div></SortableRow>
-          );
-        })}</SortableRows>
+          })}
+        </SortableRows>
       </div>
       {!exercises.length && <p className="py-8 text-center text-callout text-fg2">No exercises yet.</p>}
       <div className="mt-4 grid grid-cols-[1fr_100px] gap-2">
